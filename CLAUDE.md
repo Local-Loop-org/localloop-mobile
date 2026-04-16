@@ -1,5 +1,17 @@
 # LocalLoop Mobile — Agent Guide
 
+## Git workflow
+
+Always branch before coding. Never commit without explicit user approval.
+Full rules: see `## Git workflow` in the root `CLAUDE.md`.
+
+```
+□ On a feature branch? → git checkout -b <type>/<slug>
+□ User approved changes? → show diff and wait before committing
+```
+
+---
+
 ## What this project is
 
 The Expo React Native app for LocalLoop — a proximity-based group chat app.
@@ -8,13 +20,13 @@ The Expo React Native app for LocalLoop — a proximity-based group chat app.
 
 ## Documentation
 
-Full architecture, PRD, and ADRs live in the
-[localloop-shared](https://github.com/andreyviktor/localloop-shared) repo under `docs/`.
+All docs live in `localloop-shared/docs/` and are loaded automatically via the root `CLAUDE.md`.
+If you launched Claude from this repo directly, read them at `../localloop-shared/docs/`.
 
 Key files:
-- `docs/prd.md` — Business rules (source of truth)
-- `docs/architecture.md` — Clean Architecture pattern and mobile screen structure
-- `docs/status.md` — Current project state and pending work
+- `../localloop-shared/docs/prd.md` — Business rules (source of truth)
+- `../localloop-shared/docs/architecture.md` — Clean Architecture pattern and mobile screen structure
+- `../localloop-shared/docs/status.md` — Current project state and pending work
 
 ## Repository structure
 
