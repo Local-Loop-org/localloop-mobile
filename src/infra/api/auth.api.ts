@@ -1,4 +1,7 @@
-import { User, Provider, DmPermission } from '@/domain/user.entity';
+// src/infra/api/auth.api.ts
+
+import { User } from '@/domain/user.entity';
+import { apiClient } from './api-client';
 
 export interface AuthResponse {
   user: User;
@@ -7,63 +10,47 @@ export interface AuthResponse {
   isNewUser: boolean;
 }
 
-// Em ambiente de simulador iOS use localhost. 
-// No Android use 10.0.2.2.
-const API_URL = 'http://localhost:3000';
+interface BackendAuthResponse {
+  user: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+    provider: User['provider'];
+  };
+  accessToken: string;
+  refreshToken: string;
+  isNewUser: boolean;
+}
 
 export const authApi = {
   loginWithGoogle: async (token: string): Promise<AuthResponse> => {
-    const response = await fetch(`${API_URL}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Falha no login com Google');
-    }
-
-    const data = await response.json();
-    return {
-      user: {
-        ...data.user,
-        // Mapping backend fields to domain entity if needed
-        isActive: true,
-        lastSeenAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      isNewUser: data.isNewUser,
-    };
+    const { data } = await apiClient.post<BackendAuthResponse>('/auth/google', { token });
+    return mapToAuthResponse(data);
   },
 
-  loginWithApple: async (token: string, identityToken: string): Promise<AuthResponse> => {
-    const response = await fetch(`${API_URL}/auth/apple`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token, identityToken }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Falha no login com Apple');
-    }
-
-    const data = await response.json();
-    return {
-      user: {
-        ...data.user,
-        isActive: true,
-        lastSeenAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      isNewUser: data.isNewUser,
-    };
+  loginWithApple: async (token: string): Promise<AuthResponse> => {
+    const { data } = await apiClient.post<BackendAuthResponse>('/auth/apple', { token });
+    return mapToAuthResponse(data);
   },
 };
+
+function mapToAuthResponse(data: BackendAuthResponse): AuthResponse {
+  return {
+    user: {
+      id: data.user.id,
+      displayName: data.user.displayName,
+      avatarUrl: data.user.avatarUrl,
+      provider: data.user.provider,
+      // Fields not yet returned by the auth endpoint — filled in after GET /users/me
+      providerId: '',
+      geohash: null,
+      dmPermission: 'members' as User['dmPermission'],
+      isActive: true,
+      lastSeenAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    },
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    isNewUser: data.isNewUser,
+  };
+}
