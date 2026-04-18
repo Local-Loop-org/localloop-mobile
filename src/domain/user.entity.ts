@@ -1,15 +1,8 @@
 // src/domain/user.entity.ts
 
-export enum DmPermission {
-  NOBODY = 'nobody',
-  MEMBERS = 'members',
-  EVERYONE = 'everyone',
-}
+import { DmPermission, Provider } from '@localloop/shared-types';
 
-export enum Provider {
-  GOOGLE = 'google',
-  APPLE = 'apple',
-}
+export { DmPermission, Provider };
 
 export interface User {
   id: string;
