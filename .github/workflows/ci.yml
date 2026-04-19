@@ -65,4 +65,4 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: EAS Build
-        run: eas build --platform all --non-interactive
+        run: eas build --platform android --non-interactive
