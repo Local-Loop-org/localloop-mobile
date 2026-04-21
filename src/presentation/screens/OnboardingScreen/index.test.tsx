@@ -2,17 +2,44 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import * as Location from 'expo-location';
+import { DmPermission, Provider } from '@localloop/shared-types';
 import OnboardingScreen from './index';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { userApi } from '@/infra/api/user.api';
+
+jest.mock('@/infra/api/user.api', () => ({
+  userApi: {
+    updateProfile: jest.fn(),
+    updateLocation: jest.fn(),
+  },
+}));
 
 const resetStore = () =>
   useAuthStore.setState({
-    user: null,
-    accessToken: null,
-    refreshToken: null,
+    user: {
+      id: 'user-1',
+      providerId: 'provider-1',
+      provider: Provider.GOOGLE,
+      displayName: '',
+      avatarUrl: null,
+      geohash: null,
+      dmPermission: DmPermission.MEMBERS,
+      isActive: true,
+      lastSeenAt: '2026-01-01T00:00:00Z',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    accessToken: 'access',
+    refreshToken: 'refresh',
     isAuthenticated: true,
     isNewUser: true,
   });
+
+const mockedUpdateProfile = userApi.updateProfile as jest.MockedFunction<
+  typeof userApi.updateProfile
+>;
+const mockedUpdateLocation = userApi.updateLocation as jest.MockedFunction<
+  typeof userApi.updateLocation
+>;
 
 describe('OnboardingScreen', () => {
   let alertSpy: jest.SpyInstance;
@@ -21,6 +48,9 @@ describe('OnboardingScreen', () => {
     resetStore();
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValue({
+      coords: { latitude: -23.5505, longitude: -46.6333 },
+    });
   });
 
   afterEach(() => {
@@ -72,10 +102,15 @@ describe('OnboardingScreen', () => {
     );
   });
 
-  it('flips isNewUser to false when name is valid and location is granted', async () => {
-    (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
-      status: 'granted',
+  it('calls both user APIs, persists displayName, and flips isNewUser on success', async () => {
+    mockedUpdateProfile.mockResolvedValue({
+      id: 'user-1',
+      displayName: 'Alice',
+      avatarUrl: null,
+      dmPermission: DmPermission.MEMBERS,
+      provider: Provider.GOOGLE,
     });
+    mockedUpdateLocation.mockResolvedValue(undefined);
 
     const { getByText, getByPlaceholderText } = render(<OnboardingScreen />);
     fireEvent.changeText(getByPlaceholderText('Seu nome ou apelido'), 'Alice');
@@ -86,9 +121,43 @@ describe('OnboardingScreen', () => {
       expect(getByText('Localização Concedida! ✅')).toBeTruthy(),
     );
 
-    fireEvent.press(getByText('Começar a Explorar'));
+    await act(async () => {
+      fireEvent.press(getByText('Começar a Explorar'));
+    });
 
-    expect(useAuthStore.getState().isNewUser).toBe(false);
+    expect(mockedUpdateProfile).toHaveBeenCalledWith({ displayName: 'Alice' });
+    expect(mockedUpdateLocation).toHaveBeenCalledWith({
+      lat: -23.5505,
+      lng: -46.6333,
+    });
+
+    const state = useAuthStore.getState();
+    expect(state.isNewUser).toBe(false);
+    expect(state.user?.displayName).toBe('Alice');
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('alerts and keeps isNewUser true when the profile API fails', async () => {
+    mockedUpdateProfile.mockRejectedValue(new Error('network'));
+    mockedUpdateLocation.mockResolvedValue(undefined);
+
+    const { getByText, getByPlaceholderText } = render(<OnboardingScreen />);
+    fireEvent.changeText(getByPlaceholderText('Seu nome ou apelido'), 'Alice');
+    await act(async () => {
+      fireEvent.press(getByText('Permitir Localização 📍'));
+    });
+    await waitFor(() =>
+      expect(getByText('Localização Concedida! ✅')).toBeTruthy(),
+    );
+
+    await act(async () => {
+      fireEvent.press(getByText('Começar a Explorar'));
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Erro',
+      'Não foi possível salvar seu perfil. Tente novamente.',
+    );
+    expect(useAuthStore.getState().isNewUser).toBe(true);
   });
 });
