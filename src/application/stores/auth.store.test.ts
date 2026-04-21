@@ -152,4 +152,36 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().isNewUser).toBe(false);
     });
   });
+
+  describe('updateUser', () => {
+    it('merges partial fields into the current user and persists to SecureStore', async () => {
+      const user = buildUser({ displayName: 'Alice' });
+      useAuthStore.setState({
+        user,
+        accessToken: 'access',
+        refreshToken: 'refresh',
+        isAuthenticated: true,
+      });
+      (SecureStore.setItemAsync as jest.Mock).mockClear();
+
+      await useAuthStore.getState().updateUser({ displayName: 'Alicia' });
+
+      const state = useAuthStore.getState();
+      expect(state.user?.displayName).toBe('Alicia');
+      expect(state.user?.id).toBe(user.id);
+      expect(state.accessToken).toBe('access');
+      expect(state.isAuthenticated).toBe(true);
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+        STORAGE_KEYS.USER_DATA,
+        JSON.stringify({ ...user, displayName: 'Alicia' }),
+      );
+    });
+
+    it('is a no-op when no user is currently set', async () => {
+      await useAuthStore.getState().updateUser({ displayName: 'ignored' });
+
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+  });
 });
