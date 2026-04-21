@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { colors, typography } from '@/shared/theme';
 import { styles } from './styles';
 import { OnboardingLayoutProps } from './types';
@@ -7,6 +7,7 @@ import { OnboardingLayoutProps } from './types';
 export default function OnboardingLayout({
   displayName,
   locationGranted,
+  isLoading,
   onDisplayNameChange,
   onRequestLocation,
   onFinish,
@@ -36,8 +37,16 @@ export default function OnboardingLayout({
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.finishBtn} onPress={onFinish}>
-        <Text style={styles.finishBtnText}>Começar a Explorar</Text>
+      <TouchableOpacity
+        style={[styles.finishBtn, isLoading && { opacity: 0.6 }]}
+        onPress={onFinish}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.finishBtnText}>Começar a Explorar</Text>
+        )}
       </TouchableOpacity>
     </View>
   );

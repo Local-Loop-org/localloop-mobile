@@ -15,6 +15,7 @@ interface AuthState {
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   setNewUserStatus: (isNewUser: boolean) => void;
+  updateUser: (partial: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -61,4 +62,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setNewUserStatus: (isNewUser: boolean) => set({ isNewUser }),
+
+  updateUser: async (partial) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    const updated = { ...user, ...partial };
+    await SecureStore.setItemAsync(STORAGE_KEYS.USER_DATA, JSON.stringify(updated));
+    set({ user: updated });
+  },
 }));
