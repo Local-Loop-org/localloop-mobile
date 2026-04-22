@@ -39,11 +39,15 @@ jest.mock('@react-navigation/native-stack', () => {
   };
 });
 
-jest.mock('../screens/HomeScreen', () => {
+jest.mock('./AuthenticatedStack', () => {
   const ReactLib = require('react');
   const { Text } = require('react-native');
   return () =>
-    ReactLib.createElement(Text, { testID: 'home-screen' }, 'HomeScreen');
+    ReactLib.createElement(
+      Text,
+      { testID: 'authenticated-stack' },
+      'AuthenticatedStack',
+    );
 });
 
 jest.mock('../screens/OnboardingScreen', () => {

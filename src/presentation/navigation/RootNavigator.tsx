@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from '@/application/stores/auth.store';
 import AuthStack from './AuthStack';
-import HomeScreen from '../screens/HomeScreen';
+import AuthenticatedStack from './AuthenticatedStack';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import { ActivityIndicator, View } from 'react-native';
 import { colors } from '@/shared/theme';
@@ -40,7 +40,7 @@ export default function RootNavigator() {
         ) : isNewUser ? (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Home" component={AuthenticatedStack} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
