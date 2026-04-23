@@ -1,6 +1,7 @@
 // src/presentation/navigation/types.ts
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { MemberRole } from '@localloop/shared-types';
 
 /**
  * Route params for the authenticated stack. Keep in sync with
@@ -10,6 +11,7 @@ export type AuthenticatedStackParamList = {
   GroupDiscovery: undefined;
   CreateGroup: undefined;
   GroupDetail: { groupId: string };
+  GroupMembers: { groupId: string; myRole: MemberRole | null };
 };
 
 export type AuthenticatedStackScreenProps<

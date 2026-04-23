@@ -64,6 +64,99 @@ export const styles = StyleSheet.create({
   joinBtnTextDisabled: {
     color: colors.textSecondary,
   },
+  secondaryBtn: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  secondaryBtnText: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  modSection: {
+    marginTop: spacing.xl,
+  },
+  sectionTitle: {
+    ...typography.h2,
+    fontSize: 18,
+    marginBottom: spacing.md,
+  },
+  emptyRequests: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  requestRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surface,
+  },
+  requestName: {
+    color: colors.text,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  requestActions: {
+    flexDirection: 'row',
+  },
+  approveBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+    marginRight: spacing.xs,
+  },
+  approveBtnText: {
+    color: colors.black,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  rejectBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.textSecondary,
+  },
+  rejectBtnText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  leaveBtn: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  leaveBtnDisabled: {
+    opacity: 0.5,
+  },
+  leaveBtnText: {
+    color: colors.error,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  leaveHelper: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',

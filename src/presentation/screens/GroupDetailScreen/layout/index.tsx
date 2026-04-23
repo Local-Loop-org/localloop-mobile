@@ -31,6 +31,17 @@ export default function GroupDetailLayout({
   isJoining,
   onJoin,
   onBack,
+  showModerationSection,
+  pendingRequests,
+  resolvingRequestId,
+  onApproveRequest,
+  onRejectRequest,
+  showMembersButton,
+  onPressMembers,
+  showLeaveButton,
+  isOwner,
+  isLeaving,
+  onLeave,
 }: GroupDetailLayoutProps) {
   if (loading) {
     return (
@@ -58,6 +69,7 @@ export default function GroupDetailLayout({
   }
 
   const joinDisabled = joinButtonState !== 'join' || isJoining;
+  const leaveDisabled = isOwner || isLeaving;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,6 +114,70 @@ export default function GroupDetailLayout({
             </Text>
           )}
         </TouchableOpacity>
+
+        {showMembersButton ? (
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={onPressMembers}
+          >
+            <Text style={styles.secondaryBtnText}>Ver membros</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {showModerationSection ? (
+          <View style={styles.modSection}>
+            <Text style={styles.sectionTitle}>Solicitações pendentes</Text>
+            {pendingRequests.length === 0 ? (
+              <Text style={styles.emptyRequests}>Nenhuma solicitação no momento.</Text>
+            ) : (
+              pendingRequests.map((req) => {
+                const isResolving = resolvingRequestId === req.id;
+                return (
+                  <View key={req.id} style={styles.requestRow}>
+                    <Text style={styles.requestName}>{req.displayName}</Text>
+                    <View style={styles.requestActions}>
+                      <TouchableOpacity
+                        style={[styles.approveBtn, isResolving && styles.btnDisabled]}
+                        disabled={isResolving}
+                        onPress={() => onApproveRequest(req.id)}
+                      >
+                        <Text style={styles.approveBtnText}>Aprovar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.rejectBtn, isResolving && styles.btnDisabled]}
+                        disabled={isResolving}
+                        onPress={() => onRejectRequest(req.id)}
+                      >
+                        <Text style={styles.rejectBtnText}>Rejeitar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        ) : null}
+
+        {showLeaveButton ? (
+          <>
+            <TouchableOpacity
+              style={[styles.leaveBtn, leaveDisabled && styles.leaveBtnDisabled]}
+              disabled={leaveDisabled}
+              onPress={onLeave}
+            >
+              {isLeaving ? (
+                <ActivityIndicator color={colors.error} />
+              ) : (
+                <Text style={styles.leaveBtnText}>Sair do grupo</Text>
+              )}
+            </TouchableOpacity>
+            {isOwner ? (
+              <Text style={styles.leaveHelper}>
+                Transfira a liderança antes de sair.
+              </Text>
+            ) : null}
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
