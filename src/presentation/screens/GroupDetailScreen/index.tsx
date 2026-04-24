@@ -171,6 +171,10 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
     });
   };
 
+  const handlePressChat = () => {
+    navigation.navigate('GroupChat', { groupId });
+  };
+
   const myRole = group?.myRole ?? null;
 
   return (
@@ -189,6 +193,8 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       onRejectRequest={(id) => handleResolveRequest(id, 'reject')}
       showMembersButton={isActiveMember(myRole)}
       onPressMembers={handlePressMembers}
+      showChatButton={isActiveMember(myRole)}
+      onPressChat={handlePressChat}
       showLeaveButton={isActiveMember(myRole)}
       isOwner={myRole === MemberRole.OWNER}
       isLeaving={isLeaving}

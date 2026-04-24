@@ -12,6 +12,7 @@ export type AuthenticatedStackParamList = {
   CreateGroup: undefined;
   GroupDetail: { groupId: string };
   GroupMembers: { groupId: string; myRole: MemberRole | null };
+  GroupChat: { groupId: string };
 };
 
 export type AuthenticatedStackScreenProps<

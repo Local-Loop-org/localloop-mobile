@@ -355,6 +355,29 @@ describe('GroupDetailScreen', () => {
     });
   });
 
+  // --- chat ---
+
+  it('chat: button navigates to GroupChat with groupId when user is an active member', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.MEMBER }),
+    );
+
+    const { findByText } = renderScreen();
+    fireEvent.press(await findByText('Chat do grupo'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
+      groupId: 'g-1',
+    });
+  });
+
+  it('chat: button is hidden when user is not a member', async () => {
+    mockedGetDetail.mockResolvedValueOnce(buildGroup({ myRole: null }));
+
+    const { queryByText, findByText } = renderScreen();
+    await findByText('Entrar no grupo');
+    expect(queryByText('Chat do grupo')).toBeNull();
+  });
+
   // --- leave ---
 
   it('leave: confirm → success → goBack', async () => {

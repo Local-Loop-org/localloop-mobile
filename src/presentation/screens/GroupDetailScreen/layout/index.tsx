@@ -38,6 +38,8 @@ export default function GroupDetailLayout({
   onRejectRequest,
   showMembersButton,
   onPressMembers,
+  showChatButton,
+  onPressChat,
   showLeaveButton,
   isOwner,
   isLeaving,
@@ -114,6 +116,15 @@ export default function GroupDetailLayout({
             </Text>
           )}
         </TouchableOpacity>
+
+        {showChatButton ? (
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={onPressChat}
+          >
+            <Text style={styles.secondaryBtnText}>Chat do grupo</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {showMembersButton ? (
           <TouchableOpacity

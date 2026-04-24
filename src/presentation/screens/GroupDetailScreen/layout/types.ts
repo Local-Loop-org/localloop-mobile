@@ -20,6 +20,9 @@ export interface GroupDetailLayoutProps {
   showMembersButton: boolean;
   onPressMembers: () => void;
 
+  showChatButton: boolean;
+  onPressChat: () => void;
+
   showLeaveButton: boolean;
   isOwner: boolean;
   isLeaving: boolean;
