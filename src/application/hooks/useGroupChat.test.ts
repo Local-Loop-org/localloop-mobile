@@ -1,4 +1,6 @@
+import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
@@ -48,11 +50,23 @@ const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   ...over,
 });
 
+function makeWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client }, children);
+}
+
 describe('useGroupChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({
-      user: { id: 'me', displayName: 'Me' } as never,
+      user: {
+        id: 'me',
+        displayName: 'Me',
+        avatarUrl: null,
+      } as never,
       accessToken: 'tok',
       refreshToken: 'ref',
       isAuthenticated: true,
@@ -68,11 +82,15 @@ describe('useGroupChat', () => {
     const { mock, fire } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result } = renderHook(() => useGroupChat('g-1'));
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.messages).toHaveLength(1);
-    expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok');
+    await waitFor(() =>
+      expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok'),
+    );
 
     act(() => {
       fire('connect');
@@ -87,39 +105,57 @@ describe('useGroupChat', () => {
     const { mock, fire } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result } = renderHook(() => useGroupChat('g-1'));
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
     await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     const incoming = baseMessage({ id: 'm-2', content: 'first' });
     act(() => {
       fire('new_message', incoming);
     });
-    expect(result.current.messages[0].id).toBe('m-2');
+    await waitFor(() =>
+      expect(result.current.messages[0]?.id).toBe('m-2'),
+    );
 
     const second = baseMessage({ id: 'm-3', content: 'second' });
     act(() => {
       fire('new_message', second);
     });
-    expect(result.current.messages.map((m) => m.id)).toEqual(['m-3', 'm-2']);
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'm-3',
+        'm-2',
+      ]),
+    );
 
-    // Dedupe: re-emitting the same id is a no-op.
     act(() => {
       fire('new_message', second);
     });
     expect(result.current.messages).toHaveLength(2);
   });
 
-  it('sendMessage emits send_message with trimmed content', async () => {
+  it('sendMessage optimistically prepends a temp-* message and emits send_message', async () => {
     mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
     const { mock } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result } = renderHook(() => useGroupChat('g-1'));
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
     await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
       result.current.sendMessage('  hi  ');
     });
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    const temp = result.current.messages[0];
+    expect(temp.id.startsWith('temp-')).toBe(true);
+    expect(temp.content).toBe('hi');
+    expect(temp.senderId).toBe('me');
 
     expect(mock.emit).toHaveBeenCalledWith('send_message', {
       groupId: 'g-1',
@@ -129,19 +165,97 @@ describe('useGroupChat', () => {
     });
   });
 
+  it('reconciles the server echo with an optimistic temp (same senderId + content)', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      result.current.sendMessage('hello world');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    expect(result.current.messages[0].id.startsWith('temp-')).toBe(true);
+
+    act(() => {
+      fire(
+        'new_message',
+        baseMessage({
+          id: 'server-uuid-1',
+          senderId: 'me',
+          senderName: 'Me',
+          content: 'hello world',
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages[0]?.id).toBe('server-uuid-1'),
+    );
+    expect(result.current.messages).toHaveLength(1);
+  });
+
+  it('loadOlder fetches the next page using the previous next_cursor', async () => {
+    mockedGetHistory
+      .mockResolvedValueOnce({
+        data: [baseMessage({ id: 'm-new' })],
+        next_cursor: '2026-04-24T09:59:00.000Z',
+      })
+      .mockResolvedValueOnce({
+        data: [
+          baseMessage({ id: 'm-older', createdAt: '2026-04-24T09:00:00.000Z' }),
+        ],
+        next_cursor: null,
+      });
+    const { mock } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.hasMore).toBe(true);
+
+    act(() => {
+      result.current.loadOlder();
+    });
+
+    await waitFor(() =>
+      expect(mockedGetHistory).toHaveBeenNthCalledWith(2, 'g-1', {
+        before: '2026-04-24T09:59:00.000Z',
+      }),
+    );
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'm-new',
+        'm-older',
+      ]),
+    );
+    expect(result.current.hasMore).toBe(false);
+  });
+
   it('sendMessage is a no-op for empty or whitespace-only input', async () => {
     mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
     const { mock } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result } = renderHook(() => useGroupChat('g-1'));
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
     await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     mock.emit.mockClear();
     act(() => {
       result.current.sendMessage('   ');
     });
     expect(mock.emit).not.toHaveBeenCalled();
+    expect(result.current.messages).toHaveLength(0);
   });
 
   it('emits leave_group and disconnects on unmount', async () => {
@@ -149,8 +263,11 @@ describe('useGroupChat', () => {
     const { mock } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result, unmount } = renderHook(() => useGroupChat('g-1'));
+    const { result, unmount } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
     await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     unmount();
 
@@ -160,7 +277,9 @@ describe('useGroupChat', () => {
 
   it('sets error=load_failed when initial history fetch throws', async () => {
     mockedGetHistory.mockRejectedValueOnce(new Error('boom'));
-    const { result } = renderHook(() => useGroupChat('g-1'));
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('load_failed');
