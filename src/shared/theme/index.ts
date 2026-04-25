@@ -3,10 +3,14 @@
 export const colors = {
   primary: '#00D1FF',      // Cyan
   secondary: '#7000FF',    // Purple
+  accent2: '#A78BFA',      // Soft lavender — gradient pair for `primary` (cyan→lavender)
   background: '#0F0F0F',   // Almost Black
   surface: '#1E1E1E',      // Dark Gray
   text: '#FFFFFF',
   textSecondary: '#A0A0A0',
+  line: '#2A2A2A',
+  dim: '#C4C4C4',
+  faint: '#6E6E6E',
   error: '#FF4B4B',
   success: '#00E676',
   white: '#FFFFFF',

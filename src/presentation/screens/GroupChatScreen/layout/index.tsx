@@ -1,101 +1,155 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
-  View,
-  Text,
+  ActivityIndicator,
   FlatList,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import type { ChatMessage } from '@/infra/api/messages.api';
-import { styles } from './styles';
+import AnchorIcon from '../components/AnchorIcon';
+import Avatar from '../components/Avatar';
+import {
+  buildChatListItems,
+  formatTime,
+  type ChatListItem,
+} from '../utils';
+import { layoutDimensions, styles } from './styles';
 import type { GroupChatLayoutProps } from './types';
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const hh = d.getHours().toString().padStart(2, '0');
-  const mm = d.getMinutes().toString().padStart(2, '0');
-  return `${hh}:${mm}`;
+function OwnMessage({ message }: { message: ChatMessage }) {
+  return (
+    <View style={styles.ownRow}>
+      <View style={styles.ownColumn}>
+        <LinearGradient
+          colors={[colors.primary, colors.accent2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.ownBubble}
+        >
+          <Text style={styles.ownBubbleText}>{message.content}</Text>
+        </LinearGradient>
+        <Text style={styles.ownTimestamp}>{formatTime(message.createdAt)}</Text>
+      </View>
+    </View>
+  );
 }
 
-function MessageBubble({
-  message,
-  isMine,
-}: {
-  message: ChatMessage;
-  isMine: boolean;
-}) {
+function PeerMessage({ message }: { message: ChatMessage }) {
   return (
-    <View
-      style={[
-        styles.messageRow,
-        isMine ? styles.messageRowMine : styles.messageRowTheirs,
-      ]}
-    >
-      {!isMine ? (
-        <Text style={styles.senderName}>{message.senderName}</Text>
-      ) : null}
-      <View
-        style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}
-      >
-        <Text
-          style={[
-            styles.content,
-            isMine ? styles.contentMine : styles.contentTheirs,
-          ]}
-        >
-          {message.content}
+    <View style={styles.peerRow}>
+      <Avatar
+        name={message.senderName}
+        uri={message.senderAvatar}
+        size={layoutDimensions.peerAvatar}
+      />
+      <View style={styles.peerColumn}>
+        <View style={styles.peerNameRow}>
+          <Text style={styles.peerName}>{message.senderName}</Text>
+        </View>
+        <View style={styles.peerBubble}>
+          <Text style={styles.peerBubbleText}>{message.content}</Text>
+        </View>
+        <Text style={styles.peerTimestamp}>
+          {formatTime(message.createdAt)}
         </Text>
       </View>
-      <Text style={[styles.timestamp, isMine && styles.timestampMine]}>
-        {formatTime(message.createdAt)}
-      </Text>
+    </View>
+  );
+}
+
+function DaySeparator({ label }: { label: string }) {
+  return (
+    <View style={styles.separatorWrapper}>
+      <Text style={styles.separatorText}>{label}</Text>
     </View>
   );
 }
 
 export default function GroupChatLayout({
+  groupName,
+  anchorType,
   messages,
   currentUserId,
   loading,
   loadingMore,
   hasMore,
-  connected,
   errorMessage,
   draft,
   onChangeDraft,
   onSend,
   onLoadOlder,
   onBack,
+  onPressHeader,
+  onPressMembers,
 }: GroupChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0;
+  const items = useMemo(() => buildChatListItems(messages), [messages]);
+
+  const renderItem = ({ item }: { item: ChatListItem }) => {
+    if (item.kind === 'separator') {
+      return <DaySeparator label={item.label} />;
+    }
+    const isOwn = item.message.senderId === currentUserId;
+    return isOwn ? (
+      <OwnMessage message={item.message} />
+    ) : (
+      <PeerMessage message={item.message} />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-              <Text style={styles.backText}>‹ Voltar</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Chat</Text>
-          </View>
-          <View
-            testID="connection-indicator"
-            style={[
-              styles.connectionDot,
-              connected
-                ? styles.connectionDotOnline
-                : styles.connectionDotOffline,
-            ]}
-          />
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={onBack}
+            testID="header-back"
+          >
+            <Icon name="chevronLeft" size={17} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerCenter}
+            onPress={onPressHeader}
+            testID="header-title"
+          >
+            <AnchorIcon
+              type={anchorType}
+              size={layoutDimensions.headerAnchor}
+            />
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {groupName}
+              </Text>
+              <Icon
+                name="chevronRight"
+                size={13}
+                color={colors.faint}
+                strokeWidth={2}
+              />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={onPressMembers}
+            testID="header-members"
+          >
+            <Icon name="users" size={17} color={colors.text} />
+          </TouchableOpacity>
         </View>
 
         {errorMessage ? (
@@ -109,15 +163,10 @@ export default function GroupChatLayout({
         ) : (
           <FlatList
             inverted
-            data={messages}
-            keyExtractor={(m) => m.id}
+            data={items}
+            keyExtractor={(item) => item.key}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <MessageBubble
-                message={item}
-                isMine={item.senderId === currentUserId}
-              />
-            )}
+            renderItem={renderItem}
             onEndReached={hasMore ? onLoadOlder : undefined}
             onEndReachedThreshold={0.2}
             ListFooterComponent={
@@ -138,21 +187,42 @@ export default function GroupChatLayout({
         )}
 
         <View style={styles.composer}>
+          <TouchableOpacity
+            style={styles.composerBtn}
+            testID="composer-attach"
+            disabled
+          >
+            <Icon name="plus" size={18} color={colors.dim} />
+          </TouchableOpacity>
           <TextInput
-            style={styles.input}
+            style={styles.inputPill}
             placeholder="Escreva uma mensagem"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.faint}
             value={draft}
             onChangeText={onChangeDraft}
             multiline
           />
           <TouchableOpacity
-            style={[styles.sendBtn, sendDisabled && styles.sendBtnDisabled]}
+            style={[
+              styles.composerSend,
+              sendDisabled && styles.composerSendDisabled,
+            ]}
             disabled={sendDisabled}
             onPress={onSend}
             testID="send-button"
           >
-            <Text style={styles.sendBtnText}>Enviar</Text>
+            <LinearGradient
+              colors={[colors.primary, colors.accent2]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Icon
+              name="send2"
+              size={15}
+              color={colors.white}
+              strokeWidth={2.2}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

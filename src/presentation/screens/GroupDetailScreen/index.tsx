@@ -172,7 +172,13 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   };
 
   const handlePressChat = () => {
-    navigation.navigate('GroupChat', { groupId });
+    if (!group) return;
+    navigation.navigate('GroupChat', {
+      groupId,
+      groupName: group.name,
+      anchorType: group.anchorType,
+      myRole: group.myRole,
+    });
   };
 
   const myRole = group?.myRole ?? null;

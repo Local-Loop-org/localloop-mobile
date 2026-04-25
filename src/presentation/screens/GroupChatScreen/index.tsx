@@ -12,13 +12,12 @@ export default function GroupChatScreen({
   navigation,
   route,
 }: GroupChatScreenProps) {
-  const { groupId } = route.params;
+  const { groupId, groupName, anchorType, myRole } = route.params;
   const {
     messages,
     loading,
     loadingMore,
     error,
-    connected,
     hasMore,
     currentUserId,
     sendMessage,
@@ -36,18 +35,23 @@ export default function GroupChatScreen({
 
   return (
     <GroupChatLayout
+      groupName={groupName}
+      anchorType={anchorType}
       messages={messages}
       currentUserId={currentUserId}
       loading={loading}
       loadingMore={loadingMore}
       hasMore={hasMore}
-      connected={connected}
       errorMessage={error ? ERROR_LABEL[error] : null}
       draft={draft}
       onChangeDraft={setDraft}
       onSend={handleSend}
       onLoadOlder={loadOlder}
       onBack={() => navigation.goBack()}
+      onPressHeader={() => navigation.navigate('GroupDetail', { groupId })}
+      onPressMembers={() =>
+        navigation.navigate('GroupMembers', { groupId, myRole })
+      }
     />
   );
 }

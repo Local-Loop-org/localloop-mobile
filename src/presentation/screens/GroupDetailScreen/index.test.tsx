@@ -357,7 +357,7 @@ describe('GroupDetailScreen', () => {
 
   // --- chat ---
 
-  it('chat: button navigates to GroupChat with groupId when user is an active member', async () => {
+  it('chat: button navigates to GroupChat with groupId, name and myRole when user is an active member', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
@@ -367,6 +367,9 @@ describe('GroupDetailScreen', () => {
 
     expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
       groupId: 'g-1',
+      groupName: 'Morumbi Runners',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      myRole: MemberRole.MEMBER,
     });
   });
 

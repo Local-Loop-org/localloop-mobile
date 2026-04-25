@@ -63,7 +63,16 @@ export default function GroupDiscoveryScreen({ navigation }: Props) {
       refreshing={refreshing}
       errorMessage={errorMessage}
       onRefresh={() => loadGroups('refresh')}
-      onPressGroup={(id) => navigation.navigate('GroupDetail', { groupId: id })}
+      onPressGroup={(id) => {
+        const group = groups.find((g) => g.id === id);
+        if (!group) return;
+        navigation.navigate('GroupChat', {
+          groupId: id,
+          groupName: group.name,
+          anchorType: group.anchorType,
+          myRole: null,
+        });
+      }}
       onPressCreate={() => navigation.navigate('CreateGroup')}
       onLogout={logout}
     />

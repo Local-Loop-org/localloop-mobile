@@ -116,14 +116,17 @@ describe('GroupDiscoveryScreen', () => {
     ).toBeTruthy();
   });
 
-  it('navigates to GroupDetail when a group card is pressed', async () => {
+  it('navigates to GroupChat when a group card is pressed', async () => {
     const { findByText } = renderScreen();
     const card = await findByText('Morumbi Runners');
 
     fireEvent.press(card);
 
-    expect(navigation.navigate).toHaveBeenCalledWith('GroupDetail', {
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
       groupId: 'g-1',
+      groupName: 'Morumbi Runners',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      myRole: null,
     });
   });
 

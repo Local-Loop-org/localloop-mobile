@@ -1,92 +1,78 @@
-import { StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/shared/theme';
+import { Platform, StyleSheet } from 'react-native';
+import { colors, spacing } from '@/shared/theme';
+
+const HEADER_BTN = 38;
+const HEADER_RADIUS = 11;
+const ANCHOR_ICON = 36;
+const PEER_AVATAR = 26;
+const COMPOSER_BTN = 38;
+const COMPOSER_RADIUS = 22;
+
+export const layoutDimensions = {
+  headerAnchor: ANCHOR_ICON,
+  peerAvatar: PEER_AVATAR,
+};
+
+const monoFamily = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  default: 'monospace',
+});
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
+  // --- header ---
   header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm + 2,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  backBtn: {
-    paddingVertical: spacing.xs,
-  },
-  backText: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  title: {
-    ...typography.h2,
-    marginTop: spacing.xs,
-  },
-  connectionDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  connectionDotOnline: {
-    backgroundColor: colors.success,
-  },
-  connectionDotOffline: {
-    backgroundColor: colors.textSecondary,
-  },
-  listContent: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
-  messageRow: {
-    marginBottom: spacing.md,
-    maxWidth: '80%',
-  },
-  messageRowMine: {
-    alignSelf: 'flex-end',
-  },
-  messageRowTheirs: {
-    alignSelf: 'flex-start',
-  },
-  bubble: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 16,
-  },
-  bubbleMine: {
-    backgroundColor: colors.primary,
-  },
-  bubbleTheirs: {
+  iconBtn: {
+    width: HEADER_BTN,
+    height: HEADER_BTN,
+    borderRadius: HEADER_RADIUS,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  senderName: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 2,
-    marginLeft: spacing.sm,
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 4,
+    borderRadius: 10,
   },
-  content: {
+  headerTitleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 1,
+  },
+  headerTitle: {
     fontSize: 15,
-  },
-  contentMine: {
-    color: colors.black,
-  },
-  contentTheirs: {
+    fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.2,
+    flexShrink: 1,
   },
-  timestamp: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-    marginHorizontal: spacing.sm,
-  },
-  timestampMine: {
-    textAlign: 'right',
+  // --- content states ---
+  errorText: {
+    color: colors.error,
+    textAlign: 'center',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
   emptyWrapper: {
     flex: 1,
@@ -95,49 +81,149 @@ export const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   emptyText: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontSize: 14,
+    color: colors.faint,
     textAlign: 'center',
-  },
-  errorText: {
-    color: colors.error,
-    textAlign: 'center',
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.md,
-  },
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surface,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-    fontSize: 15,
-    marginRight: spacing.sm,
-  },
-  sendBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-  },
-  sendBtnDisabled: {
-    opacity: 0.4,
-  },
-  sendBtnText: {
-    color: colors.black,
-    fontWeight: '700',
   },
   loadingMoreWrapper: {
     paddingVertical: spacing.md,
     alignItems: 'center',
+  },
+  // --- list ---
+  listContent: {
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
+  },
+  // --- separator ---
+  separatorWrapper: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  separatorText: {
+    fontSize: 10,
+    fontFamily: monoFamily,
+    color: colors.faint,
+    letterSpacing: 1.6,
+  },
+  // --- own message ---
+  ownRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    marginVertical: 4,
+  },
+  ownColumn: {
+    maxWidth: '75%',
+    alignItems: 'flex-end',
+  },
+  ownBubble: {
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+  },
+  ownBubbleText: {
+    color: colors.white,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  ownTimestamp: {
+    fontSize: 9.5,
+    fontFamily: monoFamily,
+    color: colors.faint,
+    marginTop: 2,
+  },
+  // --- peer message ---
+  peerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    marginVertical: 4,
+  },
+  peerColumn: {
+    maxWidth: '75%',
+    alignItems: 'flex-start',
+  },
+  peerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 3,
+    paddingLeft: 10,
+  },
+  peerName: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  peerBubble: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+  },
+  peerBubbleText: {
+    color: colors.text,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '400',
+  },
+  peerTimestamp: {
+    fontSize: 9.5,
+    fontFamily: monoFamily,
+    color: colors.faint,
+    marginTop: 2,
+    paddingLeft: 10,
+  },
+  // --- composer ---
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 24,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  composerBtn: {
+    width: COMPOSER_BTN,
+    height: COMPOSER_BTN,
+    borderRadius: HEADER_RADIUS,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  composerSend: {
+    width: COMPOSER_BTN,
+    height: COMPOSER_BTN,
+    borderRadius: HEADER_RADIUS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  composerSendDisabled: {
+    opacity: 0.4,
+  },
+  inputPill: {
+    flex: 1,
+    minHeight: COMPOSER_BTN,
+    maxHeight: 120,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: COMPOSER_RADIUS,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    fontSize: 13.5,
+    color: colors.text,
   },
 });
