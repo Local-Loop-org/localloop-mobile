@@ -8,7 +8,7 @@ import type { AnchorType, MemberRole } from '@localloop/shared-types';
  * `AuthenticatedStack.tsx`.
  */
 export type AuthenticatedStackParamList = {
-  GroupDiscovery: undefined;
+  Home: undefined;
   CreateGroup: undefined;
   GroupDetail: { groupId: string };
   GroupMembers: { groupId: string; myRole: MemberRole | null };

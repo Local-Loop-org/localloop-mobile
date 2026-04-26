@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import GroupDiscoveryScreen from '../screens/GroupDiscoveryScreen';
+import HomeScreen from '../screens/HomeScreen';
 import CreateGroupScreen from '../screens/CreateGroupScreen';
 import GroupDetailScreen from '../screens/GroupDetailScreen';
 import GroupMembersScreen from '../screens/GroupMembersScreen';
@@ -14,10 +14,10 @@ const Stack = createNativeStackNavigator<AuthenticatedStackParamList>();
 export default function AuthenticatedStack() {
   return (
     <Stack.Navigator
-      initialRouteName="GroupDiscovery"
+      initialRouteName="Home"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="GroupDiscovery" component={GroupDiscoveryScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
       <Stack.Screen name="GroupMembers" component={GroupMembersScreen} />

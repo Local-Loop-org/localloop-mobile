@@ -1,6 +1,6 @@
 import type { NearbyGroup } from '@/infra/api/groups.api';
 
-export interface GroupDiscoveryLayoutProps {
+export interface HomeLayoutProps {
   groups: NearbyGroup[];
   loading: boolean;
   refreshing: boolean;
@@ -9,5 +9,5 @@ export interface GroupDiscoveryLayoutProps {
   onRefresh: () => void;
   onPressGroup: (id: string) => void;
   onPressCreate: () => void;
-  onLogout: () => void;
+  onPressMore: () => void;
 }

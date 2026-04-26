@@ -1,8 +1,15 @@
 import React from 'react';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  waitFor,
+} from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
-import GroupDiscoveryScreen from './index';
+import HomeScreen from './index';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { groupsApi } from '@/infra/api/groups.api';
 import { userApi } from '@/infra/api/user.api';
@@ -38,18 +45,29 @@ const mockedGetPosition = Location.getCurrentPositionAsync as jest.Mock;
 
 const navigation = {
   navigate: jest.fn(),
-} as unknown as Parameters<typeof GroupDiscoveryScreen>[0]['navigation'];
+} as unknown as Parameters<typeof HomeScreen>[0]['navigation'];
 
 const route = {
-  key: 'GroupDiscovery',
-  name: 'GroupDiscovery' as const,
+  key: 'Home',
+  name: 'Home' as const,
   params: undefined,
 };
 
-const renderScreen = () =>
-  render(<GroupDiscoveryScreen navigation={navigation} route={route as never} />);
+function makeWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+}
 
-const sampleGroup = {
+const renderScreen = () =>
+  render(<HomeScreen navigation={navigation} route={route as never} />, {
+    wrapper: makeWrapper(),
+  });
+
+const sampleNeighborhood = {
   id: 'g-1',
   name: 'Morumbi Runners',
   description: null,
@@ -60,22 +78,71 @@ const sampleGroup = {
   memberCount: 5,
 };
 
-describe('GroupDiscoveryScreen', () => {
+const sampleEstablishment = {
+  id: 'g-2',
+  name: 'Pedalada do Sábado',
+  description: null,
+  anchorType: AnchorType.ESTABLISHMENT,
+  anchorLabel: 'Café Manfredini',
+  proximityLabel: 'Mesmo local' as const,
+  privacy: GroupPrivacy.OPEN,
+  memberCount: 18,
+};
+
+const sampleEvent = {
+  id: 'g-3',
+  name: 'Festival de Inverno',
+  description: null,
+  anchorType: AnchorType.EVENT,
+  anchorLabel: 'Largo da Ordem',
+  proximityLabel: 'Região próxima' as const,
+  privacy: GroupPrivacy.OPEN,
+  memberCount: 128,
+};
+
+describe('HomeScreen', () => {
+  let alertSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockedRequestPermissions.mockResolvedValue({ status: 'granted' });
     mockedGetPosition.mockResolvedValue({
       coords: { latitude: -23.55, longitude: -46.63 },
     });
     mockedUpdateLocation.mockResolvedValue(undefined);
-    mockedGetNearby.mockResolvedValue([sampleGroup]);
+    mockedGetNearby.mockResolvedValue([
+      sampleNeighborhood,
+      sampleEstablishment,
+      sampleEvent,
+    ]);
   });
 
-  it('useFocusEffect triggers an initial load and renders the group', async () => {
+  afterEach(() => {
+    alertSpy.mockRestore();
+  });
+
+  it('useFocusEffect triggers an initial load and renders groups under sections', async () => {
     const { findByText } = renderScreen();
 
     expect(await findByText('Morumbi Runners')).toBeTruthy();
+    expect(await findByText('Pedalada do Sábado')).toBeTruthy();
+    expect(await findByText('Festival de Inverno')).toBeTruthy();
+    // Section labels render alongside the groups.
+    expect(await findByText('Lugares')).toBeTruthy();
+    expect(await findByText('Bairros')).toBeTruthy();
+    expect(await findByText('Eventos')).toBeTruthy();
     expect(mockedGetNearby).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides empty section buckets', async () => {
+    mockedGetNearby.mockResolvedValueOnce([sampleNeighborhood]);
+    const { findByText, queryByText } = renderScreen();
+
+    await findByText('Morumbi Runners');
+    expect(queryByText('Lugares')).toBeNull();
+    expect(queryByText('Eventos')).toBeNull();
+    expect(queryByText('Prédios')).toBeNull();
   });
 
   it('calls updateLocation before getNearbyGroups', async () => {
@@ -116,7 +183,7 @@ describe('GroupDiscoveryScreen', () => {
     ).toBeTruthy();
   });
 
-  it('navigates to GroupChat when a group card is pressed', async () => {
+  it('navigates to GroupChat when a group is pressed', async () => {
     const { findByText } = renderScreen();
     const card = await findByText('Morumbi Runners');
 
@@ -130,24 +197,30 @@ describe('GroupDiscoveryScreen', () => {
     });
   });
 
-  it('navigates to CreateGroup when the new-group FAB is pressed', async () => {
-    const { findByText } = renderScreen();
+  it('navigates to CreateGroup when the new-group tab is pressed', async () => {
+    const { findByText, findByLabelText } = renderScreen();
     await findByText('Morumbi Runners');
 
-    fireEvent.press(await findByText('+ Novo grupo'));
+    fireEvent.press(await findByLabelText('Novo'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('CreateGroup');
   });
 
-  it('invokes the store logout when the header logout button is pressed', async () => {
+  it('logs the user out via the header more action sheet', async () => {
     const logoutSpy = jest.fn();
     useAuthStore.setState({ logout: logoutSpy });
 
-    const { findByText } = renderScreen();
+    const { findByText, findByLabelText } = renderScreen();
     await findByText('Morumbi Runners');
 
+    fireEvent.press(await findByLabelText('Mais opções'));
+
+    const buttons = alertSpy.mock.calls[0][2];
+    const sairBtn = buttons.find(
+      (b: { text: string }) => b.text === 'Sair',
+    );
     await act(async () => {
-      fireEvent.press(await findByText('Sair'));
+      await sairBtn.onPress();
     });
 
     expect(logoutSpy).toHaveBeenCalledTimes(1);

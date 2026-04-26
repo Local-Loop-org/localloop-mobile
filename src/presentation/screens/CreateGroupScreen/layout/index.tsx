@@ -10,16 +10,9 @@ import {
 } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
+import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
 import { styles } from './styles';
 import type { CreateGroupLayoutProps } from './types';
-
-const ANCHOR_TYPE_LABELS: Record<AnchorType, string> = {
-  [AnchorType.ESTABLISHMENT]: 'Estabelecimento',
-  [AnchorType.NEIGHBORHOOD]: 'Bairro',
-  [AnchorType.CONDO]: 'Condomínio',
-  [AnchorType.EVENT]: 'Evento',
-  [AnchorType.CITY]: 'Cidade',
-};
 
 const PRIVACY_LABELS: Record<GroupPrivacy, string> = {
   [GroupPrivacy.OPEN]: 'Aberto',
