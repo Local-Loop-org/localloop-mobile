@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon } from '@/shared/icons';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import { colors } from '@/shared/theme';
+import { formatDistance } from '@/shared/format/distance';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import { styles } from './styles';
 
@@ -37,7 +38,7 @@ export function DiscoverCard({ group, onPress }: Props) {
       </Text>
       <View style={styles.cardFooter}>
         <Text style={styles.cardMeta} numberOfLines={1}>
-          {group.proximityLabel.toUpperCase()} · {group.memberCount} MEM
+          {formatDistance(group.distanceMeters)} · {group.memberCount} MEM
         </Text>
         <View style={styles.cardJoinBtn}>
           <Text style={styles.cardJoinText}>Entrar</Text>
