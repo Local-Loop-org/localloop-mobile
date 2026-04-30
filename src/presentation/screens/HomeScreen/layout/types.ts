@@ -1,4 +1,4 @@
-import type { NearbyGroup } from '@/infra/api/groups.api';
+import type { MyGroup, NearbyGroup } from '@/infra/api/groups.api';
 
 export interface HomeLayoutProps {
   groups: NearbyGroup[];
@@ -10,4 +10,7 @@ export interface HomeLayoutProps {
   onPressGroup: (id: string) => void;
   onPressCreate: () => void;
   onPressMore: () => void;
+  myGroups: MyGroup[];
+  myGroupsLoading: boolean;
+  onPressMyGroup: (id: string) => void;
 }

@@ -80,6 +80,28 @@ export interface ListMembersResponse {
   next_cursor: string | null;
 }
 
+export interface MyGroupLastMessage {
+  content: string | null;
+  senderName: string;
+  createdAt: string;
+}
+
+export interface MyGroup {
+  id: string;
+  name: string;
+  anchorType: AnchorType;
+  anchorLabel: string;
+  memberCount: number;
+  myRole: MemberRole;
+  lastActivityAt: string;
+  lastMessage: MyGroupLastMessage | null;
+}
+
+export interface ListMyGroupsResponse {
+  data: MyGroup[];
+  next_cursor: string | null;
+}
+
 export type JoinRequestAction = 'approve' | 'reject';
 
 export interface ResolveJoinRequestResult {
@@ -176,5 +198,16 @@ export const groupsApi = {
    */
   banMember: async (groupId: string, userId: string): Promise<void> => {
     await apiClient.delete(`/groups/${groupId}/members/${userId}`);
+  },
+
+  /**
+   * List the caller's active group memberships sorted by latest activity.
+   * Used for the "Meus grupos" pinned section on HomeScreen.
+   */
+  getMyGroups: async (limit = 5): Promise<ListMyGroupsResponse> => {
+    const { data } = await apiClient.get<ListMyGroupsResponse>('/groups/me', {
+      params: { limit },
+    });
+    return data;
   },
 };

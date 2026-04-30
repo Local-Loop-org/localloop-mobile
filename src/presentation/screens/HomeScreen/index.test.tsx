@@ -8,14 +8,14 @@ import {
 } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
+import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { groupsApi } from '@/infra/api/groups.api';
 import { userApi } from '@/infra/api/user.api';
 
 jest.mock('@/infra/api/groups.api', () => ({
-  groupsApi: { getNearbyGroups: jest.fn() },
+  groupsApi: { getNearbyGroups: jest.fn(), getMyGroups: jest.fn() },
 }));
 
 jest.mock('@/infra/api/user.api', () => ({
@@ -35,6 +35,9 @@ jest.mock('@react-navigation/native', () => {
 
 const mockedGetNearby = groupsApi.getNearbyGroups as jest.MockedFunction<
   typeof groupsApi.getNearbyGroups
+>;
+const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
+  typeof groupsApi.getMyGroups
 >;
 const mockedUpdateLocation = userApi.updateLocation as jest.MockedFunction<
   typeof userApi.updateLocation
@@ -100,6 +103,21 @@ const sampleEvent = {
   memberCount: 128,
 };
 
+const sampleMyGroup = {
+  id: 'mg-1',
+  name: 'Clube dos Corredores',
+  anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLabel: 'Vila Madalena',
+  memberCount: 12,
+  myRole: MemberRole.OWNER,
+  lastActivityAt: '2026-04-29T08:00:00.000Z',
+  lastMessage: {
+    content: 'Bora amanhã cedo?',
+    senderName: 'Bob',
+    createdAt: '2026-04-29T08:00:00.000Z',
+  },
+};
+
 describe('HomeScreen', () => {
   let alertSpy: jest.SpyInstance;
 
@@ -116,6 +134,7 @@ describe('HomeScreen', () => {
       sampleEstablishment,
       sampleEvent,
     ]);
+    mockedGetMyGroups.mockResolvedValue({ data: [], next_cursor: null });
   });
 
   afterEach(() => {
@@ -204,6 +223,43 @@ describe('HomeScreen', () => {
     fireEvent.press(await findByLabelText('Novo'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('CreateGroup');
+  });
+
+  it('renders "Meus grupos" section with group rows when data is available', async () => {
+    mockedGetMyGroups.mockResolvedValueOnce({
+      data: [sampleMyGroup],
+      next_cursor: null,
+    });
+    const { findByText } = renderScreen();
+
+    expect(await findByText('Meus grupos')).toBeTruthy();
+    expect(await findByText('Clube dos Corredores')).toBeTruthy();
+    expect(await findByText('Bob: Bora amanhã cedo?')).toBeTruthy();
+  });
+
+  it('hides "Meus grupos" section when the user has no groups', async () => {
+    const { findByText, queryByText } = renderScreen();
+
+    await findByText('Morumbi Runners');
+    expect(queryByText('Meus grupos')).toBeNull();
+  });
+
+  it('navigates to GroupChat with myRole when a my-groups row is pressed', async () => {
+    mockedGetMyGroups.mockResolvedValueOnce({
+      data: [sampleMyGroup],
+      next_cursor: null,
+    });
+    const { findByText } = renderScreen();
+    const row = await findByText('Clube dos Corredores');
+
+    fireEvent.press(row);
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
+      groupId: 'mg-1',
+      groupName: 'Clube dos Corredores',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      myRole: MemberRole.OWNER,
+    });
   });
 
   it('logs the user out via the header more action sheet', async () => {

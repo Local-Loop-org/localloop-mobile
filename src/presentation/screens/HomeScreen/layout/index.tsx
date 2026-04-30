@@ -19,6 +19,7 @@ import { DiscoverDivider } from "./DiscoverDivider";
 import { SectionLabel } from "./SectionLabel";
 import { DiscoverCard } from "./DiscoverCard";
 import { DiscoverRow } from "./DiscoverRow";
+import { MyGroupRow } from "./MyGroupRow";
 import { BottomTabBar } from "./BottomTabBar";
 
 type Variant = "horizontal" | "vertical";
@@ -55,6 +56,9 @@ export default function HomeLayout({
   onPressGroup,
   onPressCreate,
   onPressMore,
+  myGroups,
+  myGroupsLoading,
+  onPressMyGroup,
 }: HomeLayoutProps) {
   const showInitialLoader = loading && groups.length === 0 && !errorMessage;
   const showEmpty = !loading && !errorMessage && groups.length === 0;
@@ -73,6 +77,21 @@ export default function HomeLayout({
         }
       >
         <HomeHeader onPressSearch={() => {}} onPressMore={onPressMore} />
+
+        {!myGroupsLoading && myGroups.length > 0 ? (
+          <>
+            <SectionLabel
+              iconName="users"
+              title="Meus grupos"
+              count={myGroups.length}
+            />
+            <View style={styles.verticalList}>
+              {myGroups.map((g) => (
+                <MyGroupRow key={g.id} group={g} onPress={onPressMyGroup} />
+              ))}
+            </View>
+          </>
+        ) : null}
 
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>

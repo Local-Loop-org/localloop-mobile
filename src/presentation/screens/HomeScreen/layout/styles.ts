@@ -247,6 +247,57 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  // My groups row
+  myRow: {
+    padding: spacing.sm + 4,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 4,
+  },
+  myRowIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 209, 255, 0.27)',
+    backgroundColor: 'rgba(0, 209, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  myRowBody: {
+    flex: 1,
+  },
+  myRowName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.2,
+  },
+  myRowPreview: {
+    fontSize: 11,
+    color: colors.faint,
+    letterSpacing: 0.2,
+    marginTop: 2,
+  },
+  myRowBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.4)',
+    backgroundColor: 'rgba(167, 139, 250, 0.12)',
+  },
+  myRowBadgeText: {
+    fontSize: 9,
+    color: colors.accent2,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+
   // Bottom tab bar
   tabBarWrapper: {
     position: 'absolute',

@@ -7,6 +7,7 @@ import {
   useCurrentLocation,
 } from '@/application/hooks/useCurrentLocation';
 import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
+import { useMyGroups } from '@/application/hooks/useMyGroups';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import HomeLayout from './layout';
 
@@ -25,6 +26,7 @@ export default function HomeScreen({ navigation }: Props) {
   const logout = useAuthStore((s) => s.logout);
   const { request: requestLocation } = useCurrentLocation();
   const query = useNearbyGroups(coords);
+  const myGroupsQuery = useMyGroups();
 
   const fetchCoords = useCallback(async () => {
     const next = await requestLocation();
@@ -62,6 +64,7 @@ export default function HomeScreen({ navigation }: Props) {
   }, [logout]);
 
   const groups = query.data ?? [];
+  const myGroups = myGroupsQuery.data ?? [];
   const errorMessage = locationDenied
     ? LOCATION_DENIED_MESSAGE
     : query.isError
@@ -87,6 +90,18 @@ export default function HomeScreen({ navigation }: Props) {
       }}
       onPressCreate={() => navigation.navigate('CreateGroup')}
       onPressMore={handlePressMore}
+      myGroups={myGroups}
+      myGroupsLoading={myGroupsQuery.isLoading}
+      onPressMyGroup={(id) => {
+        const group = myGroups.find((g) => g.id === id);
+        if (!group) return;
+        navigation.navigate('GroupChat', {
+          groupId: id,
+          groupName: group.name,
+          anchorType: group.anchorType,
+          myRole: group.myRole,
+        });
+      }}
     />
   );
 }
