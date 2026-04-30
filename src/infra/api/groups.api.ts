@@ -1,29 +1,10 @@
 // src/infra/api/groups.api.ts
 
-import {
-  AnchorType,
-  GroupPrivacy,
-  MemberRole,
-} from '@localloop/shared-types';
+import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import { apiClient } from './api-client';
 
-/** Proximity bucket derived server-side from geohash prefix comparison. */
-export type ProximityLabel =
-  | 'Mesmo local'
-  | 'Mesmo bairro'
-  | 'Região próxima'
-  | 'Na cidade';
-
-export interface NearbyGroup {
-  id: string;
-  name: string;
-  description: string | null;
-  anchorType: AnchorType;
-  anchorLabel: string;
-  proximityLabel: ProximityLabel;
-  privacy: GroupPrivacy;
-  memberCount: number;
-}
+import type { NearbyGroup } from '@localloop/shared-types';
+export type { NearbyGroup } from '@localloop/shared-types';
 
 export interface CreateGroupBody {
   name: string;

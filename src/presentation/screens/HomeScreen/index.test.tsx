@@ -73,7 +73,7 @@ const sampleNeighborhood = {
   description: null,
   anchorType: AnchorType.NEIGHBORHOOD,
   anchorLabel: 'Morumbi',
-  proximityLabel: 'Mesmo bairro' as const,
+  distanceMeters: 210,
   privacy: GroupPrivacy.OPEN,
   memberCount: 5,
 };
@@ -84,7 +84,7 @@ const sampleEstablishment = {
   description: null,
   anchorType: AnchorType.ESTABLISHMENT,
   anchorLabel: 'Café Manfredini',
-  proximityLabel: 'Mesmo local' as const,
+  distanceMeters: 30,
   privacy: GroupPrivacy.OPEN,
   memberCount: 18,
 };
@@ -95,7 +95,7 @@ const sampleEvent = {
   description: null,
   anchorType: AnchorType.EVENT,
   anchorLabel: 'Largo da Ordem',
-  proximityLabel: 'Região próxima' as const,
+  distanceMeters: 1234,
   privacy: GroupPrivacy.OPEN,
   memberCount: 128,
 };

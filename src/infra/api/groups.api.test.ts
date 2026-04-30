@@ -52,7 +52,7 @@ describe('groupsApi', () => {
         description: null,
         anchorType: AnchorType.NEIGHBORHOOD,
         anchorLabel: 'Morumbi',
-        proximityLabel: 'Mesmo bairro',
+        distanceMeters: 210,
         privacy: GroupPrivacy.OPEN,
         memberCount: 5,
       },
