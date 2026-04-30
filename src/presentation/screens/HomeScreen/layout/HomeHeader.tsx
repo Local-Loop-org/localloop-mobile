@@ -6,10 +6,9 @@ import { styles } from './styles';
 
 interface Props {
   onPressSearch: () => void;
-  onPressMore: () => void;
 }
 
-export function HomeHeader({ onPressSearch, onPressMore }: Props) {
+export function HomeHeader({ onPressSearch }: Props) {
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>LocalLoop</Text>
@@ -20,13 +19,6 @@ export function HomeHeader({ onPressSearch, onPressMore }: Props) {
           onPress={onPressSearch}
         >
           <Icon name="search" size={16} color={colors.textSecondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityLabel="Mais opções"
-          style={styles.iconBtn}
-          onPress={onPressMore}
-        >
-          <Icon name="more" size={17} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>

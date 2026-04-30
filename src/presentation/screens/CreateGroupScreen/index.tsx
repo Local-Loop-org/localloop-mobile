@@ -3,10 +3,10 @@ import { Alert } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
 import { groupsApi } from '@/infra/api/groups.api';
-import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
+import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import CreateGroupLayout from './layout';
 
-type Props = AuthenticatedStackScreenProps<'CreateGroup'>;
+type Props = HomeTabsScreenProps<'CreateGroup'>;
 
 export default function CreateGroupScreen({ navigation }: Props) {
   const [name, setName] = useState('');

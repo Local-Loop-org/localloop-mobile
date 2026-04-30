@@ -1,7 +1,5 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import {
-  act,
   fireEvent,
   render,
   waitFor,
@@ -10,7 +8,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import HomeScreen from './index';
-import { useAuthStore } from '@/application/stores/auth.store';
 import { groupsApi } from '@/infra/api/groups.api';
 import { userApi } from '@/infra/api/user.api';
 
@@ -119,11 +116,8 @@ const sampleMyGroup = {
 };
 
 describe('HomeScreen', () => {
-  let alertSpy: jest.SpyInstance;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockedRequestPermissions.mockResolvedValue({ status: 'granted' });
     mockedGetPosition.mockResolvedValue({
       coords: { latitude: -23.55, longitude: -46.63 },
@@ -135,10 +129,6 @@ describe('HomeScreen', () => {
       sampleEvent,
     ]);
     mockedGetMyGroups.mockResolvedValue({ data: [], next_cursor: null });
-  });
-
-  afterEach(() => {
-    alertSpy.mockRestore();
   });
 
   it('useFocusEffect triggers an initial load and renders groups under sections', async () => {
@@ -216,15 +206,6 @@ describe('HomeScreen', () => {
     });
   });
 
-  it('navigates to CreateGroup when the new-group tab is pressed', async () => {
-    const { findByText, findByLabelText } = renderScreen();
-    await findByText('Morumbi Runners');
-
-    fireEvent.press(await findByLabelText('Novo'));
-
-    expect(navigation.navigate).toHaveBeenCalledWith('CreateGroup');
-  });
-
   it('renders "Meus grupos" section with group rows when data is available', async () => {
     mockedGetMyGroups.mockResolvedValueOnce({
       data: [sampleMyGroup],
@@ -262,23 +243,16 @@ describe('HomeScreen', () => {
     });
   });
 
-  it('logs the user out via the header more action sheet', async () => {
-    const logoutSpy = jest.fn();
-    useAuthStore.setState({ logout: logoutSpy });
-
-    const { findByText, findByLabelText } = renderScreen();
-    await findByText('Morumbi Runners');
-
-    fireEvent.press(await findByLabelText('Mais opções'));
-
-    const buttons = alertSpy.mock.calls[0][2];
-    const sairBtn = buttons.find(
-      (b: { text: string }) => b.text === 'Sair',
-    );
-    await act(async () => {
-      await sairBtn.onPress();
+  it('navigates to MyGroups when "Ver todos" is pressed in Meus grupos section', async () => {
+    mockedGetMyGroups.mockResolvedValueOnce({
+      data: [sampleMyGroup],
+      next_cursor: null,
     });
+    const { findByText } = renderScreen();
+    await findByText('Clube dos Corredores');
 
-    expect(logoutSpy).toHaveBeenCalledTimes(1);
+    fireEvent.press(await findByText('Ver todos →'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('MyGroups');
   });
 });

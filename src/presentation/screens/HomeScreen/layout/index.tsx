@@ -20,7 +20,6 @@ import { SectionLabel } from "./SectionLabel";
 import { DiscoverCard } from "./DiscoverCard";
 import { DiscoverRow } from "./DiscoverRow";
 import { MyGroupRow } from "./MyGroupRow";
-import { BottomTabBar } from "./BottomTabBar";
 
 type Variant = "horizontal" | "vertical";
 
@@ -54,11 +53,10 @@ export default function HomeLayout({
   errorMessage,
   onRefresh,
   onPressGroup,
-  onPressCreate,
-  onPressMore,
   myGroups,
   myGroupsLoading,
   onPressMyGroup,
+  onPressViewAllMyGroups,
 }: HomeLayoutProps) {
   const showInitialLoader = loading && groups.length === 0 && !errorMessage;
   const showEmpty = !loading && !errorMessage && groups.length === 0;
@@ -76,7 +74,7 @@ export default function HomeLayout({
           />
         }
       >
-        <HomeHeader onPressSearch={() => {}} onPressMore={onPressMore} />
+        <HomeHeader onPressSearch={() => {}} />
 
         {!myGroupsLoading && myGroups.length > 0 ? (
           <>
@@ -84,6 +82,7 @@ export default function HomeLayout({
               iconName="users"
               title="Meus grupos"
               count={myGroups.length}
+              onPressSeeAll={onPressViewAllMyGroups}
             />
             <View style={styles.verticalList}>
               {myGroups.map((g) => (
@@ -156,13 +155,6 @@ export default function HomeLayout({
           </>
         ) : null}
       </ScrollView>
-
-      <BottomTabBar
-        active="home"
-        onPress={(tab) => {
-          if (tab === "new") onPressCreate();
-        }}
-      />
     </SafeAreaView>
   );
 }

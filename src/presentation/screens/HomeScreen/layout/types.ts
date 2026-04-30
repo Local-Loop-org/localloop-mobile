@@ -8,9 +8,8 @@ export interface HomeLayoutProps {
   errorMessage: string | null;
   onRefresh: () => void;
   onPressGroup: (id: string) => void;
-  onPressCreate: () => void;
-  onPressMore: () => void;
   myGroups: MyGroup[];
   myGroupsLoading: boolean;
   onPressMyGroup: (id: string) => void;
+  onPressViewAllMyGroups: () => void;
 }
