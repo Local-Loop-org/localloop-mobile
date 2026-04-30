@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon } from '@/shared/icons';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import { colors } from '@/shared/theme';
+import { formatDistance } from '@/shared/format/distance';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import { styles } from './styles';
 
@@ -16,7 +17,7 @@ export function DiscoverRow({ group, onPress }: Props) {
     <TouchableOpacity
       style={styles.row}
       onPress={() => onPress(group.id)}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={`Abrir ${group.name}`}
     >
       <View style={styles.rowIconBox}>
@@ -32,7 +33,7 @@ export function DiscoverRow({ group, onPress }: Props) {
           {group.name}
         </Text>
         <Text style={styles.rowMeta} numberOfLines={1}>
-          {group.proximityLabel.toUpperCase()} · {group.memberCount} MEM
+          {formatDistance(group.distanceMeters)} · {group.memberCount} MEM
         </Text>
       </View>
       <View style={styles.cardJoinBtn}>

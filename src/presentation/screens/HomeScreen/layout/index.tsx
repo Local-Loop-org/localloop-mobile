@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,22 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
-} from "react-native";
-import { AnchorType } from "@localloop/shared-types";
-import { colors } from "@/shared/theme";
-import { ANCHOR_SECTION_LABELS } from "@/shared/anchor/labels";
-import { anchorIconName } from "@/shared/icons/anchorIcon";
-import type { NearbyGroup } from "@/infra/api/groups.api";
-import { styles } from "./styles";
-import type { HomeLayoutProps } from "./types";
-import { HomeHeader } from "./HomeHeader";
-import { DiscoverDivider } from "./DiscoverDivider";
-import { SectionLabel } from "./SectionLabel";
-import { DiscoverCard } from "./DiscoverCard";
-import { DiscoverRow } from "./DiscoverRow";
-import { MyGroupRow } from "./MyGroupRow";
+} from 'react-native';
+import { AnchorType } from '@localloop/shared-types';
+import { colors } from '@/shared/theme';
+import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
+import { anchorIconName } from '@/shared/icons/anchorIcon';
+import type { NearbyGroup } from '@/infra/api/groups.api';
+import { styles } from './styles';
+import type { HomeLayoutProps } from './types';
+import { HomeHeader } from './HomeHeader';
+import { DiscoverDivider } from './DiscoverDivider';
+import { SectionLabel } from './SectionLabel';
+import { DiscoverCard } from './DiscoverCard';
+import { DiscoverRow } from './DiscoverRow';
+import { MyGroupRow } from './MyGroupRow';
 
-type Variant = "horizontal" | "vertical";
+type Variant = 'horizontal' | 'vertical';
 
 interface SectionSpec {
   type: AnchorType;
@@ -33,7 +33,7 @@ interface SectionSpec {
  * intentionally excluded — there is no slot for them in the design.
  */
 const SECTION_ORDER: SectionSpec[] = Object.values(AnchorType)
-  .filter((type) => typeof type === "string")
+  .filter((type) => typeof type === 'string')
   .map((type) => ({ type: type as AnchorType }));
 
 function bucketByAnchor(groups: NearbyGroup[]): Map<AnchorType, NearbyGroup[]> {
@@ -79,8 +79,8 @@ export default function HomeLayout({
         {!myGroupsLoading && myGroups.length > 0 ? (
           <>
             <SectionLabel
-              iconName="users"
-              title="Meus grupos"
+              iconName='users'
+              title='Meus grupos'
               count={myGroups.length}
               onPressSeeAll={onPressViewAllMyGroups}
             />
@@ -98,7 +98,7 @@ export default function HomeLayout({
 
         {showInitialLoader ? (
           <View style={styles.centerWrapper}>
-            <ActivityIndicator color={colors.primary} size="large" />
+            <ActivityIndicator color={colors.primary} size='large' />
           </View>
         ) : null}
 
