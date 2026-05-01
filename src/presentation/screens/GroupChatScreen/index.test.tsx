@@ -45,6 +45,7 @@ const baseHookState = {
   loadingMore: false,
   error: null,
   connected: true,
+  onlineCount: 0,
   hasMore: false,
   currentUserId: 'me',
   sendMessage: jest.fn(),
@@ -153,5 +154,18 @@ describe('GroupChatScreen', () => {
       groupId: 'g-1',
       myRole: MemberRole.OWNER,
     });
+  });
+
+  it('renders the online-count subtitle when onlineCount > 0', () => {
+    mockedUseGroupChat.mockReturnValue({ ...baseHookState, onlineCount: 5 });
+    const { getByTestId, getByText } = renderScreen();
+    expect(getByTestId('header-subtitle')).toBeTruthy();
+    expect(getByText('· 5 ONLINE ·')).toBeTruthy();
+  });
+
+  it('hides the online-count subtitle when onlineCount is 0', () => {
+    mockedUseGroupChat.mockReturnValue({ ...baseHookState, onlineCount: 0 });
+    const { queryByTestId } = renderScreen();
+    expect(queryByTestId('header-subtitle')).toBeNull();
   });
 });

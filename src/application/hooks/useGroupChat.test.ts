@@ -285,4 +285,46 @@ describe('useGroupChat', () => {
     expect(result.current.error).toBe('load_failed');
     expect(mockedCreateChatSocket).not.toHaveBeenCalled();
   });
+
+  it('starts onlineCount at 0 and updates on presence_update events for the same group', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    expect(result.current.onlineCount).toBe(0);
+
+    act(() => {
+      fire('presence_update', { groupId: 'g-1', count: 3 });
+    });
+    await waitFor(() => expect(result.current.onlineCount).toBe(3));
+
+    act(() => {
+      fire('presence_update', { groupId: 'g-1', count: 5 });
+    });
+    await waitFor(() => expect(result.current.onlineCount).toBe(5));
+  });
+
+  it('ignores presence_update events for other groups', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('presence_update', { groupId: 'g-OTHER', count: 99 });
+    });
+
+    expect(result.current.onlineCount).toBe(0);
+  });
 });
