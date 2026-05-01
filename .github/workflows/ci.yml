@@ -42,10 +42,14 @@ jobs:
       - name: Unit tests
         run: npx jest --passWithNoTests
 
-  eas-build:
+  release-apk:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -64,5 +68,25 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: EAS Build
-        run: eas build --platform android --non-interactive
+      - name: Build APK on EAS
+        id: build
+        run: |
+          BUILD_JSON=$(eas build --platform android --profile production --non-interactive --json --wait)
+          echo "$BUILD_JSON"
+          APK_URL=$(echo "$BUILD_JSON" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+            echo "Failed to extract APK URL from EAS build output" >&2
+            exit 1
+          fi
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        run: curl -fL -o localloop.apk "${{ steps.build.outputs.apk_url }}"
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            ./localloop.apk \
+            --title "Build ${{ github.run_number }}" \
+            --notes "Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}"
