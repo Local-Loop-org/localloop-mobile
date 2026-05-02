@@ -78,6 +78,7 @@ function DaySeparator({ label }: { label: string }) {
 export default function GroupChatLayout({
   groupName,
   anchorType,
+  onlineCount,
   messages,
   currentUserId,
   loading,
@@ -131,16 +132,23 @@ export default function GroupChatLayout({
               type={anchorType}
               size={layoutDimensions.headerAnchor}
             />
-            <View style={styles.headerTitleRow}>
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {groupName}
-              </Text>
-              <Icon
-                name="chevronRight"
-                size={13}
-                color={colors.faint}
-                strokeWidth={2}
-              />
+            <View style={styles.headerCenterText}>
+              <View style={styles.headerTitleRow}>
+                <Text style={styles.headerTitle} numberOfLines={1}>
+                  {groupName}
+                </Text>
+                <Icon
+                  name="chevronRight"
+                  size={13}
+                  color={colors.faint}
+                  strokeWidth={2}
+                />
+              </View>
+              {onlineCount > 0 ? (
+                <Text style={styles.headerSubtitle} testID="header-subtitle">
+                  · {onlineCount} ONLINE ·
+                </Text>
+              ) : null}
             </View>
           </TouchableOpacity>
           <TouchableOpacity

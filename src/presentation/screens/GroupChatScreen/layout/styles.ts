@@ -53,8 +53,11 @@ export const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 10,
   },
-  headerTitleRow: {
+  headerCenterText: {
     flex: 1,
+    flexShrink: 1,
+  },
+  headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -66,6 +69,14 @@ export const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: -0.2,
     flexShrink: 1,
+  },
+  headerSubtitle: {
+    fontSize: 10,
+    fontFamily: monoFamily,
+    fontWeight: '500',
+    color: colors.faint,
+    letterSpacing: 1.4,
+    marginTop: 2,
   },
   // --- content states ---
   errorText: {

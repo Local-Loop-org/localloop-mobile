@@ -7,6 +7,7 @@ import {
   useInfiniteQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { PresenceUpdate } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import {
@@ -39,6 +40,7 @@ export function useGroupChat(groupId: string) {
 
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
   const [socketError, setSocketError] = useState<ChatErrorKind | null>(null);
 
   const historyQuery = useInfiniteQuery<
@@ -107,6 +109,10 @@ export function useGroupChat(groupId: string) {
         },
       );
     });
+    socket.on('presence_update', (payload: PresenceUpdate) => {
+      if (payload.groupId !== groupId) return;
+      setOnlineCount(payload.count);
+    });
     socket.on('error', (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
@@ -119,6 +125,7 @@ export function useGroupChat(groupId: string) {
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);
+      setOnlineCount(0);
     };
   }, [groupId, accessToken, queryClient, historyReady]);
 
@@ -173,6 +180,7 @@ export function useGroupChat(groupId: string) {
     loadingMore: historyQuery.isFetchingNextPage,
     error: historyQuery.isError ? ('load_failed' as const) : socketError,
     connected,
+    onlineCount,
     hasMore: historyQuery.hasNextPage ?? false,
     currentUserId: currentUser?.id ?? null,
     sendMessage,
