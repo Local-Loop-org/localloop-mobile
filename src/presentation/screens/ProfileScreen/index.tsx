@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { DmPermission } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { useUserProfile } from '@/application/hooks/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile';
 import ProfileLayout from './layout';
+import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import type { DmException, LanguageCode, ThemeMode } from './types';
 
 const SUGGESTED_EXCEPTIONS: DmException[] = [
@@ -19,6 +21,7 @@ const COMING_SOON = 'Em breve';
 const COMING_SOON_BODY = 'Esta funcionalidade ainda não está disponível.';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<HomeTabsScreenProps<'Profile'>['navigation']>();
   const fallbackUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -93,6 +96,7 @@ export default function ProfileScreen() {
       onChangeTheme={setTheme}
       onChangeLanguage={setLanguage}
       onPressPrivacy={handleComingSoon}
+      onPressBack={() => navigation.goBack()}
       onLogout={() => logout()}
       onDeleteAccount={handleDeleteAccount}
     />

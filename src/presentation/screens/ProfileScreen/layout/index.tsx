@@ -40,15 +40,21 @@ export default function ProfileLayout({
   onChangeTheme,
   onChangeLanguage,
   onPressPrivacy,
+  onPressBack,
   onLogout,
   onDeleteAccount,
 }: ProfileLayoutProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.iconBtn}>
+        <Pressable
+          style={styles.iconBtn}
+          onPress={onPressBack}
+          accessibilityRole='button'
+          accessibilityLabel='Voltar'
+        >
           <Icon name='chevronLeft' size={17} color={colors.text} />
-        </View>
+        </Pressable>
         <Text style={styles.headerLabel}>PERFIL</Text>
         <Pressable
           style={styles.iconBtn}

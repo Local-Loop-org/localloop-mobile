@@ -29,6 +29,7 @@ export interface ProfileLayoutProps {
   onChangeTheme: (next: ThemeMode) => void;
   onChangeLanguage: (next: LanguageCode) => void;
   onPressPrivacy: () => void;
+  onPressBack: () => void;
   onLogout: () => void;
   onDeleteAccount: () => void;
 }
