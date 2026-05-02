@@ -4,9 +4,9 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GroupPrivacy } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { styles } from './styles';
