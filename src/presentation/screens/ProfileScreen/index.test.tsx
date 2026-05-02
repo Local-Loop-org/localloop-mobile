@@ -7,6 +7,12 @@ import ProfileScreen from './index';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
 
+const mockGoBack = jest.fn();
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ goBack: mockGoBack }),
+}));
+
 jest.mock('@/infra/api/user.api', () => ({
   userApi: {
     getMe: jest.fn(),
