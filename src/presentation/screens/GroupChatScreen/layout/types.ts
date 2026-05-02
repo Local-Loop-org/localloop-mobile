@@ -4,6 +4,7 @@ import type { ChatMessage } from '@/infra/api/messages.api';
 export interface GroupChatLayoutProps {
   groupName: string;
   anchorType: AnchorType;
+  onlineCount: number;
   messages: ChatMessage[];
   currentUserId: string | null;
   loading: boolean;

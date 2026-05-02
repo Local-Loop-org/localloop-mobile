@@ -19,6 +19,7 @@ export default function GroupChatScreen({
     loadingMore,
     error,
     hasMore,
+    onlineCount,
     currentUserId,
     sendMessage,
     loadOlder,
@@ -37,6 +38,7 @@ export default function GroupChatScreen({
     <GroupChatLayout
       groupName={groupName}
       anchorType={anchorType}
+      onlineCount={onlineCount}
       messages={messages}
       currentUserId={currentUserId}
       loading={loading}
