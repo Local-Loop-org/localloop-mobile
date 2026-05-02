@@ -67,7 +67,7 @@ export function useAuthLogin() {
       }
     } catch (error) {
       console.error('Google login error:', error);
-      Alert.alert('Erro', `Falha ao fazer login com Google ${error}`);
+      Alert.alert('Erro', 'Falha ao fazer login com Google');
     } finally {
       setLoading(false);
     }
