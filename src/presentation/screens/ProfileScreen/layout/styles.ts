@@ -184,18 +184,21 @@ export const styles = StyleSheet.create({
     gap: 12,
   },
   radiusBadge: {
+    minWidth: 72,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: 'rgba(0,209,255,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(0,209,255,0.35)',
+    alignItems: 'center',
   },
   radiusBadgeLabel: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
     letterSpacing: 0.4,
+    fontVariant: ['tabular-nums'],
   },
   radiusTrackWrap: {
     paddingHorizontal: 14,
