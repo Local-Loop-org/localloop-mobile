@@ -31,7 +31,11 @@ export type IconName =
   | 'image'
   | 'mic'
   | 'sparkle'
-  | 'signal';
+  | 'signal'
+  | 'edit'
+  | 'logout'
+  | 'trash'
+  | 'shield';
 
 interface IconProps {
   name: IconName;
@@ -199,6 +203,28 @@ function renderPaths(name: IconName, color: string): React.ReactNode {
           />
           <Circle cx={3} cy={14} r={1.5} fill={color} />
         </>
+      );
+    case 'edit':
+      return (
+        <Path d="M3 17l4-1 9-9-3-3-9 9-1 4zM12 5l3 3" />
+      );
+    case 'logout':
+      return (
+        <>
+          <Path d="M9 3H5a1 1 0 00-1 1v12a1 1 0 001 1h4" />
+          <Path d="M13 6l4 4-4 4M9 10h8" />
+        </>
+      );
+    case 'trash':
+      return (
+        <>
+          <Path d="M4 6h12M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2" />
+          <Path d="M5 6l1 11a1 1 0 001 1h6a1 1 0 001-1l1-11M9 9v6M11 9v6" />
+        </>
+      );
+    case 'shield':
+      return (
+        <Path d="M10 2l6 2v5c0 4-3 7-6 9-3-2-6-5-6-9V4l6-2z" />
       );
   }
 }
