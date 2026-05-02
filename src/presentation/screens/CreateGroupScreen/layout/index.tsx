@@ -5,9 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';

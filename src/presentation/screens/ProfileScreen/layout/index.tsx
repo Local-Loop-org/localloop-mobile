@@ -1,11 +1,11 @@
 import React from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import Hero from './Hero';

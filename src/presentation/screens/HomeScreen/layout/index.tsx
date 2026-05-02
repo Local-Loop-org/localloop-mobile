@@ -3,10 +3,10 @@ import {
   View,
   Text,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnchorType } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
