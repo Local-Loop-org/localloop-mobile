@@ -27,7 +27,10 @@ export function useAuthLogin() {
 
       if (error) throw error;
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectUrl,
+      );
 
       if (result.type === 'success' && result.url) {
         const fragment = result.url.split('#')[1];
@@ -41,22 +44,30 @@ export function useAuthLogin() {
         const refreshToken = params?.refresh_token as string;
 
         if (accessToken && refreshToken) {
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+          const { data: sessionData, error: sessionError } =
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
 
           if (sessionError) throw sessionError;
 
           if (sessionData.session) {
-            const res = await authApi.loginWithGoogle(sessionData.session.access_token);
-            await setAuth(res.user, res.accessToken, res.refreshToken, res.isNewUser);
+            const res = await authApi.loginWithGoogle(
+              sessionData.session.access_token,
+            );
+            await setAuth(
+              res.user,
+              res.accessToken,
+              res.refreshToken,
+              res.isNewUser,
+            );
           }
         }
       }
     } catch (error) {
       console.error('Google login error:', error);
-      Alert.alert('Erro', 'Falha ao fazer login com Google');
+      Alert.alert('Erro', `Falha ao fazer login com Google ${error}`);
     } finally {
       setLoading(false);
     }
@@ -77,11 +88,18 @@ export function useAuthLogin() {
 
       if (error) throw error;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (session) {
         const res = await authApi.loginWithApple(session.access_token);
-        await setAuth(res.user, res.accessToken, res.refreshToken, res.isNewUser);
+        await setAuth(
+          res.user,
+          res.accessToken,
+          res.refreshToken,
+          res.isNewUser,
+        );
       }
     } catch (error) {
       console.error('Apple login error:', error);
