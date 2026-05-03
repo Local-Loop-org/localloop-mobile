@@ -25,14 +25,10 @@ const resetStore = () =>
 
 const buildUser = (overrides: Partial<User> = {}): User => ({
   id: 'user-1',
-  providerId: 'provider-1',
   provider: Provider.GOOGLE,
   displayName: 'Alice',
   avatarUrl: null,
-  geohash: null,
   dmPermission: DmPermission.MEMBERS,
-  isActive: true,
-  lastSeenAt: '2026-01-01T00:00:00Z',
   createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 });
