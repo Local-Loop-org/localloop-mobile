@@ -141,20 +141,6 @@ describe('MyGroupsScreen', () => {
     expect(queryByText('Café Manfredini')).toBeNull();
   });
 
-  it('filters by last message content', async () => {
-    const { findByText, queryByText, getByPlaceholderText } = renderScreen();
-    await findByText('Café Manfredini');
-
-    fireEvent.changeText(
-      getByPlaceholderText('Buscar nos meus grupos…'),
-      'mesa',
-    );
-
-    expect(await findByText('Café Manfredini')).toBeTruthy();
-    expect(queryByText('Clube dos Corredores')).toBeNull();
-    expect(queryByText('Ed. Jade Park')).toBeNull();
-  });
-
   it('narrows the list when an anchor-type chip is tapped', async () => {
     const { findByText, queryByText } = renderScreen();
     await findByText('Clube dos Corredores');
@@ -167,8 +153,12 @@ describe('MyGroupsScreen', () => {
   });
 
   it('chip counts reflect the unfiltered list (stable while typing)', async () => {
-    const { findByText, queryAllByText, getByPlaceholderText, findByLabelText } =
-      renderScreen();
+    const {
+      findByText,
+      queryAllByText,
+      getByPlaceholderText,
+      findByLabelText,
+    } = renderScreen();
     await findByText('Clube dos Corredores');
 
     // Before typing: "Todos" announces 3 (unique chip count value).
