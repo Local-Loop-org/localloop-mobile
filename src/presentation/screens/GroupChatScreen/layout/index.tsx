@@ -18,11 +18,7 @@ import { colors } from '@/shared/theme';
 import type { ChatMessage } from '@/infra/api/messages.api';
 import AnchorIcon from '../components/AnchorIcon';
 import Avatar from '../components/Avatar';
-import {
-  buildChatListItems,
-  formatTime,
-  type ChatListItem,
-} from '../utils';
+import { buildChatListItems, formatTime, type ChatListItem } from '../utils';
 import { layoutDimensions, styles } from './styles';
 import type { GroupChatLayoutProps } from './types';
 
@@ -110,7 +106,7 @@ export default function GroupChatLayout({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style='light' />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -119,14 +115,14 @@ export default function GroupChatLayout({
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={onBack}
-            testID="header-back"
+            testID='header-back'
           >
-            <Icon name="chevronLeft" size={17} color={colors.text} />
+            <Icon name='chevronLeft' size={17} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerCenter}
             onPress={onPressHeader}
-            testID="header-title"
+            testID='header-title'
           >
             <AnchorIcon
               type={anchorType}
@@ -138,14 +134,14 @@ export default function GroupChatLayout({
                   {groupName}
                 </Text>
                 <Icon
-                  name="chevronRight"
+                  name='chevronRight'
                   size={13}
                   color={colors.faint}
                   strokeWidth={2}
                 />
               </View>
               {onlineCount > 0 ? (
-                <Text style={styles.headerSubtitle} testID="header-subtitle">
+                <Text style={styles.headerSubtitle} testID='header-subtitle'>
                   · {onlineCount} ONLINE ·
                 </Text>
               ) : null}
@@ -154,9 +150,9 @@ export default function GroupChatLayout({
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={onPressMembers}
-            testID="header-members"
+            testID='header-members'
           >
-            <Icon name="users" size={17} color={colors.text} />
+            <Icon name='users' size={17} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -166,7 +162,7 @@ export default function GroupChatLayout({
 
         {loading ? (
           <View style={styles.emptyWrapper}>
-            <ActivityIndicator color={colors.primary} size="large" />
+            <ActivityIndicator color={colors.primary} size='large' />
           </View>
         ) : (
           <FlatList
@@ -197,14 +193,14 @@ export default function GroupChatLayout({
         <View style={styles.composer}>
           <TouchableOpacity
             style={styles.composerBtn}
-            testID="composer-attach"
+            testID='composer-attach'
             disabled
           >
-            <Icon name="plus" size={18} color={colors.dim} />
+            <Icon name='plus' size={18} color={colors.dim} />
           </TouchableOpacity>
           <TextInput
             style={styles.inputPill}
-            placeholder="Escreva uma mensagem"
+            placeholder='Escreva uma mensagem'
             placeholderTextColor={colors.faint}
             value={draft}
             onChangeText={onChangeDraft}
@@ -217,7 +213,7 @@ export default function GroupChatLayout({
             ]}
             disabled={sendDisabled}
             onPress={onSend}
-            testID="send-button"
+            testID='send-button'
           >
             <LinearGradient
               colors={[colors.primary, colors.accent2]}
@@ -226,7 +222,7 @@ export default function GroupChatLayout({
               style={StyleSheet.absoluteFill}
             />
             <Icon
-              name="send2"
+              name='send'
               size={15}
               color={colors.white}
               strokeWidth={2.2}

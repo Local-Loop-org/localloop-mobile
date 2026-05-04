@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Icon } from '@/shared/icons';
-import { anchorIconName } from '@/shared/icons/anchorIcon';
-import { colors } from '@/shared/theme';
+import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import { styles } from './styles';
@@ -21,14 +19,12 @@ export function DiscoverCard({ group, onPress }: Props) {
       accessibilityLabel={`Abrir ${group.name}`}
     >
       <View style={styles.cardHeader}>
-        <View style={styles.cardIconBox}>
-          <Icon
-            name={anchorIconName(group.anchorType)}
-            size={17}
-            color={colors.primary}
-            strokeWidth={1.9}
-          />
-        </View>
+        <AnchorIconBadge
+          anchorType={group.anchorType}
+          size={36}
+          iconSize={17}
+          borderRadius={10}
+        />
       </View>
       <Text style={styles.cardName} numberOfLines={1}>
         {group.name}

@@ -1,16 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { MemberRole } from '@localloop/shared-types';
-import { Icon } from '@/shared/icons';
-import { anchorIconName } from '@/shared/icons/anchorIcon';
-import { colors } from '@/shared/theme';
+import { AnchorIconBadge } from '@/shared/icons';
+import { formatLastActivity } from '@/shared/format/lastActivity';
 import type { MyGroup } from '@/infra/api/groups.api';
 import { styles } from './styles';
-
-const ROLE_LABELS: Partial<Record<MemberRole, string>> = {
-  [MemberRole.OWNER]: 'DONO',
-  [MemberRole.MODERATOR]: 'MOD',
-};
 
 interface Props {
   group: MyGroup;
@@ -18,10 +11,16 @@ interface Props {
 }
 
 export function MyGroupRow({ group, onPress }: Props) {
+  const unread = group.unreadCount ?? 0;
+  const live = group.liveCount ?? 0;
+  const hasUnread = unread > 0;
+  const isLive = live > 0;
+  const lastAt = group.lastMessage
+    ? formatLastActivity(group.lastMessage.createdAt)
+    : null;
   const preview = group.lastMessage
     ? `${group.lastMessage.senderName}: ${group.lastMessage.content ?? '[mídia]'}`
     : `${group.memberCount} membros`;
-  const roleLabel = ROLE_LABELS[group.myRole];
 
   return (
     <TouchableOpacity
@@ -30,27 +29,48 @@ export function MyGroupRow({ group, onPress }: Props) {
       accessibilityRole="button"
       accessibilityLabel={`Abrir ${group.name}`}
     >
-      <View style={styles.myRowIconBox}>
-        <Icon
-          name={anchorIconName(group.anchorType)}
-          size={18}
-          color={colors.primary}
-          strokeWidth={1.9}
+      <View style={styles.myRowIconWrap}>
+        <AnchorIconBadge
+          anchorType={group.anchorType}
+          size={48}
+          iconSize={20}
+          borderRadius={14}
         />
+        {isLive ? <View style={styles.myRowLiveDot} /> : null}
       </View>
       <View style={styles.myRowBody}>
-        <Text style={styles.myRowName} numberOfLines={1}>
-          {group.name}
-        </Text>
-        <Text style={styles.myRowPreview} numberOfLines={1}>
-          {preview}
-        </Text>
-      </View>
-      {roleLabel ? (
-        <View style={styles.myRowBadge}>
-          <Text style={styles.myRowBadgeText}>{roleLabel}</Text>
+        <View style={styles.myRowTopLine}>
+          <Text style={styles.myRowName} numberOfLines={1}>
+            {group.name}
+          </Text>
+          {lastAt ? (
+            <Text
+              style={[
+                styles.myRowLastAt,
+                hasUnread && styles.myRowLastAtUnread,
+              ]}
+            >
+              {lastAt}
+            </Text>
+          ) : null}
         </View>
-      ) : null}
+        <View style={styles.myRowBottomLine}>
+          <Text
+            style={[
+              styles.myRowPreview,
+              hasUnread && styles.myRowPreviewUnread,
+            ]}
+            numberOfLines={1}
+          >
+            {preview}
+          </Text>
+          {hasUnread ? (
+            <View style={styles.myRowUnreadBadge}>
+              <Text style={styles.myRowUnreadBadgeText}>{unread}</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
