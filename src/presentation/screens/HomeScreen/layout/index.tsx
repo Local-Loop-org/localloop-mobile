@@ -84,7 +84,7 @@ export default function HomeLayout({
               count={myGroups.length}
               onPressSeeAll={onPressViewAllMyGroups}
             />
-            <View style={styles.verticalList}>
+            <View style={styles.myGroupsList}>
               {myGroups.map((g) => (
                 <MyGroupRow key={g.id} group={g} onPress={onPressMyGroup} />
               ))}

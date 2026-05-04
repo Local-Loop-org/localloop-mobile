@@ -1,5 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { colors, spacing } from '@/shared/theme';
+
+const monoFamily = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  default: 'monospace',
+});
 
 export const styles = StyleSheet.create({
   container: {
@@ -147,6 +153,11 @@ export const styles = StyleSheet.create({
     gap: spacing.xs,
   },
 
+  // My groups list (rows manage their own horizontal padding to match design)
+  myGroupsList: {
+    paddingTop: spacing.xs,
+  },
+
   // Discover card (horizontal)
   card: {
     width: 220,
@@ -161,16 +172,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
-  },
-  cardIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 209, 255, 0.27)',
-    backgroundColor: 'rgba(0, 209, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cardName: {
     fontSize: 15,
@@ -220,16 +221,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm + 4,
   },
-  rowIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 209, 255, 0.27)',
-    backgroundColor: 'rgba(0, 209, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   rowBody: {
     flex: 1,
   },
@@ -247,55 +238,83 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // My groups row
+  // My groups row (design: bare list-item, gradient icon, lastAt, unread badge)
   myRow: {
-    padding: spacing.sm + 4,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm + 4,
+    gap: 12,
   },
-  myRowIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 209, 255, 0.27)',
-    backgroundColor: 'rgba(0, 209, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  myRowIconWrap: {
+    width: 48,
+    height: 48,
+    position: 'relative',
+  },
+  myRowLiveDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.success,
+    borderWidth: 2.5,
+    borderColor: colors.background,
   },
   myRowBody: {
     flex: 1,
+    minWidth: 0,
+  },
+  myRowTopLine: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+    gap: 8,
   },
   myRowName: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 14.5,
     fontWeight: '700',
     color: colors.text,
     letterSpacing: -0.2,
   },
-  myRowPreview: {
-    fontSize: 11,
+  myRowLastAt: {
+    fontSize: 10.5,
+    fontFamily: monoFamily,
     color: colors.faint,
-    letterSpacing: 0.2,
-    marginTop: 2,
+    letterSpacing: 0.4,
   },
-  myRowBadge: {
+  myRowLastAtUnread: {
+    color: colors.primary,
+  },
+  myRowBottomLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  myRowPreview: {
+    flex: 1,
+    fontSize: 12.5,
+    color: colors.dim,
+  },
+  myRowPreviewUnread: {
+    color: colors.text,
+    fontWeight: '500',
+  },
+  myRowUnreadBadge: {
     paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.4)',
-    backgroundColor: 'rgba(167, 139, 250, 0.12)',
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
   },
-  myRowBadgeText: {
-    fontSize: 9,
-    color: colors.accent2,
+  myRowUnreadBadgeText: {
+    fontSize: 10.5,
+    fontFamily: monoFamily,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    color: colors.black,
   },
 
   // Bottom tab bar

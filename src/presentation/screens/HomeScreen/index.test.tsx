@@ -207,15 +207,23 @@ describe('HomeScreen', () => {
   });
 
   it('renders "Meus grupos" section with group rows when data is available', async () => {
-    mockedGetMyGroups.mockResolvedValueOnce({
-      data: [sampleMyGroup],
-      next_cursor: null,
-    });
-    const { findByText } = renderScreen();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-04-29T13:00:00.000Z'));
+    try {
+      mockedGetMyGroups.mockResolvedValueOnce({
+        data: [sampleMyGroup],
+        next_cursor: null,
+      });
+      const { findByText } = renderScreen();
 
-    expect(await findByText('Meus grupos')).toBeTruthy();
-    expect(await findByText('Clube dos Corredores')).toBeTruthy();
-    expect(await findByText('Bob: Bora amanhã cedo?')).toBeTruthy();
+      expect(await findByText('Meus grupos')).toBeTruthy();
+      expect(await findByText('Clube dos Corredores')).toBeTruthy();
+      expect(await findByText('Bob: Bora amanhã cedo?')).toBeTruthy();
+      // lastActivity renders against the locked clock (5h ago).
+      expect(await findByText('5h')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('hides "Meus grupos" section when the user has no groups', async () => {

@@ -76,6 +76,8 @@ export interface MyGroup {
   myRole: MemberRole;
   lastActivityAt: string;
   lastMessage: MyGroupLastMessage | null;
+  unreadCount?: number;
+  liveCount?: number;
 }
 
 export interface ListMyGroupsResponse {
