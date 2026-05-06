@@ -1,11 +1,15 @@
 // src/shared/theme/index.ts
 
+import { Platform } from 'react-native';
+
 export const colors = {
   primary: '#00D1FF',      // Cyan
   secondary: '#7000FF',    // Purple
   accent2: '#A78BFA',      // Soft lavender — gradient pair for `primary` (cyan→lavender)
+  accentInk: '#070710',    // Ink color for text/icons placed on top of `primary` fills
   background: '#0F0F0F',   // Almost Black
   surface: '#1E1E1E',      // Dark Gray
+  surface2: '#26262E',     // Inner surface — used for nested blocks (map cells, picker rows)
   text: '#FFFFFF',
   textSecondary: '#A0A0A0',
   line: '#2A2A2A',
@@ -17,6 +21,10 @@ export const colors = {
   black: '#000000',
   google: '#DB4437',
   apple: '#000000',
+};
+
+export const fonts = {
+  mono: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
 };
 
 export const spacing = {

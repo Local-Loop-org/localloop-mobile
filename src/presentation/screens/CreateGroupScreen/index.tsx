@@ -1,34 +1,39 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
-import { groupsApi } from '@/infra/api/groups.api';
+import { useCreateGroup } from '@/application/hooks/useCreateGroup';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import CreateGroupLayout from './layout';
+import type { SendPermValue } from './layout/types';
 
 type Props = HomeTabsScreenProps<'CreateGroup'>;
+
+const DEFAULT_RADIUS_KM = 2;
+const DEFAULT_SEND_PERM: SendPermValue = 'all';
 
 export default function CreateGroupScreen({ navigation }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [anchorType, setAnchorType] = useState<AnchorType>(
+  const [placeType, setPlaceType] = useState<AnchorType>(
     AnchorType.ESTABLISHMENT,
   );
   const [anchorLabel, setAnchorLabel] = useState('');
   const [privacy, setPrivacy] = useState<GroupPrivacy>(GroupPrivacy.OPEN);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Local-only: not yet persisted to the API. See `feedback_create_group_local_only_fields` memory.
+  const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
+  const [sendPerm, setSendPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
+  const [sendMediaPerm, setSendMediaPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
 
   const { coords, granted, request: requestLocation } = useCurrentLocation();
+  const createGroup = useCreateGroup();
 
-  const handleRequestLocation = async () => {
-    const result = await requestLocation();
-    if (!result) {
-      Alert.alert(
-        'Localização',
-        'Precisamos da sua localização para ancorar o grupo.',
-      );
-    }
-  };
+  useEffect(() => {
+    void requestLocation();
+  }, [requestLocation]);
+
+  const canSubmit = name.trim().length > 0 && !createGroup.isPending;
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -36,33 +41,34 @@ export default function CreateGroupScreen({ navigation }: Props) {
       return;
     }
     if (!anchorLabel.trim()) {
-      Alert.alert('Ops', 'Informe o nome da âncora.');
+      Alert.alert('Ops', 'Informe o local de referência.');
       return;
     }
-    if (!granted || !coords) {
-      Alert.alert('Ops', 'Capture sua localização antes de criar o grupo.');
-      return;
+    let finalCoords = coords;
+    if (!granted || !finalCoords) {
+      finalCoords = await requestLocation();
+      if (!finalCoords) {
+        Alert.alert(
+          'Localização',
+          'Precisamos da sua localização para ancorar o grupo.',
+        );
+        return;
+      }
     }
 
-    setIsSubmitting(true);
     try {
-      const created = await groupsApi.createGroup({
+      const created = await createGroup.mutateAsync({
         name: name.trim(),
         description: description.trim() || undefined,
-        anchorType,
+        anchorType: placeType,
         anchorLabel: anchorLabel.trim(),
-        lat: coords.lat,
-        lng: coords.lng,
+        lat: finalCoords.lat,
+        lng: finalCoords.lng,
         privacy,
       });
-
-      // Replace the stack entry so the user lands on the new group's detail
-      // instead of returning to the empty form on back.
       navigation.replace('GroupDetail', { groupId: created.id });
     } catch {
       Alert.alert('Erro', 'Não foi possível criar o grupo. Tente novamente.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -70,19 +76,25 @@ export default function CreateGroupScreen({ navigation }: Props) {
     <CreateGroupLayout
       name={name}
       description={description}
-      anchorType={anchorType}
+      placeType={placeType}
       anchorLabel={anchorLabel}
       privacy={privacy}
+      radiusKm={radiusKm}
+      sendPerm={sendPerm}
+      sendMediaPerm={sendMediaPerm}
       locationGranted={granted}
-      isSubmitting={isSubmitting}
+      isSubmitting={createGroup.isPending}
+      canSubmit={canSubmit}
       onNameChange={setName}
       onDescriptionChange={setDescription}
-      onAnchorTypeChange={setAnchorType}
+      onPlaceTypeChange={setPlaceType}
       onAnchorLabelChange={setAnchorLabel}
       onPrivacyChange={setPrivacy}
-      onRequestLocation={handleRequestLocation}
+      onRadiusChange={setRadiusKm}
+      onSendPermChange={setSendPerm}
+      onSendMediaPermChange={setSendMediaPerm}
       onSubmit={handleSubmit}
-      onCancel={() => navigation.goBack()}
+      onClose={() => navigation.goBack()}
     />
   );
 }
