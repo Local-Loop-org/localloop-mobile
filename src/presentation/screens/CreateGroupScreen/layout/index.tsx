@@ -1,163 +1,83 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
-import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
+import { HeaderBar } from './sections/HeaderBar';
+import { HeroCard } from './sections/HeroCard';
+import { AboutSection } from './sections/AboutSection';
+import { LocationSection } from './sections/LocationSection';
+import { VisibilitySection } from './sections/VisibilitySection';
+import { PrivacySection } from './sections/PrivacySection';
+import { SendPermSection } from './sections/SendPermSection';
+import { FooterBar } from './sections/FooterBar';
 import { styles } from './styles';
 import type { CreateGroupLayoutProps } from './types';
-
-const PRIVACY_LABELS: Record<GroupPrivacy, string> = {
-  [GroupPrivacy.OPEN]: 'Aberto',
-  [GroupPrivacy.APPROVAL_REQUIRED]: 'Requer aprovação',
-};
-
-function Chip<T extends string>({
-  label,
-  value,
-  active,
-  onPress,
-}: {
-  label: string;
-  value: T;
-  active: boolean;
-  onPress: (value: T) => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.optionChip, active && styles.optionChipActive]}
-      onPress={() => onPress(value)}
-    >
-      <Text
-        style={[
-          styles.optionChipText,
-          active && styles.optionChipTextActive,
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
 
 export default function CreateGroupLayout({
   name,
   description,
-  anchorType,
+  placeType,
   anchorLabel,
   privacy,
+  radiusKm,
+  sendPerm,
+  sendMediaPerm,
   locationGranted,
   isSubmitting,
+  canSubmit,
   onNameChange,
   onDescriptionChange,
-  onAnchorTypeChange,
+  onPlaceTypeChange,
   onAnchorLabelChange,
   onPrivacyChange,
-  onRequestLocation,
+  onRadiusChange,
+  onSendPermChange,
+  onSendMediaPermChange,
   onSubmit,
-  onCancel,
+  onClose,
 }: CreateGroupLayoutProps) {
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Novo grupo</Text>
-          <TouchableOpacity onPress={onCancel} disabled={isSubmitting}>
-            <Text style={styles.cancelText}>Cancelar</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Nome do grupo</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={onNameChange}
-          placeholder="Ex: Corredores do Ibirapuera"
-          placeholderTextColor={colors.textSecondary}
-          maxLength={80}
-        />
-
-        <Text style={styles.label}>Descrição (opcional)</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={description}
-          onChangeText={onDescriptionChange}
-          placeholder="Para que serve este grupo?"
-          placeholderTextColor={colors.textSecondary}
-          maxLength={500}
-          multiline
-        />
-
-        <Text style={styles.label}>Tipo de âncora</Text>
-        <View style={styles.optionsRow}>
-          {Object.values(AnchorType).map((type) => (
-            <Chip
-              key={type}
-              label={ANCHOR_TYPE_LABELS[type]}
-              value={type}
-              active={anchorType === type}
-              onPress={onAnchorTypeChange}
-            />
-          ))}
-        </View>
-
-        <Text style={styles.label}>Nome da âncora</Text>
-        <TextInput
-          style={styles.input}
-          value={anchorLabel}
-          onChangeText={onAnchorLabelChange}
-          placeholder="Ex: Parque Ibirapuera"
-          placeholderTextColor={colors.textSecondary}
-          maxLength={100}
-        />
-
-        <Text style={styles.label}>Privacidade</Text>
-        <View style={styles.optionsRow}>
-          {Object.values(GroupPrivacy).map((p) => (
-            <Chip
-              key={p}
-              label={PRIVACY_LABELS[p]}
-              value={p}
-              active={privacy === p}
-              onPress={onPrivacyChange}
-            />
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.locationBtn,
-            locationGranted && styles.locationBtnGranted,
-          ]}
-          onPress={onRequestLocation}
-          disabled={isSubmitting}
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <HeaderBar onClose={onClose} />
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.locationBtnText}>
-            {locationGranted
-              ? 'Localização capturada ✅'
-              : 'Capturar minha localização 📍'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
-          onPress={onSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color={colors.black} />
-          ) : (
-            <Text style={styles.submitBtnText}>Criar grupo</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+          <HeroCard />
+          <AboutSection
+            name={name}
+            description={description}
+            onNameChange={onNameChange}
+            onDescriptionChange={onDescriptionChange}
+          />
+          <LocationSection
+            placeType={placeType}
+            anchorLabel={anchorLabel}
+            locationGranted={locationGranted}
+            onPlaceTypeChange={onPlaceTypeChange}
+            onAnchorLabelChange={onAnchorLabelChange}
+          />
+          <VisibilitySection radiusKm={radiusKm} onChange={onRadiusChange} />
+          <PrivacySection value={privacy} onChange={onPrivacyChange} />
+          <SendPermSection
+            sendPerm={sendPerm}
+            sendMediaPerm={sendMediaPerm}
+            onSendPermChange={onSendPermChange}
+            onSendMediaPermChange={onSendMediaPermChange}
+          />
+          <View style={{ height: 8 }} />
+        </ScrollView>
+        <FooterBar
+          canSubmit={canSubmit}
+          isSubmitting={isSubmitting}
+          onSubmit={onSubmit}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
