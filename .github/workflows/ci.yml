@@ -68,6 +68,23 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Build and Download IPA
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --output "./builds/app.ipa"
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./builds/app.ipa
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build APK on EAS
         id: build
         run: |
