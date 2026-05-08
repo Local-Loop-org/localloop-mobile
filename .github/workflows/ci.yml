@@ -78,7 +78,7 @@ jobs:
             --json > build.json
 
       - name: Extract build URL
-        id: build
+        id: build-ipa
         run: |
           BUILD_URL=$(cat build.json | jq -r '.[0].artifacts.buildUrl')
           echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
@@ -98,7 +98,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build APK on EAS
-        id: build
+        id: build-apk
         run: |
           BUILD_JSON=$(eas build --platform android --profile production --non-interactive --json --wait)
           echo "$BUILD_JSON"
