@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import {
   fireEvent,
   render,
@@ -9,14 +10,13 @@ import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
-import { userApi } from '@/infra/api/user.api';
 
 jest.mock('@/infra/api/groups.api', () => ({
-  groupsApi: { getNearbyGroups: jest.fn(), getMyGroups: jest.fn() },
-}));
-
-jest.mock('@/infra/api/user.api', () => ({
-  userApi: { updateLocation: jest.fn() },
+  groupsApi: {
+    getNearbyGroups: jest.fn(),
+    getMyGroups: jest.fn(),
+    joinGroup: jest.fn(),
+  },
 }));
 
 jest.mock('@react-navigation/native', () => {
@@ -36,8 +36,8 @@ const mockedGetNearby = groupsApi.getNearbyGroups as jest.MockedFunction<
 const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
   typeof groupsApi.getMyGroups
 >;
-const mockedUpdateLocation = userApi.updateLocation as jest.MockedFunction<
-  typeof userApi.updateLocation
+const mockedJoin = groupsApi.joinGroup as jest.MockedFunction<
+  typeof groupsApi.joinGroup
 >;
 const mockedRequestPermissions =
   Location.requestForegroundPermissionsAsync as jest.Mock;
@@ -100,6 +100,17 @@ const sampleEvent = {
   memberCount: 128,
 };
 
+const samplePrivateNeighborhood = {
+  id: 'g-4',
+  name: 'Condomínio Vista Verde',
+  description: null,
+  anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLabel: 'Vila Madalena',
+  distanceMeters: 80,
+  privacy: GroupPrivacy.APPROVAL_REQUIRED,
+  memberCount: 42,
+};
+
 const sampleMyGroup = {
   id: 'mg-1',
   name: 'Clube dos Corredores',
@@ -122,7 +133,6 @@ describe('HomeScreen', () => {
     mockedGetPosition.mockResolvedValue({
       coords: { latitude: -23.55, longitude: -46.63 },
     });
-    mockedUpdateLocation.mockResolvedValue(undefined);
     mockedGetNearby.mockResolvedValue([
       sampleNeighborhood,
       sampleEstablishment,
@@ -154,19 +164,6 @@ describe('HomeScreen', () => {
     expect(queryByText('Prédios')).toBeNull();
   });
 
-  it('calls updateLocation before getNearbyGroups', async () => {
-    renderScreen();
-    await waitFor(() => expect(mockedGetNearby).toHaveBeenCalled());
-
-    const updateOrder = mockedUpdateLocation.mock.invocationCallOrder[0];
-    const nearbyOrder = mockedGetNearby.mock.invocationCallOrder[0];
-    expect(updateOrder).toBeLessThan(nearbyOrder);
-    expect(mockedUpdateLocation).toHaveBeenCalledWith({
-      lat: -23.55,
-      lng: -46.63,
-    });
-  });
-
   it('shows an error message and no groups when location is denied', async () => {
     mockedRequestPermissions.mockResolvedValueOnce({ status: 'denied' });
 
@@ -178,7 +175,6 @@ describe('HomeScreen', () => {
       ),
     ).toBeTruthy();
     expect(queryByText('Morumbi Runners')).toBeNull();
-    expect(mockedUpdateLocation).not.toHaveBeenCalled();
     expect(mockedGetNearby).not.toHaveBeenCalled();
   });
 
@@ -192,18 +188,109 @@ describe('HomeScreen', () => {
     ).toBeTruthy();
   });
 
-  it('navigates to GroupChat when a group is pressed', async () => {
+  it('OPEN card press: fires joinGroup and navigates to GroupChat with myRole=MEMBER', async () => {
+    mockedJoin.mockResolvedValueOnce({
+      status: 'joined',
+      role: MemberRole.MEMBER,
+    });
     const { findByText } = renderScreen();
     const card = await findByText('Morumbi Runners');
 
     fireEvent.press(card);
 
+    await waitFor(() => expect(mockedJoin).toHaveBeenCalledWith('g-1'));
     expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
       groupId: 'g-1',
       groupName: 'Morumbi Runners',
       anchorType: AnchorType.NEIGHBORHOOD,
-      myRole: null,
+      myRole: MemberRole.MEMBER,
     });
+  });
+
+  it('OPEN card press still navigates when joinGroup rejects with 409 ALREADY_MEMBER', async () => {
+    mockedJoin.mockRejectedValueOnce({ response: { status: 409 } });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByText } = renderScreen();
+    const card = await findByText('Morumbi Runners');
+
+    fireEvent.press(card);
+
+    await waitFor(() => expect(mockedJoin).toHaveBeenCalledWith('g-1'));
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
+      groupId: 'g-1',
+      groupName: 'Morumbi Runners',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      myRole: MemberRole.MEMBER,
+    });
+    expect(alertSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('APPROVAL_REQUIRED card press: shows confirm modal but does not call joinGroup or navigate yet', async () => {
+    mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByText } = renderScreen();
+    const card = await findByText('Condomínio Vista Verde');
+
+    fireEvent.press(card);
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(alertSpy.mock.calls[0][0]).toBe('Solicitar entrada?');
+    expect(mockedJoin).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('APPROVAL_REQUIRED confirm: calls joinGroup, shows "Solicitação enviada", does not navigate', async () => {
+    mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
+    mockedJoin.mockResolvedValueOnce({ status: 'pending' });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByText } = renderScreen();
+    fireEvent.press(await findByText('Condomínio Vista Verde'));
+
+    const buttons = alertSpy.mock.calls[0][2] as Array<{
+      text: string;
+      onPress?: () => void | Promise<void>;
+    }>;
+    const solicitar = buttons.find((b) => b.text === 'Solicitar')!;
+    await solicitar.onPress!();
+
+    expect(mockedJoin).toHaveBeenCalledWith('g-4');
+    expect(alertSpy).toHaveBeenCalledTimes(2);
+    expect(alertSpy.mock.calls[1][0]).toBe('Solicitação enviada');
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('APPROVAL_REQUIRED cancel: does not call joinGroup or navigate', async () => {
+    mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByText } = renderScreen();
+    fireEvent.press(await findByText('Condomínio Vista Verde'));
+
+    // Cancel button has no onPress in production; just don't invoke any.
+    expect(mockedJoin).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('debounces double-taps: only one joinGroup call while mutation is pending', async () => {
+    mockedJoin.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ status: 'joined', role: MemberRole.MEMBER }), 100),
+        ),
+    );
+    const { findByText } = renderScreen();
+    const card = await findByText('Morumbi Runners');
+
+    fireEvent.press(card);
+    await waitFor(() => expect(mockedJoin).toHaveBeenCalledTimes(1));
+    fireEvent.press(card);
+    fireEvent.press(card);
+
+    expect(mockedJoin).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledTimes(1));
   });
 
   it('renders "Meus grupos" section with group rows when data is available', async () => {

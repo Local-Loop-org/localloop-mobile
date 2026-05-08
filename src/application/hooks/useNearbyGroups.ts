@@ -1,6 +1,5 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { groupsApi, type NearbyGroup } from '@/infra/api/groups.api';
-import { userApi } from '@/infra/api/user.api';
 import type { Coords } from './useCurrentLocation';
 
 const COORD_PRECISION = 3;
@@ -17,18 +16,16 @@ export function nearbyGroupsKey(coords: Coords | null) {
 }
 
 /**
- * Fetches groups near the given coords. Refreshes the server-side geohash
- * before querying so results match the latest position. The query is only
- * enabled when coords are available — callers gate on permission state.
+ * Fetches groups near the given coords. The query is only enabled when
+ * coords are available — callers gate on permission state.
  */
 export function useNearbyGroups(
   coords: Coords | null,
 ): UseQueryResult<NearbyGroup[], Error> {
   return useQuery<NearbyGroup[], Error>({
     queryKey: nearbyGroupsKey(coords),
-    queryFn: async () => {
+    queryFn: () => {
       if (!coords) throw new Error('coords_required');
-      await userApi.updateLocation(coords);
       return groupsApi.getNearbyGroups(coords);
     },
     enabled: coords != null,

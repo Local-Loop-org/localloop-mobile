@@ -3,19 +3,13 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { groupsApi } from '@/infra/api/groups.api';
-import { userApi } from '@/infra/api/user.api';
 import { nearbyGroupsKey, useNearbyGroups } from './useNearbyGroups';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getNearbyGroups: jest.fn() },
 }));
 
-jest.mock('@/infra/api/user.api', () => ({
-  userApi: { updateLocation: jest.fn() },
-}));
-
 const mockedGetNearby = groupsApi.getNearbyGroups as jest.Mock;
-const mockedUpdateLocation = userApi.updateLocation as jest.Mock;
 
 function makeWrapper() {
   const client = new QueryClient({
@@ -59,7 +53,6 @@ describe('nearbyGroupsKey', () => {
 describe('useNearbyGroups', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedUpdateLocation.mockResolvedValue(undefined);
     mockedGetNearby.mockResolvedValue([sampleGroup]);
   });
 
@@ -70,10 +63,9 @@ describe('useNearbyGroups', () => {
 
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockedGetNearby).not.toHaveBeenCalled();
-    expect(mockedUpdateLocation).not.toHaveBeenCalled();
   });
 
-  it('refreshes location then fetches nearby groups when coords are provided', async () => {
+  it('fetches nearby groups when coords are provided', async () => {
     const coords = { lat: -23.55, lng: -46.63 };
     const { result } = renderHook(() => useNearbyGroups(coords), {
       wrapper: makeWrapper(),
@@ -81,11 +73,7 @@ describe('useNearbyGroups', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockedUpdateLocation).toHaveBeenCalledWith(coords);
     expect(mockedGetNearby).toHaveBeenCalledWith(coords);
-    const updateOrder = mockedUpdateLocation.mock.invocationCallOrder[0];
-    const nearbyOrder = mockedGetNearby.mock.invocationCallOrder[0];
-    expect(updateOrder).toBeLessThan(nearbyOrder);
     expect(result.current.data).toEqual([sampleGroup]);
   });
 

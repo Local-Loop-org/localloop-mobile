@@ -1,11 +1,14 @@
 import React, { useCallback, useState } from "react";
+import { Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { GroupPrivacy, MemberRole } from "@localloop/shared-types";
 import {
   type Coords,
   useCurrentLocation,
 } from "@/application/hooks/useCurrentLocation";
 import { useNearbyGroups } from "@/application/hooks/useNearbyGroups";
 import { useMyGroups } from "@/application/hooks/useMyGroups";
+import { useJoinGroup } from "@/application/hooks/useJoinGroup";
 import type { HomeTabsScreenProps } from "@/presentation/navigation/types";
 import HomeLayout from "./layout";
 
@@ -24,6 +27,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { request: requestLocation } = useCurrentLocation();
   const query = useNearbyGroups(coords);
   const myGroupsQuery = useMyGroups();
+  const joinMutation = useJoinGroup();
 
   const fetchCoords = useCallback(async () => {
     const next = await requestLocation();
@@ -47,11 +51,11 @@ export default function HomeScreen({ navigation }: Props) {
     setRefreshing(true);
     try {
       const next = await fetchCoords();
-      if (next) await query.refetch();
+      if (next) await Promise.all([query.refetch(), myGroupsQuery.refetch()]);
     } finally {
       setRefreshing(false);
     }
-  }, [fetchCoords, query]);
+  }, [fetchCoords, query, myGroupsQuery]);
 
   const groups = query.data ?? [];
   const myGroups = myGroupsQuery.data ?? [];
@@ -71,12 +75,43 @@ export default function HomeScreen({ navigation }: Props) {
       onPressGroup={(id) => {
         const group = groups.find((g) => g.id === id);
         if (!group) return;
-        navigation.navigate("GroupChat", {
-          groupId: id,
-          groupName: group.name,
-          anchorType: group.anchorType,
-          myRole: null,
-        });
+        if (joinMutation.isPending) return;
+
+        if (group.privacy === GroupPrivacy.OPEN) {
+          joinMutation.mutate({ groupId: id, group });
+          navigation.navigate("GroupChat", {
+            groupId: id,
+            groupName: group.name,
+            anchorType: group.anchorType,
+            myRole: MemberRole.MEMBER,
+          });
+          return;
+        }
+
+        Alert.alert(
+          "Solicitar entrada?",
+          `${group.name} requer aprovação de um moderador para participar. Deseja enviar uma solicitação?`,
+          [
+            { text: "Cancelar", style: "cancel" },
+            {
+              text: "Solicitar",
+              onPress: async () => {
+                try {
+                  await joinMutation.mutateAsync({ groupId: id, group });
+                  Alert.alert(
+                    "Solicitação enviada",
+                    "Aguarde a aprovação de um moderador para entrar no grupo.",
+                  );
+                } catch {
+                  Alert.alert(
+                    "Erro",
+                    "Não foi possível enviar sua solicitação. Tente novamente.",
+                  );
+                }
+              },
+            },
+          ],
+        );
       }}
       myGroups={myGroups}
       myGroupsLoading={myGroupsQuery.isLoading}

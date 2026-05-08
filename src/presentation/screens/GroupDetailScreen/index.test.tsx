@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import GroupDetailScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
@@ -48,18 +49,26 @@ const navigation = {
   navigate: jest.fn(),
 } as unknown as Parameters<typeof GroupDetailScreen>[0]['navigation'];
 
-const renderScreen = () =>
+function makeClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+}
+
+const renderScreen = (client = makeClient()) =>
   render(
-    <GroupDetailScreen
-      navigation={navigation}
-      route={
-        {
-          key: 'GroupDetail',
-          name: 'GroupDetail' as const,
-          params: { groupId: 'g-1' },
-        } as never
-      }
-    />,
+    <QueryClientProvider client={client}>
+      <GroupDetailScreen
+        navigation={navigation}
+        route={
+          {
+            key: 'GroupDetail',
+            name: 'GroupDetail' as const,
+            params: { groupId: 'g-1' },
+          } as never
+        }
+      />
+    </QueryClientProvider>,
   );
 
 const buildGroup = (overrides: Partial<import('@/infra/api/groups.api').GroupDetail> = {}) => ({
