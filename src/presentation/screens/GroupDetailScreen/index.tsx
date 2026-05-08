@@ -191,7 +191,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       joinButtonState={deriveJoinButtonState(group, localPending)}
       isJoining={isJoining}
       onJoin={handleJoin}
-      onBack={() => navigation.goBack()}
+      onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate({ name: 'HomeTabs', params: { screen: 'Home' } })}
       showModerationSection={isPrivileged(myRole)}
       pendingRequests={pendingRequests}
       resolvingRequestId={resolvingRequestId}
