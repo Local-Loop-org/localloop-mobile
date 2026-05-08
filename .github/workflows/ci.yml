@@ -75,7 +75,19 @@ jobs:
             --profile production \
             --non-interactive \
             --wait \
-            --output "./builds/app.ipa"
+            --json > build.json
+
+      - name: Extract build URL
+        id: build
+        run: |
+          BUILD_URL=$(cat build.json | jq -r '.[0].artifacts.buildUrl')
+          echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+
+      - name: Download IPA
+        run: |
+          mkdir -p builds
+          curl -L "${{ steps.build.outputs.build_url }}" \
+            --output builds/app.ipa
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
