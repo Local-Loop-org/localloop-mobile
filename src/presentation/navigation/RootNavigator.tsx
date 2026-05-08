@@ -7,6 +7,7 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import AuthStack from './AuthStack';
 import AuthenticatedStack from './AuthenticatedStack';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import { RootRoutes } from './routes';
 import { ActivityIndicator, View } from 'react-native';
 import { colors } from '@/shared/theme';
 
@@ -36,11 +37,11 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          <Stack.Screen name="AuthStack" component={AuthStack} />
+          <Stack.Screen name={RootRoutes.AuthStack} component={AuthStack} />
         ) : isNewUser ? (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name={RootRoutes.Onboarding} component={OnboardingScreen} />
         ) : (
-          <Stack.Screen name="Home" component={AuthenticatedStack} />
+          <Stack.Screen name={RootRoutes.Home} component={AuthenticatedStack} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

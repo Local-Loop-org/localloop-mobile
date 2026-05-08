@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import { styles } from './styles';
+import { TabRoutes, type TabRoute } from '@/presentation/navigation/routes';
 
-export type TabId = 'Home' | 'Inbox' | 'CreateGroup' | 'Map' | 'Profile';
+export type TabId = TabRoute;
 
 interface TabSpec {
   id: TabId;
@@ -14,11 +15,11 @@ interface TabSpec {
 }
 
 const TABS: TabSpec[] = [
-  { id: 'Home', icon: 'home', label: 'Início' },
-  { id: 'Inbox', icon: 'chat', label: 'Inbox' },
-  { id: 'CreateGroup', icon: 'plus' },
-  { id: 'Map', icon: 'map', label: 'Mapa' },
-  { id: 'Profile', icon: 'users', label: 'Perfil' },
+  { id: TabRoutes.Home, icon: 'home', label: 'Início' },
+  { id: TabRoutes.Inbox, icon: 'chat', label: 'Inbox' },
+  { id: TabRoutes.CreateGroup, icon: 'plus' },
+  { id: TabRoutes.Map, icon: 'map', label: 'Mapa' },
+  { id: TabRoutes.Profile, icon: 'users', label: 'Perfil' },
 ];
 
 interface Props {
@@ -31,7 +32,7 @@ export function BottomTabBar({ active, onPress }: Props) {
     <View style={styles.tabBarWrapper}>
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
-          const isNew = tab.id === 'CreateGroup';
+          const isNew = tab.id === TabRoutes.CreateGroup;
           const isActive = tab.id === active;
           const labelColor = isActive ? colors.text : colors.textSecondary;
           const iconColor = isNew

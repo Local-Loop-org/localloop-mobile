@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGroupChat } from '@/application/hooks/useGroupChat';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
+import { StackRoutes } from '@/presentation/navigation/routes';
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -50,9 +51,9 @@ export default function GroupChatScreen({
       onSend={handleSend}
       onLoadOlder={loadOlder}
       onBack={() => navigation.goBack()}
-      onPressHeader={() => navigation.navigate('GroupDetail', { groupId })}
+      onPressHeader={() => navigation.navigate(StackRoutes.GroupDetail, { groupId })}
       onPressMembers={() =>
-        navigation.navigate('GroupMembers', { groupId, myRole })
+        navigation.navigate(StackRoutes.GroupMembers, { groupId, myRole })
       }
     />
   );

@@ -7,6 +7,7 @@ import {
 import { useNearbyGroups } from "@/application/hooks/useNearbyGroups";
 import { useMyGroups } from "@/application/hooks/useMyGroups";
 import type { HomeTabsScreenProps } from "@/presentation/navigation/types";
+import { StackRoutes } from "@/presentation/navigation/routes";
 import HomeLayout from "./layout";
 
 type Props = HomeTabsScreenProps<"Home">;
@@ -71,7 +72,7 @@ export default function HomeScreen({ navigation }: Props) {
       onPressGroup={(id) => {
         const group = groups.find((g) => g.id === id);
         if (!group) return;
-        navigation.navigate("GroupChat", {
+        navigation.navigate(StackRoutes.GroupChat, {
           groupId: id,
           groupName: group.name,
           anchorType: group.anchorType,
@@ -83,14 +84,14 @@ export default function HomeScreen({ navigation }: Props) {
       onPressMyGroup={(id) => {
         const group = myGroups.find((g) => g.id === id);
         if (!group) return;
-        navigation.navigate("GroupChat", {
+        navigation.navigate(StackRoutes.GroupChat, {
           groupId: id,
           groupName: group.name,
           anchorType: group.anchorType,
           myRole: group.myRole,
         });
       }}
-      onPressViewAllMyGroups={() => navigation.navigate("MyGroups")}
+      onPressViewAllMyGroups={() => navigation.navigate(StackRoutes.MyGroups)}
     />
   );
 }
