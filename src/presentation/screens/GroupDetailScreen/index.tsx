@@ -9,6 +9,7 @@ import {
 } from '@/infra/api/groups.api';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
+import { StackRoutes, TabRoutes } from '@/presentation/navigation/routes';
 import GroupDetailLayout from './layout';
 import type { JoinButtonState } from './layout/types';
 
@@ -164,7 +165,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   };
 
   const handlePressMembers = () => {
-    navigation.navigate('GroupMembers', {
+    navigation.navigate(StackRoutes.GroupMembers, {
       groupId,
       myRole: group?.myRole ?? null,
     });
@@ -172,7 +173,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
 
   const handlePressChat = () => {
     if (!group) return;
-    navigation.navigate('GroupChat', {
+    navigation.navigate(StackRoutes.GroupChat, {
       groupId,
       groupName: group.name,
       anchorType: group.anchorType,
@@ -190,7 +191,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       joinButtonState={deriveJoinButtonState(group, localPending)}
       isJoining={joinMutation.isPending}
       onJoin={handleJoin}
-      onBack={() => navigation.goBack()}
+      onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate({ name: StackRoutes.HomeTabs, params: { screen: TabRoutes.Home } })}
       showModerationSection={isPrivileged(myRole)}
       pendingRequests={pendingRequests}
       resolvingRequestId={resolvingRequestId}

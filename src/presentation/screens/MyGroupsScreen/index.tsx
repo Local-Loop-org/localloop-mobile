@@ -4,6 +4,7 @@ import { useMyGroups } from '@/application/hooks/useMyGroups';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
+import { StackRoutes } from '@/presentation/navigation/routes';
 import MyGroupsLayout from './layout';
 import type { ChipSpec } from './layout/types';
 import type { MyGroupsFilter } from './types';
@@ -97,7 +98,7 @@ export default function MyGroupsScreen({ navigation }: Props) {
       onPressGroup={(id) => {
         const group = groups.find((g) => g.id === id);
         if (!group) return;
-        navigation.navigate('GroupChat', {
+        navigation.navigate(StackRoutes.GroupChat, {
           groupId: id,
           groupName: group.name,
           anchorType: group.anchorType,

@@ -1,23 +1,24 @@
-import React, { useCallback, useState } from "react";
-import { Alert } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { GroupPrivacy, MemberRole } from "@localloop/shared-types";
+import React, { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import {
   type Coords,
   useCurrentLocation,
-} from "@/application/hooks/useCurrentLocation";
-import { useNearbyGroups } from "@/application/hooks/useNearbyGroups";
-import { useMyGroups } from "@/application/hooks/useMyGroups";
-import { useJoinGroup } from "@/application/hooks/useJoinGroup";
-import type { HomeTabsScreenProps } from "@/presentation/navigation/types";
-import HomeLayout from "./layout";
+} from '@/application/hooks/useCurrentLocation';
+import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
+import { useMyGroups } from '@/application/hooks/useMyGroups';
+import { useJoinGroup } from '@/application/hooks/useJoinGroup';
+import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
+import { StackRoutes } from '@/presentation/navigation/routes';
+import HomeLayout from './layout';
 
-type Props = HomeTabsScreenProps<"Home">;
+type Props = HomeTabsScreenProps<'Home'>;
 
 const LOCATION_DENIED_MESSAGE =
-  "Precisamos da sua localização para mostrar grupos próximos.";
+  'Precisamos da sua localização para mostrar grupos próximos.';
 const FETCH_FAILED_MESSAGE =
-  "Não foi possível carregar os grupos. Tente novamente.";
+  'Não foi possível carregar os grupos. Tente novamente.';
 
 export default function HomeScreen({ navigation }: Props) {
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -79,7 +80,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         if (group.privacy === GroupPrivacy.OPEN) {
           joinMutation.mutate({ groupId: id, group });
-          navigation.navigate("GroupChat", {
+          navigation.navigate('GroupChat', {
             groupId: id,
             groupName: group.name,
             anchorType: group.anchorType,
@@ -89,23 +90,23 @@ export default function HomeScreen({ navigation }: Props) {
         }
 
         Alert.alert(
-          "Solicitar entrada?",
+          'Solicitar entrada?',
           `${group.name} requer aprovação de um moderador para participar. Deseja enviar uma solicitação?`,
           [
-            { text: "Cancelar", style: "cancel" },
+            { text: 'Cancelar', style: 'cancel' },
             {
-              text: "Solicitar",
+              text: 'Solicitar',
               onPress: async () => {
                 try {
                   await joinMutation.mutateAsync({ groupId: id, group });
                   Alert.alert(
-                    "Solicitação enviada",
-                    "Aguarde a aprovação de um moderador para entrar no grupo.",
+                    'Solicitação enviada',
+                    'Aguarde a aprovação de um moderador para entrar no grupo.',
                   );
                 } catch {
                   Alert.alert(
-                    "Erro",
-                    "Não foi possível enviar sua solicitação. Tente novamente.",
+                    'Erro',
+                    'Não foi possível enviar sua solicitação. Tente novamente.',
                   );
                 }
               },
@@ -118,14 +119,14 @@ export default function HomeScreen({ navigation }: Props) {
       onPressMyGroup={(id) => {
         const group = myGroups.find((g) => g.id === id);
         if (!group) return;
-        navigation.navigate("GroupChat", {
+        navigation.navigate(StackRoutes.GroupChat, {
           groupId: id,
           groupName: group.name,
           anchorType: group.anchorType,
           myRole: group.myRole,
         });
       }}
-      onPressViewAllMyGroups={() => navigation.navigate("MyGroups")}
+      onPressViewAllMyGroups={() => navigation.navigate(StackRoutes.MyGroups)}
     />
   );
 }
