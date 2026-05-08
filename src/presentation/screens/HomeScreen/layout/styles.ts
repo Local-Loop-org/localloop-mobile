@@ -1,6 +1,8 @@
 import { Platform, StyleSheet } from 'react-native';
 import { colors, spacing } from '@/shared/theme';
 
+export const TAB_BAR_BASE_BOTTOM_PADDING = spacing.lg + 2;
+
 const monoFamily = Platform.select({
   ios: 'Menlo',
   android: 'monospace',
@@ -325,7 +327,7 @@ export const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.lg + 2,
+    paddingBottom: TAB_BAR_BASE_BOTTOM_PADDING,
     backgroundColor: colors.background,
   },
   tabBar: {

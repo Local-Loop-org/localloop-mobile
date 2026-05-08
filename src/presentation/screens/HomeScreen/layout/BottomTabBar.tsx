@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
 import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { styles, TAB_BAR_BASE_BOTTOM_PADDING } from './styles';
 import { TabRoutes, type TabRoute } from '@/presentation/navigation/routes';
 
 export type TabId = TabRoute;
@@ -25,11 +25,12 @@ const TABS: TabSpec[] = [
 interface Props {
   active: TabId;
   onPress: (tab: TabId) => void;
+  bottomInset?: number;
 }
 
-export function BottomTabBar({ active, onPress }: Props) {
+export function BottomTabBar({ active, onPress, bottomInset = 0 }: Props) {
   return (
-    <View style={styles.tabBarWrapper}>
+    <View style={[styles.tabBarWrapper, { paddingBottom: TAB_BAR_BASE_BOTTOM_PADDING + bottomInset }]}>
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
           const isNew = tab.id === TabRoutes.CreateGroup;
