@@ -4,6 +4,7 @@ import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
 import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
 import { useCreateGroup } from '@/application/hooks/useCreateGroup';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
+import { StackRoutes } from '@/presentation/navigation/routes';
 import CreateGroupLayout from './layout';
 import type { SendPermValue } from './layout/types';
 
@@ -66,7 +67,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
         lng: finalCoords.lng,
         privacy,
       });
-      navigation.replace('GroupDetail', { groupId: created.id });
+      navigation.replace(StackRoutes.GroupDetail, { groupId: created.id });
     } catch {
       Alert.alert('Erro', 'Não foi possível criar o grupo. Tente novamente.');
     }
