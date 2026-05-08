@@ -1,14 +1,23 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AnchorType, MemberRole } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
+import { groupsApi } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { useGroupChat } from './useGroupChat';
+import { useJoinGroup } from './useJoinGroup';
 
 jest.mock('@/infra/api/messages.api', () => ({
   messagesApi: {
     getHistory: jest.fn(),
+  },
+}));
+
+jest.mock('@/infra/api/groups.api', () => ({
+  groupsApi: {
+    joinGroup: jest.fn(),
   },
 }));
 
@@ -37,6 +46,7 @@ function makeSocketMock() {
 
 const mockedGetHistory = messagesApi.getHistory as jest.Mock;
 const mockedCreateChatSocket = createChatSocket as jest.Mock;
+const mockedJoinGroup = groupsApi.joinGroup as jest.Mock;
 
 const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
@@ -326,5 +336,58 @@ describe('useGroupChat', () => {
     });
 
     expect(result.current.onlineCount).toBe(0);
+  });
+
+  it('gates history fetch and socket creation while a join-group mutation for the same id is pending', async () => {
+    let resolveJoin: (v: { status: 'joined'; role: MemberRole }) => void = () => {};
+    mockedJoinGroup.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveJoin = resolve;
+        }),
+    );
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    });
+    const sharedWrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client }, children);
+
+    // Start the join mutation first so it's already pending in the cache
+    // before useGroupChat mounts.
+    const { result: joinResult } = renderHook(() => useJoinGroup(), {
+      wrapper: sharedWrapper,
+    });
+    act(() => {
+      joinResult.current.mutate({
+        groupId: 'g-1',
+        group: {
+          id: 'g-1',
+          name: 'Morumbi Runners',
+          anchorType: AnchorType.NEIGHBORHOOD,
+          anchorLabel: 'Morumbi',
+          memberCount: 5,
+        },
+      });
+    });
+    await waitFor(() => expect(joinResult.current.isPending).toBe(true));
+
+    const { result: chatResult } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: sharedWrapper,
+    });
+
+    expect(chatResult.current.loading).toBe(true);
+    expect(mockedGetHistory).not.toHaveBeenCalled();
+    expect(mockedCreateChatSocket).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveJoin({ status: 'joined', role: MemberRole.MEMBER });
+    });
+
+    await waitFor(() => expect(mockedGetHistory).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalledTimes(1));
   });
 });

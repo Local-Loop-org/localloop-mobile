@@ -7,6 +7,7 @@ import {
   type GroupDetail,
   type JoinRequest,
 } from '@/infra/api/groups.api';
+import { useJoinGroup } from '@/application/hooks/useJoinGroup';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import GroupDetailLayout from './layout';
 import type { JoinButtonState } from './layout/types';
@@ -43,11 +44,11 @@ function isActiveMember(role: MemberRole | null): boolean {
 
 export default function GroupDetailScreen({ navigation, route }: Props) {
   const { groupId } = route.params;
+  const joinMutation = useJoinGroup();
 
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isJoining, setIsJoining] = useState(false);
   const [localPending, setLocalPending] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<JoinRequest[]>([]);
   const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(
@@ -92,9 +93,9 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   );
 
   const handleJoin = async () => {
-    setIsJoining(true);
+    if (!group) return;
     try {
-      const result = await groupsApi.joinGroup(groupId);
+      const result = await joinMutation.mutateAsync({ groupId, group });
       if (result.status === 'joined') {
         await loadGroup();
       } else {
@@ -106,8 +107,6 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       }
     } catch {
       Alert.alert('Erro', 'Não foi possível entrar no grupo. Tente novamente.');
-    } finally {
-      setIsJoining(false);
     }
   };
 
@@ -189,7 +188,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       loading={loading}
       errorMessage={errorMessage}
       joinButtonState={deriveJoinButtonState(group, localPending)}
-      isJoining={isJoining}
+      isJoining={joinMutation.isPending}
       onJoin={handleJoin}
       onBack={() => navigation.goBack()}
       showModerationSection={isPrivileged(myRole)}

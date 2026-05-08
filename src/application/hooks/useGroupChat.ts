@@ -5,6 +5,7 @@ import type { Socket } from 'socket.io-client';
 import {
   InfiniteData,
   useInfiniteQuery,
+  useIsMutating,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { PresenceUpdate } from '@localloop/shared-types';
@@ -43,6 +44,14 @@ export function useGroupChat(groupId: string) {
   const [onlineCount, setOnlineCount] = useState(0);
   const [socketError, setSocketError] = useState<ChatErrorKind | null>(null);
 
+  const isJoining =
+    useIsMutating({
+      mutationKey: ['join-group'],
+      predicate: (m) =>
+        (m.state.variables as { groupId?: string } | undefined)?.groupId ===
+        groupId,
+    }) > 0;
+
   const historyQuery = useInfiniteQuery<
     MessageHistoryResponse,
     Error,
@@ -55,7 +64,7 @@ export function useGroupChat(groupId: string) {
       messagesApi.getHistory(groupId, pageParam ? { before: pageParam } : {}),
     initialPageParam: undefined,
     getNextPageParam: (last) => last.next_cursor ?? undefined,
-    enabled: !!accessToken,
+    enabled: !!accessToken && !isJoining,
   });
 
   const messages = useMemo(
@@ -67,6 +76,7 @@ export function useGroupChat(groupId: string) {
 
   useEffect(() => {
     if (!accessToken) return;
+    if (isJoining) return;
     if (!historyReady) return;
 
     const socket = createChatSocket(accessToken);
@@ -127,7 +137,7 @@ export function useGroupChat(groupId: string) {
       setConnected(false);
       setOnlineCount(0);
     };
-  }, [groupId, accessToken, queryClient, historyReady]);
+  }, [groupId, accessToken, queryClient, historyReady, isJoining]);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -176,7 +186,7 @@ export function useGroupChat(groupId: string) {
 
   return {
     messages,
-    loading: historyQuery.isLoading,
+    loading: historyQuery.isLoading || isJoining,
     loadingMore: historyQuery.isFetchingNextPage,
     error: historyQuery.isError ? ('load_failed' as const) : socketError,
     connected,
