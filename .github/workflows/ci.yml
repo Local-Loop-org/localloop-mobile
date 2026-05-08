@@ -111,7 +111,7 @@ jobs:
           echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
 
       - name: Download APK
-        run: curl -fL -o localloop.apk "${{ steps.build.outputs.apk_url }}"
+        run: curl -fL -o localloop.apk "${{ steps.build-apk.outputs.apk_url }}"
 
       - name: Create GitHub Release
         run: |
