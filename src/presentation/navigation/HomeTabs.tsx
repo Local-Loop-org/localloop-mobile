@@ -12,13 +12,14 @@ import { TabRoutes } from "./routes";
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>();
 
-function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const currentRoute = state.routes[state.index]?.name ?? TabRoutes.Home;
   if (currentRoute === TabRoutes.CreateGroup) return null;
   return (
     <BottomTabBar
       active={currentRoute as keyof HomeTabsParamList}
       onPress={(tab) => navigation.navigate(tab)}
+      bottomInset={insets.bottom}
     />
   );
 }
