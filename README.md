@@ -15,6 +15,16 @@ Expo / React Native client for [LocalLoop](https://github.com/Local-Loop-org/loc
 
 A pixel-tuned client for browsing groups anchored to your location, joining them, and chatting in real time. Eleven screens cover the full surface today: [HomeScreen](src/presentation/screens/HomeScreen/) (sectioned discovery + pinned "my groups"), [GroupChatScreen](src/presentation/screens/GroupChatScreen/) (real-time chat with day separators and gradient bubbles), [GroupDetailScreen](src/presentation/screens/GroupDetailScreen/) and [GroupMembersScreen](src/presentation/screens/GroupMembersScreen/) (moderation surfaces), plus [LoginScreen](src/presentation/screens/LoginScreen/), [OnboardingScreen](src/presentation/screens/OnboardingScreen/), [CreateGroupScreen](src/presentation/screens/CreateGroupScreen/), [InboxScreen](src/presentation/screens/InboxScreen/), [MapScreen](src/presentation/screens/MapScreen/), [ProfileScreen](src/presentation/screens/ProfileScreen/), and [MyGroupsScreen](src/presentation/screens/MyGroupsScreen/).
 
+<p align="center">
+  <img width="200" alt="Screenshot 2026-05-08 at 16 36 40" src="https://github.com/user-attachments/assets/aa1e8161-fbfc-4037-8cb6-620ea6f06c82" />
+  <img width="200" alt="Screenshot 2026-05-08 at 16 38 22" src="https://github.com/user-attachments/assets/afc9fe58-8d57-4e1a-982c-f208412f7b97" />
+  <img width="200" alt="Screenshot 2026-05-08 at 16 38 02" src="https://github.com/user-attachments/assets/c7f61321-b978-4b5d-8641-d74c97f0a284" />
+  <img width="200" alt="Screenshot 2026-05-08 at 16 37 46" src="https://github.com/user-attachments/assets/6d342628-55ca-4804-92fc-3df98cf54579" />
+  <img width="200" alt="Screenshot 2026-05-08 at 16 37 13" src="https://github.com/user-attachments/assets/5d64aee2-9918-49d7-b701-a5e5b2f7cc5a" />  
+</p>
+
+
+
 ## Architecture: Clean layers
 
 ```
@@ -105,7 +115,7 @@ type-check (tsc --noEmit)  →  unit tests (jest)  →  EAS Build (Android, prof
                                        with the .apk attached  (main, push only)
 ```
 
-EAS builds use the `production` profile and emit an APK URL, which the workflow downloads and attaches to a GitHub Release tagged `build-<run_number>` with the commit SHA and branch name in the notes. Recruiters and testers can sideload the latest build directly from the Releases page — no Play Store enrollment required.
+EAS builds use the `production` profile and emit an APK URL, which the workflow downloads and attaches to a GitHub Release tagged `build-<run_number>` with the commit SHA and branch name in the notes. 
 
 iOS builds are deferred until an Apple Developer account is set up; once that lands, an `ios` job slots in next to `release-apk` and the EAS profile picks up.
 
