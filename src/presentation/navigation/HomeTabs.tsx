@@ -8,12 +8,13 @@ import MapScreen from "../screens/MapScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import { BottomTabBar } from "../screens/HomeScreen/layout/BottomTabBar";
 import type { HomeTabsParamList } from "./types";
+import { TabRoutes } from "./routes";
 
 const Tab = createBottomTabNavigator<HomeTabsParamList>();
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const currentRoute = state.routes[state.index]?.name ?? "Home";
-  if (currentRoute === "CreateGroup") return null;
+  const currentRoute = state.routes[state.index]?.name ?? TabRoutes.Home;
+  if (currentRoute === TabRoutes.CreateGroup) return null;
   return (
     <BottomTabBar
       active={currentRoute as keyof HomeTabsParamList}
@@ -28,15 +29,15 @@ export default function HomeTabs() {
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <CustomTabBar {...props} />}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Inbox" component={InboxScreen} />
+      <Tab.Screen name={TabRoutes.Home} component={HomeScreen} />
+      <Tab.Screen name={TabRoutes.Inbox} component={InboxScreen} />
       <Tab.Screen
-        name="CreateGroup"
+        name={TabRoutes.CreateGroup}
         component={CreateGroupScreen}
         options={{ tabBarButton: () => null }}
       />
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name={TabRoutes.Map} component={MapScreen} />
+      <Tab.Screen name={TabRoutes.Profile} component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
