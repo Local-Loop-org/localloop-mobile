@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Local Loop",
-    "slug": "local-loop",
+    "slug": "mobile",
     "version": "1.0.0",
     "scheme": "localloop",
     "orientation": "portrait",
