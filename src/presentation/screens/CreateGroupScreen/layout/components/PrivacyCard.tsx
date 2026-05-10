@@ -29,25 +29,24 @@ export const PRIVACY_OPTIONS: PrivacyOption[] = [
 interface PrivacyCardProps {
   option: PrivacyOption;
   selected: boolean;
-  onPress: (value: GroupPrivacy) => void;
+  onPress?: (value: GroupPrivacy) => void;
+  /** When true, render as a flat info card (no border highlight, no check, no press). */
+  readOnly?: boolean;
 }
 
-export function PrivacyCard({ option, selected, onPress }: PrivacyCardProps) {
-  return (
-    <Pressable
-      onPress={() => onPress(option.value)}
-      style={[styles.card, selected ? styles.cardActive : null]}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      testID={`privacy-card-${option.value}`}
-    >
-      <View
-        style={[styles.iconWrap, selected ? styles.iconWrapActive : null]}
-      >
+export function PrivacyCard({
+  option,
+  selected,
+  onPress,
+  readOnly,
+}: PrivacyCardProps) {
+  const Inner = (
+    <>
+      <View style={styles.iconWrap}>
         <Icon
           name={option.icon}
           size={15}
-          color={selected ? colors.primary : colors.dim}
+          color={selected || readOnly ? colors.primary : colors.dim}
           strokeWidth={1.9}
         />
       </View>
@@ -55,9 +54,33 @@ export function PrivacyCard({ option, selected, onPress }: PrivacyCardProps) {
         <Text style={styles.label}>{option.label}</Text>
         <Text style={styles.sub}>{option.sub}</Text>
       </View>
-      {selected ? (
+      {selected && !readOnly ? (
         <Icon name="check" size={16} color={colors.primary} strokeWidth={2.5} />
       ) : null}
+    </>
+  );
+
+  if (readOnly) {
+    return (
+      <View
+        style={[styles.card, styles.cardReadOnly]}
+        accessibilityRole="text"
+        testID={`privacy-card-${option.value}`}
+      >
+        {Inner}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => onPress?.(option.value)}
+      style={[styles.card, selected ? styles.cardActive : null]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      testID={`privacy-card-${option.value}`}
+    >
+      {Inner}
     </Pressable>
   );
 }
@@ -77,6 +100,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,209,255,0.10)',
     borderColor: colors.primary,
   },
+  cardReadOnly: {
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+  },
   iconWrap: {
     width: 32,
     height: 32,
@@ -84,9 +111,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconWrapActive: {
-    backgroundColor: colors.surface2,
   },
   body: {
     flex: 1,

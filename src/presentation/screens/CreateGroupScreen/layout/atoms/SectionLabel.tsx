@@ -5,13 +5,19 @@ import { colors, fonts } from '@/shared/theme';
 interface SectionLabelProps {
   label: string;
   hint?: string;
+  /** Optional element rendered at the row end (e.g. a "VER TODOS" pressable). */
+  action?: React.ReactNode;
 }
 
-export function SectionLabel({ label, hint }: SectionLabelProps) {
+export function SectionLabel({ label, hint, action }: SectionLabelProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {action
+        ? action
+        : hint
+          ? <Text style={styles.hint}>{hint}</Text>
+          : null}
     </View>
   );
 }

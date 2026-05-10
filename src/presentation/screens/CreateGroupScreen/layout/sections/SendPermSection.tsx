@@ -28,8 +28,10 @@ function StackHeader({ icon, label, meta }: StackHeaderProps) {
 interface SendPermSectionProps {
   sendPerm: SendPermValue;
   sendMediaPerm: SendPermValue;
-  onSendPermChange: (value: SendPermValue) => void;
-  onSendMediaPermChange: (value: SendPermValue) => void;
+  onSendPermChange?: (value: SendPermValue) => void;
+  onSendMediaPermChange?: (value: SendPermValue) => void;
+  /** When true, render only selected options (non-interactive). */
+  readOnly?: boolean;
 }
 
 export function SendPermSection({
@@ -37,6 +39,7 @@ export function SendPermSection({
   sendMediaPerm,
   onSendPermChange,
   onSendMediaPermChange,
+  readOnly,
 }: SendPermSectionProps) {
   return (
     <View>
@@ -47,6 +50,7 @@ export function SendPermSection({
           value={sendPerm}
           onChange={onSendPermChange}
           testIdPrefix="send-perm"
+          readOnly={readOnly}
         />
         <View style={styles.gap} />
         <StackHeader icon="image" label="Mídia" meta="FOTOS · VÍDEOS" />
@@ -54,6 +58,7 @@ export function SendPermSection({
           value={sendMediaPerm}
           onChange={onSendMediaPermChange}
           testIdPrefix="send-media-perm"
+          readOnly={readOnly}
         />
       </Card>
     </View>

@@ -7,17 +7,27 @@ import { RadiusSlider } from '../components/RadiusSlider';
 
 interface VisibilitySectionProps {
   radiusKm: number;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
+  /** When true, render only the map preview (no slider, no ticks). */
+  readOnly?: boolean;
 }
 
-export function VisibilitySection({ radiusKm, onChange }: VisibilitySectionProps) {
+export function VisibilitySection({
+  radiusKm,
+  onChange,
+  readOnly,
+}: VisibilitySectionProps) {
   return (
     <View>
       <SectionLabel label="VISIBILIDADE" hint="ONDE O GRUPO APARECE" />
       <Card style={styles.body}>
         <RadiusMapPreview radiusKm={radiusKm} />
-        <View style={styles.gap} />
-        <RadiusSlider value={radiusKm} onChange={onChange} />
+        {!readOnly && onChange ? (
+          <>
+            <View style={styles.gap} />
+            <RadiusSlider value={radiusKm} onChange={onChange} />
+          </>
+        ) : null}
       </Card>
     </View>
   );
