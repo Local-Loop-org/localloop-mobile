@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
+  DISCOVERY_RADIUS_KM: 'discovery_radius_km',
 };

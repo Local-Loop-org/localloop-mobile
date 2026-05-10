@@ -13,6 +13,7 @@ import {
 import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
 import { useMyGroups } from '@/application/hooks/useMyGroups';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
+import { usePreferencesStore } from '@/application/stores/preferences.store';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -33,8 +34,10 @@ export default function HomeScreen({ navigation }: Props) {
     new Set(),
   );
 
+  const discoveryRadiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
+
   const { request: requestLocation } = useCurrentLocation();
-  const query = useNearbyGroups(coords);
+  const query = useNearbyGroups(coords, discoveryRadiusKm);
   const myGroupsQuery = useMyGroups();
   const joinMutation = useJoinGroup();
 

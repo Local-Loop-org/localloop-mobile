@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DmPermission } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { usePreferencesStore } from '@/application/stores/preferences.store';
 import { useUserProfile } from '@/application/hooks/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile';
 import ProfileLayout from './layout';
@@ -34,9 +35,10 @@ export default function ProfileScreen() {
   const dmPermission = profile?.dmPermission ?? fallbackUser?.dmPermission ?? DmPermission.MEMBERS;
   const createdAt = profile?.createdAt ?? null;
 
-  // Local-only state: backend support deferred (radius preference, push provider,
-  // theming/i18n, DM exception list). See plan's "Out of scope".
-  const [radiusKm, setRadiusKm] = useState(2);
+  const radiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
+  const setDiscoveryRadiusKm = usePreferencesStore((s) => s.setDiscoveryRadiusKm);
+
+  // Local-only state: backend support deferred (push provider, theming/i18n, DM exception list).
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [language, setLanguage] = useState<LanguageCode>('pt');
@@ -91,7 +93,7 @@ export default function ProfileScreen() {
       onRemoveDmException={(id) =>
         setExceptionIds((prev) => prev.filter((x) => x !== id))
       }
-      onChangeRadius={setRadiusKm}
+      onChangeRadius={setDiscoveryRadiusKm}
       onToggleNotifications={setNotificationsEnabled}
       onChangeTheme={setTheme}
       onChangeLanguage={setLanguage}
