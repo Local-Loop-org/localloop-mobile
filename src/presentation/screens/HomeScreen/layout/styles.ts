@@ -205,10 +205,35 @@ export const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.primary,
   },
+  cardRequestBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: 999,
+    backgroundColor: colors.accent2,
+  },
+  cardMemberBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: 999,
+    backgroundColor: colors.success,
+  },
+  cardPendingBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   cardJoinText: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.black,
+    letterSpacing: 0.2,
+  },
+  cardPendingText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.faint,
     letterSpacing: 0.2,
   },
 
