@@ -46,6 +46,7 @@ const mockedResolveJoinRequest =
 
 const navigation = {
   goBack: jest.fn(),
+  canGoBack: jest.fn(() => true),
   navigate: jest.fn(),
 } as unknown as Parameters<typeof GroupDetailScreen>[0]['navigation'];
 
@@ -71,7 +72,9 @@ const renderScreen = (client = makeClient()) =>
     </QueryClientProvider>,
   );
 
-const buildGroup = (overrides: Partial<import('@/infra/api/groups.api').GroupDetail> = {}) => ({
+const buildGroup = (
+  overrides: Partial<import('@/infra/api/groups.api').GroupDetail> = {},
+) => ({
   id: 'g-1',
   name: 'Morumbi Runners',
   description: 'Weekly runs',
@@ -107,50 +110,59 @@ describe('GroupDetailScreen', () => {
     expect(await findByText('Voltar')).toBeTruthy();
   });
 
-  it('render: myRole=null shows "Entrar no grupo" and no Leave button', async () => {
+  it('render: myRole=null shows the join CTA + no Sair / Excluir', async () => {
     mockedGetDetail.mockResolvedValueOnce(buildGroup({ myRole: null }));
 
-    const { findByText, queryByText } = renderScreen();
+    const { findByTestId, queryByText, queryByTestId } = renderScreen();
 
-    expect(await findByText('Entrar no grupo')).toBeTruthy();
+    expect(await findByTestId('join-group-cta')).toBeTruthy();
     expect(queryByText('Sair do grupo')).toBeNull();
-    expect(queryByText('Ver membros')).toBeNull();
+    expect(queryByTestId('danger-delete')).toBeNull();
+    expect(queryByTestId('role-pill-owner')).toBeNull();
   });
 
-  it('render: myRole=MEMBER shows "Você já faz parte" + Leave + Members', async () => {
+  it('render: myRole=MEMBER shows MEMBRO pill + Sair, no Excluir, no Solicitações', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
 
-    const { findByText, queryByText } = renderScreen();
+    const { findByText, findByTestId, queryByTestId, queryByText } =
+      renderScreen();
 
-    expect(await findByText('Você já faz parte')).toBeTruthy();
+    expect(await findByTestId('role-pill-member')).toBeTruthy();
     expect(await findByText('Sair do grupo')).toBeTruthy();
-    expect(await findByText('Ver membros')).toBeTruthy();
-    expect(queryByText('Solicitações pendentes')).toBeNull();
+    expect(queryByTestId('danger-delete')).toBeNull();
+    expect(queryByText('SOLICITAÇÕES')).toBeNull();
   });
 
-  it('render: myRole=OWNER shows Moderation panel + Members button + owner helper', async () => {
-    mockedGetDetail.mockResolvedValueOnce(
-      buildGroup({ myRole: MemberRole.OWNER }),
-    );
-
-    const { findByText } = renderScreen();
-
-    expect(await findByText('Solicitações pendentes')).toBeTruthy();
-    expect(await findByText('Ver membros')).toBeTruthy();
-    expect(await findByText('Transfira a liderança antes de sair.')).toBeTruthy();
-  });
-
-  it('render: myRole=MODERATOR shows Moderation panel', async () => {
+  it('render: myRole=MODERATOR shows Solicitações + Sair + Excluir disabled with caption', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MODERATOR }),
     );
 
-    const { findByText, queryByText } = renderScreen();
+    const { findByText, findByTestId } = renderScreen();
 
-    expect(await findByText('Solicitações pendentes')).toBeTruthy();
-    expect(queryByText('Transfira a liderança antes de sair.')).toBeNull();
+    expect(await findByText('SOLICITAÇÕES')).toBeTruthy();
+    expect(await findByTestId('role-pill-moderator')).toBeTruthy();
+    expect(await findByText('Sair do grupo')).toBeTruthy();
+    const deleteBtn = await findByTestId('danger-delete');
+    expect(deleteBtn.props.accessibilityState?.disabled).toBe(true);
+    expect(await findByTestId('danger-delete-caption')).toBeTruthy();
+  });
+
+  it('render: myRole=OWNER shows Solicitações + Sair + Excluir enabled (no caption)', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER }),
+    );
+
+    const { findByText, findByTestId, queryByTestId } = renderScreen();
+
+    expect(await findByText('SOLICITAÇÕES')).toBeTruthy();
+    expect(await findByTestId('role-pill-owner')).toBeTruthy();
+    expect(await findByText('Sair do grupo')).toBeTruthy();
+    const deleteBtn = await findByTestId('danger-delete');
+    expect(deleteBtn.props.accessibilityState?.disabled).toBe(false);
+    expect(queryByTestId('danger-delete-caption')).toBeNull();
   });
 
   // --- join ---
@@ -165,14 +177,14 @@ describe('GroupDetailScreen', () => {
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
 
-    const { findByText } = renderScreen();
-    fireEvent.press(await findByText('Entrar no grupo'));
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('join-group-cta'));
 
-    expect(await findByText('Você já faz parte')).toBeTruthy();
+    expect(await findByTestId('role-pill-member')).toBeTruthy();
     expect(mockedGetDetail).toHaveBeenCalledTimes(2);
   });
 
-  it('join: APPROVAL_REQUIRED → status=pending shows pending label + Alert', async () => {
+  it('join: APPROVAL_REQUIRED → status=pending shows AGUARDANDO pill + Alert', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({
         myRole: null,
@@ -181,23 +193,22 @@ describe('GroupDetailScreen', () => {
     );
     mockedJoin.mockResolvedValueOnce({ status: 'pending' });
 
-    const { findByText } = renderScreen();
-    fireEvent.press(await findByText('Entrar no grupo'));
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('join-group-cta'));
 
-    expect(await findByText('Solicitação pendente')).toBeTruthy();
+    expect(await findByTestId('role-pill-pending')).toBeTruthy();
     expect(alertSpy).toHaveBeenCalledWith(
       'Solicitação enviada',
       'Aguarde a aprovação de um moderador para entrar no grupo.',
     );
   });
 
-  it('join: API failure shows Alert and keeps Join button', async () => {
+  it('join: API failure shows Alert and keeps the join CTA', async () => {
     mockedGetDetail.mockResolvedValueOnce(buildGroup({ myRole: null }));
     mockedJoin.mockRejectedValueOnce(new Error('network'));
 
-    const { findByText } = renderScreen();
-    const joinBtn = await findByText('Entrar no grupo');
-    fireEvent.press(joinBtn);
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('join-group-cta'));
 
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith(
@@ -205,7 +216,7 @@ describe('GroupDetailScreen', () => {
         'Não foi possível entrar no grupo. Tente novamente.',
       ),
     );
-    expect(await findByText('Entrar no grupo')).toBeTruthy();
+    expect(await findByTestId('join-group-cta')).toBeTruthy();
   });
 
   // --- moderation ---
@@ -234,8 +245,8 @@ describe('GroupDetailScreen', () => {
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
 
-    const { findByText } = renderScreen();
-    await findByText('Você já faz parte');
+    const { findByTestId } = renderScreen();
+    await findByTestId('role-pill-member');
 
     expect(mockedListJoinRequests).not.toHaveBeenCalled();
   });
@@ -254,16 +265,20 @@ describe('GroupDetailScreen', () => {
     ]);
     mockedResolveJoinRequest.mockResolvedValueOnce({ status: 'approved' });
 
-    const { findByText, queryByText, getAllByText } = renderScreen();
+    const { findByText, findByTestId, queryByText } = renderScreen();
     await findByText('Pending Alice');
 
     await act(async () => {
-      fireEvent.press(getAllByText('Aprovar')[0]);
+      fireEvent.press(await findByTestId('request-row-req-1-approve'));
     });
 
-    expect(mockedResolveJoinRequest).toHaveBeenCalledWith('g-1', 'req-1', 'approve');
+    expect(mockedResolveJoinRequest).toHaveBeenCalledWith(
+      'g-1',
+      'req-1',
+      'approve',
+    );
     await waitFor(() => expect(queryByText('Pending Alice')).toBeNull());
-    expect(await findByText('11')).toBeTruthy();
+    expect(await findByText('11 membros')).toBeTruthy();
   });
 
   it('moderation: approve API failure rolls back the request list', async () => {
@@ -280,11 +295,11 @@ describe('GroupDetailScreen', () => {
     ]);
     mockedResolveJoinRequest.mockRejectedValueOnce(new Error('boom'));
 
-    const { findByText, getAllByText } = renderScreen();
+    const { findByText, findByTestId } = renderScreen();
     await findByText('Pending Alice');
 
     await act(async () => {
-      fireEvent.press(getAllByText('Aprovar')[0]);
+      fireEvent.press(await findByTestId('request-row-req-1-approve'));
     });
 
     expect(await findByText('Pending Alice')).toBeTruthy();
@@ -308,16 +323,20 @@ describe('GroupDetailScreen', () => {
     ]);
     mockedResolveJoinRequest.mockResolvedValueOnce({ status: 'rejected' });
 
-    const { findByText, queryByText, getAllByText } = renderScreen();
+    const { findByText, findByTestId, queryByText } = renderScreen();
     await findByText('Pending Alice');
 
     await act(async () => {
-      fireEvent.press(getAllByText('Rejeitar')[0]);
+      fireEvent.press(await findByTestId('request-row-req-1-reject'));
     });
 
-    expect(mockedResolveJoinRequest).toHaveBeenCalledWith('g-1', 'req-1', 'reject');
+    expect(mockedResolveJoinRequest).toHaveBeenCalledWith(
+      'g-1',
+      'req-1',
+      'reject',
+    );
     await waitFor(() => expect(queryByText('Pending Alice')).toBeNull());
-    expect(await findByText('10')).toBeTruthy();
+    expect(await findByText('10 membros')).toBeTruthy();
   });
 
   it('moderation: reject API failure rolls back and alerts', async () => {
@@ -334,11 +353,11 @@ describe('GroupDetailScreen', () => {
     ]);
     mockedResolveJoinRequest.mockRejectedValueOnce(new Error('boom'));
 
-    const { findByText, getAllByText } = renderScreen();
+    const { findByText, findByTestId } = renderScreen();
     await findByText('Pending Alice');
 
     await act(async () => {
-      fireEvent.press(getAllByText('Rejeitar')[0]);
+      fireEvent.press(await findByTestId('request-row-req-1-reject'));
     });
 
     expect(await findByText('Pending Alice')).toBeTruthy();
@@ -350,13 +369,13 @@ describe('GroupDetailScreen', () => {
 
   // --- members ---
 
-  it('members: button navigates to GroupMembers with groupId + myRole', async () => {
+  it('members: VER TODOS navigates to GroupMembers with groupId + myRole', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MODERATOR }),
     );
 
-    const { findByText } = renderScreen();
-    fireEvent.press(await findByText('Ver membros'));
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('members-section-view-all'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('GroupMembers', {
       groupId: 'g-1',
@@ -364,30 +383,36 @@ describe('GroupDetailScreen', () => {
     });
   });
 
-  // --- chat ---
-
-  it('chat: button navigates to GroupChat with groupId, name and myRole when user is an active member', async () => {
+  it('members: hero chevron also navigates to GroupMembers', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
 
-    const { findByText } = renderScreen();
-    fireEvent.press(await findByText('Chat do grupo'));
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('hero-members-button'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupMembers', {
       groupId: 'g-1',
-      groupName: 'Morumbi Runners',
-      anchorType: AnchorType.NEIGHBORHOOD,
       myRole: MemberRole.MEMBER,
     });
   });
 
-  it('chat: button is hidden when user is not a member', async () => {
-    mockedGetDetail.mockResolvedValueOnce(buildGroup({ myRole: null }));
+  // --- delete (stub) ---
 
-    const { queryByText, findByText } = renderScreen();
-    await findByText('Entrar no grupo');
-    expect(queryByText('Chat do grupo')).toBeNull();
+  it('delete: owner Excluir tap shows the "Em breve" alert', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER }),
+    );
+
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('danger-delete'));
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Em breve',
+        'A exclusão de grupos será adicionada em uma próxima atualização.',
+      ),
+    );
   });
 
   // --- leave ---

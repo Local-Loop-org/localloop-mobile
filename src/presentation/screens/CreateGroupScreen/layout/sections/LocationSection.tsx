@@ -10,9 +10,11 @@ import { PlaceTypeChips } from '../components/PlaceTypeChips';
 interface LocationSectionProps {
   placeType: AnchorType;
   anchorLabel: string;
-  locationGranted: boolean;
-  onPlaceTypeChange: (value: AnchorType) => void;
-  onAnchorLabelChange: (value: string) => void;
+  locationGranted?: boolean;
+  onPlaceTypeChange?: (value: AnchorType) => void;
+  onAnchorLabelChange?: (value: string) => void;
+  /** When true, render fields as read-only display. */
+  readOnly?: boolean;
 }
 
 export function LocationSection({
@@ -21,17 +23,24 @@ export function LocationSection({
   locationGranted,
   onPlaceTypeChange,
   onAnchorLabelChange,
+  readOnly,
 }: LocationSectionProps) {
   return (
     <View>
       <SectionLabel label="LOCAL" />
       <Card style={styles.body}>
         <FieldLabel label="TIPO DE LUGAR" />
-        <PlaceTypeChips value={placeType} onChange={onPlaceTypeChange} />
+        <PlaceTypeChips
+          value={placeType}
+          onChange={onPlaceTypeChange}
+          readOnly={readOnly}
+        />
         <View style={styles.gap} />
         <FieldLabel
           label="LOCAL DE REFERÊNCIA"
-          hint={locationGranted ? undefined : 'PERMISSÃO PENDENTE'}
+          hint={
+            !readOnly && !locationGranted ? 'PERMISSÃO PENDENTE' : undefined
+          }
         />
         <FormInput
           value={anchorLabel}
@@ -39,6 +48,7 @@ export function LocationSection({
           placeholder="Ex: Parque Barigui"
           leadingIcon="pin"
           maxLength={100}
+          readOnly={readOnly}
           testID="create-group-anchor-label"
         />
       </Card>

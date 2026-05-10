@@ -6,10 +6,23 @@ import { PRIVACY_OPTIONS, PrivacyCard } from '../components/PrivacyCard';
 
 interface PrivacySectionProps {
   value: GroupPrivacy;
-  onChange: (value: GroupPrivacy) => void;
+  onChange?: (value: GroupPrivacy) => void;
+  /** When true, render only the selected privacy as a flat info card. */
+  readOnly?: boolean;
 }
 
-export function PrivacySection({ value, onChange }: PrivacySectionProps) {
+export function PrivacySection({ value, onChange, readOnly }: PrivacySectionProps) {
+  if (readOnly) {
+    const selected =
+      PRIVACY_OPTIONS.find((o) => o.value === value) ?? PRIVACY_OPTIONS[0];
+    return (
+      <View>
+        <SectionLabel label="PRIVACIDADE" />
+        <PrivacyCard option={selected} selected readOnly />
+      </View>
+    );
+  }
+
   return (
     <View>
       <SectionLabel label="PRIVACIDADE" />

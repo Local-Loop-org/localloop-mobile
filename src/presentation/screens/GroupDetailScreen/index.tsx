@@ -35,14 +35,6 @@ function isPrivileged(role: MemberRole | null): boolean {
   return role === MemberRole.OWNER || role === MemberRole.MODERATOR;
 }
 
-function isActiveMember(role: MemberRole | null): boolean {
-  return (
-    role === MemberRole.OWNER ||
-    role === MemberRole.MODERATOR ||
-    role === MemberRole.MEMBER
-  );
-}
-
 export default function GroupDetailScreen({ navigation, route }: Props) {
   const { groupId } = route.params;
   const joinMutation = useJoinGroup();
@@ -164,20 +156,17 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
     );
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      'Em breve',
+      'A exclusão de grupos será adicionada em uma próxima atualização.',
+    );
+  };
+
   const handlePressMembers = () => {
     navigation.navigate(StackRoutes.GroupMembers, {
       groupId,
       myRole: group?.myRole ?? null,
-    });
-  };
-
-  const handlePressChat = () => {
-    if (!group) return;
-    navigation.navigate(StackRoutes.GroupChat, {
-      groupId,
-      groupName: group.name,
-      anchorType: group.anchorType,
-      myRole: group.myRole,
     });
   };
 
@@ -191,20 +180,23 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       joinButtonState={deriveJoinButtonState(group, localPending)}
       isJoining={joinMutation.isPending}
       onJoin={handleJoin}
-      onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate({ name: StackRoutes.HomeTabs, params: { screen: TabRoutes.Home } })}
+      onBack={() =>
+        navigation.canGoBack()
+          ? navigation.goBack()
+          : navigation.navigate({
+              name: StackRoutes.HomeTabs,
+              params: { screen: TabRoutes.Home },
+            })
+      }
       showModerationSection={isPrivileged(myRole)}
       pendingRequests={pendingRequests}
       resolvingRequestId={resolvingRequestId}
       onApproveRequest={(id) => handleResolveRequest(id, 'approve')}
       onRejectRequest={(id) => handleResolveRequest(id, 'reject')}
-      showMembersButton={isActiveMember(myRole)}
       onPressMembers={handlePressMembers}
-      showChatButton={isActiveMember(myRole)}
-      onPressChat={handlePressChat}
-      showLeaveButton={isActiveMember(myRole)}
-      isOwner={myRole === MemberRole.OWNER}
       isLeaving={isLeaving}
       onLeave={handleLeave}
+      onPressDelete={handleDelete}
     />
   );
 }

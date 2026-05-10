@@ -15,10 +15,38 @@ const TYPES: AnchorType[] = [
 
 interface PlaceTypeChipsProps {
   value: AnchorType;
-  onChange: (value: AnchorType) => void;
+  onChange?: (value: AnchorType) => void;
+  /** When true, render only the selected chip (non-interactive). */
+  readOnly?: boolean;
 }
 
-export function PlaceTypeChips({ value, onChange }: PlaceTypeChipsProps) {
+export function PlaceTypeChips({
+  value,
+  onChange,
+  readOnly,
+}: PlaceTypeChipsProps) {
+  if (readOnly) {
+    return (
+      <View style={styles.row}>
+        <View
+          style={[styles.chip, styles.chipReadOnly]}
+          accessibilityRole="text"
+          testID={`place-chip-${value}`}
+        >
+          <Icon
+            name={anchorIconName(value)}
+            size={12}
+            color={colors.primary}
+            strokeWidth={1.8}
+          />
+          <Text style={[styles.label, styles.labelReadOnly]}>
+            {ANCHOR_TYPE_LABELS[value]}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.row}>
       {TYPES.map((type) => {
@@ -26,7 +54,7 @@ export function PlaceTypeChips({ value, onChange }: PlaceTypeChipsProps) {
         return (
           <Pressable
             key={type}
-            onPress={() => onChange(type)}
+            onPress={() => onChange?.(type)}
             style={[styles.chip, active ? styles.chipActive : null]}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
@@ -38,9 +66,7 @@ export function PlaceTypeChips({ value, onChange }: PlaceTypeChipsProps) {
               color={active ? colors.accentInk : colors.dim}
               strokeWidth={1.8}
             />
-            <Text
-              style={[styles.label, active ? styles.labelActive : null]}
-            >
+            <Text style={[styles.label, active ? styles.labelActive : null]}>
               {ANCHOR_TYPE_LABELS[type]}
             </Text>
           </Pressable>
@@ -71,6 +97,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  chipReadOnly: {
+    backgroundColor: 'rgba(0,209,255,0.10)',
+    borderColor: 'rgba(0,209,255,0.45)',
+  },
   label: {
     fontSize: 12.5,
     fontWeight: '600',
@@ -78,5 +108,8 @@ const styles = StyleSheet.create({
   },
   labelActive: {
     color: colors.accentInk,
+  },
+  labelReadOnly: {
+    color: colors.primary,
   },
 });

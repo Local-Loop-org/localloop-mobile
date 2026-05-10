@@ -35,16 +35,54 @@ export const SEND_PERM_OPTIONS: SendPermOption[] = [
 
 interface SendPermPickerProps {
   value: SendPermValue;
-  onChange: (value: SendPermValue) => void;
+  onChange?: (value: SendPermValue) => void;
   /** Used to scope `testID`s when the same picker is rendered twice on a screen. */
   testIdPrefix?: string;
+  /** When true, render only the selected option (non-interactive). */
+  readOnly?: boolean;
 }
 
 export function SendPermPicker({
   value,
   onChange,
   testIdPrefix,
+  readOnly,
 }: SendPermPickerProps) {
+  if (readOnly) {
+    const option =
+      SEND_PERM_OPTIONS.find((o) => o.value === value) ?? SEND_PERM_OPTIONS[0];
+    return (
+      <View style={styles.list}>
+        <View
+          style={[styles.row, styles.rowActive]}
+          accessibilityRole="text"
+          testID={
+            testIdPrefix ? `${testIdPrefix}-${option.value}` : undefined
+          }
+        >
+          <View style={[styles.iconWrap, styles.iconWrapActive]}>
+            <Icon
+              name={option.icon}
+              size={12}
+              color={colors.accentInk}
+              strokeWidth={2}
+            />
+          </View>
+          <View style={styles.body}>
+            <Text style={styles.label}>{option.label}</Text>
+            <Text style={styles.sub}>{option.sub}</Text>
+          </View>
+          <Icon
+            name="check"
+            size={13}
+            color={colors.primary}
+            strokeWidth={2.5}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.list}>
       {SEND_PERM_OPTIONS.map((option) => {
@@ -52,7 +90,7 @@ export function SendPermPicker({
         return (
           <Pressable
             key={option.value}
-            onPress={() => onChange(option.value)}
+            onPress={() => onChange?.(option.value)}
             style={[styles.row, active ? styles.rowActive : null]}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}

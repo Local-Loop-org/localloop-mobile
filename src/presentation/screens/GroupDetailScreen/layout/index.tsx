@@ -1,27 +1,45 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GroupPrivacy } from '@localloop/shared-types';
+import { MemberRole } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
+import { GradientButton } from '@/presentation/screens/CreateGroupScreen/layout/atoms/GradientButton';
+import { LocationSection } from '@/presentation/screens/CreateGroupScreen/layout/sections/LocationSection';
+import { VisibilitySection } from '@/presentation/screens/CreateGroupScreen/layout/sections/VisibilitySection';
+import { PrivacySection } from '@/presentation/screens/CreateGroupScreen/layout/sections/PrivacySection';
+import { Hero } from './components/Hero';
+import { HeaderBar } from './sections/HeaderBar';
+import { RequestsSection } from './sections/RequestsSection';
+import { MembersSection } from './sections/MembersSection';
+import { AboutStatsSection } from './sections/AboutStatsSection';
+import { PermissionsSummarySection } from './sections/PermissionsSummarySection';
+import { DangerSection } from './sections/DangerSection';
 import { styles } from './styles';
 import type { GroupDetailLayoutProps, JoinButtonState } from './types';
+import type { RolePillRole } from './atoms/RolePill';
+
+const PLACEHOLDER_RADIUS_KM = 2;
 
 const JOIN_BUTTON_LABEL: Record<JoinButtonState, string> = {
   join: 'Entrar no grupo',
-  pending: 'Solicitação pendente',
+  pending: 'Aguardando aprovação',
   joined: 'Você já faz parte',
 };
 
-const PRIVACY_LABEL: Record<GroupPrivacy, string> = {
-  [GroupPrivacy.OPEN]: 'Aberto',
-  [GroupPrivacy.APPROVAL_REQUIRED]: 'Requer aprovação',
-};
+function pillRoleFor(
+  myRole: MemberRole | null,
+  joinButtonState: JoinButtonState,
+): RolePillRole | null {
+  if (myRole) return myRole;
+  if (joinButtonState === 'pending') return 'pending';
+  return null;
+}
 
 export default function GroupDetailLayout({
   group,
@@ -36,14 +54,10 @@ export default function GroupDetailLayout({
   resolvingRequestId,
   onApproveRequest,
   onRejectRequest,
-  showMembersButton,
   onPressMembers,
-  showChatButton,
-  onPressChat,
-  showLeaveButton,
-  isOwner,
   isLeaving,
   onLeave,
+  onPressDelete,
 }: GroupDetailLayoutProps) {
   if (loading) {
     return (
@@ -62,133 +76,111 @@ export default function GroupDetailLayout({
           <Text style={styles.errorText}>
             {errorMessage ?? 'Grupo não encontrado.'}
           </Text>
-          <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-            <Text style={styles.backText}>Voltar</Text>
-          </TouchableOpacity>
+          <Pressable
+            style={styles.errorBack}
+            onPress={onBack}
+            accessibilityRole="button"
+          >
+            <Text style={styles.errorBackText}>Voltar</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
   }
 
-  const joinDisabled = joinButtonState !== 'join' || isJoining;
-  const leaveDisabled = isOwner || isLeaving;
+  const myRole = group.myRole;
+  const isActiveMember = myRole !== null;
+  const isPrivileged =
+    myRole === MemberRole.OWNER || myRole === MemberRole.MODERATOR;
+  const showAboutStats = !isPrivileged;
+  const showLocationCard = isPrivileged;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backText}>‹ Voltar</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.title}>{group.name}</Text>
-        <Text style={styles.anchor}>{group.anchorLabel}</Text>
-
-        <View style={styles.metaRow}>
-          <View>
-            <Text style={styles.metaLabel}>Privacidade</Text>
-            <Text style={styles.metaValue}>{PRIVACY_LABEL[group.privacy]}</Text>
-          </View>
-          <View>
-            <Text style={styles.metaLabel}>Membros</Text>
-            <Text style={styles.metaValue}>{group.memberCount}</Text>
-          </View>
-        </View>
-
-        {group.description ? (
-          <Text style={styles.description}>{group.description}</Text>
-        ) : null}
-
-        <TouchableOpacity
-          style={[styles.joinBtn, joinDisabled && styles.joinBtnDisabled]}
-          onPress={onJoin}
-          disabled={joinDisabled}
-        >
-          {isJoining ? (
-            <ActivityIndicator color={colors.black} />
-          ) : (
-            <Text
-              style={[
-                styles.joinBtnText,
-                joinDisabled && styles.joinBtnTextDisabled,
-              ]}
-            >
-              {JOIN_BUTTON_LABEL[joinButtonState]}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {showChatButton ? (
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={onPressChat}
-          >
-            <Text style={styles.secondaryBtnText}>Chat do grupo</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {showMembersButton ? (
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={onPressMembers}
-          >
-            <Text style={styles.secondaryBtnText}>Ver membros</Text>
-          </TouchableOpacity>
-        ) : null}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <HeaderBar onBack={onBack} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Hero
+          name={group.name}
+          description={group.description}
+          anchorType={group.anchorType}
+          anchorLabel={group.anchorLabel}
+          memberCount={group.memberCount}
+          role={pillRoleFor(myRole, joinButtonState)}
+          onPressMembers={onPressMembers}
+        />
 
         {showModerationSection ? (
-          <View style={styles.modSection}>
-            <Text style={styles.sectionTitle}>Solicitações pendentes</Text>
-            {pendingRequests.length === 0 ? (
-              <Text style={styles.emptyRequests}>Nenhuma solicitação no momento.</Text>
-            ) : (
-              pendingRequests.map((req) => {
-                const isResolving = resolvingRequestId === req.id;
-                return (
-                  <View key={req.id} style={styles.requestRow}>
-                    <Text style={styles.requestName}>{req.displayName}</Text>
-                    <View style={styles.requestActions}>
-                      <TouchableOpacity
-                        style={[styles.approveBtn, isResolving && styles.btnDisabled]}
-                        disabled={isResolving}
-                        onPress={() => onApproveRequest(req.id)}
-                      >
-                        <Text style={styles.approveBtnText}>Aprovar</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.rejectBtn, isResolving && styles.btnDisabled]}
-                        disabled={isResolving}
-                        onPress={() => onRejectRequest(req.id)}
-                      >
-                        <Text style={styles.rejectBtnText}>Rejeitar</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </View>
+          <RequestsSection
+            requests={pendingRequests.map((r) => ({
+              id: r.id,
+              displayName: r.displayName,
+            }))}
+            resolvingRequestId={resolvingRequestId}
+            onApprove={onApproveRequest}
+            onReject={onRejectRequest}
+          />
         ) : null}
 
-        {showLeaveButton ? (
-          <>
-            <TouchableOpacity
-              style={[styles.leaveBtn, leaveDisabled && styles.leaveBtnDisabled]}
-              disabled={leaveDisabled}
-              onPress={onLeave}
-            >
-              {isLeaving ? (
-                <ActivityIndicator color={colors.error} />
-              ) : (
-                <Text style={styles.leaveBtnText}>Sair do grupo</Text>
-              )}
-            </TouchableOpacity>
-            {isOwner ? (
-              <Text style={styles.leaveHelper}>
-                Transfira a liderança antes de sair.
+        <MembersSection
+          memberCount={group.memberCount}
+          onPressViewAll={onPressMembers}
+        />
+
+        {showAboutStats ? (
+          <AboutStatsSection
+            memberCount={group.memberCount}
+            anchorType={group.anchorType}
+            anchorLabel={group.anchorLabel}
+            privacy={group.privacy}
+          />
+        ) : null}
+
+        {showLocationCard ? (
+          <LocationSection
+            placeType={group.anchorType}
+            anchorLabel={group.anchorLabel}
+            readOnly
+          />
+        ) : null}
+
+        <VisibilitySection radiusKm={PLACEHOLDER_RADIUS_KM} readOnly />
+
+        {!showAboutStats ? (
+          <PrivacySection value={group.privacy} readOnly />
+        ) : null}
+
+        <PermissionsSummarySection />
+
+        {isActiveMember ? (
+          <DangerSection
+            role={myRole}
+            isLeaving={isLeaving}
+            onLeave={onLeave}
+            onDelete={onPressDelete}
+          />
+        ) : (
+          <View style={styles.joinWrap}>
+            <GradientButton
+              label={
+                isJoining ? 'Entrando...' : JOIN_BUTTON_LABEL[joinButtonState]
+              }
+              leadingIcon="check"
+              loading={isJoining}
+              disabled={joinButtonState !== 'join'}
+              onPress={onJoin}
+              testID="join-group-cta"
+            />
+            {joinButtonState === 'pending' ? (
+              <Text style={styles.joinHint}>
+                AGUARDANDO APROVAÇÃO DE UM MODERADOR
               </Text>
             ) : null}
-          </>
-        ) : null}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

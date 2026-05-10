@@ -1,23 +1,69 @@
 import React from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 import { colors } from '@/shared/theme';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface FormInputProps extends Omit<TextInputProps, 'style'> {
   leadingIcon?: IconName;
   testID?: string;
+  /** When true, render as plain text (no border, no editing). */
+  readOnly?: boolean;
 }
 
-export function FormInput({ leadingIcon, ...rest }: FormInputProps) {
+export function FormInput({
+  leadingIcon,
+  readOnly,
+  value,
+  ...rest
+}: FormInputProps) {
+  if (readOnly) {
+    return (
+      <View style={[styles.wrap, styles.readOnlyWrap]}>
+        {leadingIcon ? (
+          <View style={styles.icon}>
+            <Icon
+              name={leadingIcon}
+              size={14}
+              color={colors.dim}
+              strokeWidth={1.8}
+            />
+          </View>
+        ) : null}
+        <Text
+          style={[
+            styles.readOnlyText,
+            leadingIcon ? styles.readOnlyTextWithIcon : null,
+          ]}
+          numberOfLines={1}
+          testID={rest.testID}
+        >
+          {value}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrap}>
       {leadingIcon ? (
         <View style={styles.icon}>
-          <Icon name={leadingIcon} size={14} color={colors.dim} strokeWidth={1.8} />
+          <Icon
+            name={leadingIcon}
+            size={14}
+            color={colors.dim}
+            strokeWidth={1.8}
+          />
         </View>
       ) : null}
       <TextInput
         placeholderTextColor={colors.faint}
+        value={value}
         {...rest}
         style={[styles.input, leadingIcon ? styles.inputWithIcon : null]}
       />
@@ -28,6 +74,11 @@ export function FormInput({ leadingIcon, ...rest }: FormInputProps) {
 const styles = StyleSheet.create({
   wrap: {
     position: 'relative',
+  },
+  readOnlyWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
   },
   icon: {
     position: 'absolute',
@@ -48,6 +99,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputWithIcon: {
+    paddingLeft: 38,
+  },
+  readOnlyText: {
+    color: colors.text,
+    fontSize: 14,
+  },
+  readOnlyTextWithIcon: {
     paddingLeft: 38,
   },
 });
