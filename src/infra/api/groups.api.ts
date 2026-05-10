@@ -37,6 +37,8 @@ export interface GroupDetail {
   memberCount: number;
   /** null when the caller is not a member. */
   myRole: MemberRole | null;
+  /** ISO-8601 timestamp from the API. Optional for forward-compat with older responses. */
+  createdAt?: string;
 }
 
 export type JoinGroupResult =

@@ -20,7 +20,7 @@ export function HeaderBar({ onBack }: HeaderBarProps) {
         <Icon name="back" size={15} color={colors.text} strokeWidth={2} />
       </Pressable>
       <Text style={styles.title}>GRUPO</Text>
-      <View style={styles.iconBtn} />
+      <View style={styles.spacer} />
     </View>
   );
 }
@@ -49,5 +49,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.dim,
     letterSpacing: 1.6,
+  },
+  spacer: {
+    width: 36,
+    height: 36,
   },
 });
