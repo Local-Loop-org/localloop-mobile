@@ -22,7 +22,6 @@ export default function CreateGroupScreen({ navigation }: Props) {
   const [anchorLabel, setAnchorLabel] = useState('');
   const [privacy, setPrivacy] = useState<GroupPrivacy>(GroupPrivacy.OPEN);
 
-  // Local-only: not yet persisted to the API. See `feedback_create_group_local_only_fields` memory.
   const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
   const [sendPerm, setSendPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
   const [sendMediaPerm, setSendMediaPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
@@ -66,6 +65,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
         lat: finalCoords.lat,
         lng: finalCoords.lng,
         privacy,
+        radiusKm,
       });
       navigation.replace(StackRoutes.GroupDetail, { groupId: created.id });
     } catch {

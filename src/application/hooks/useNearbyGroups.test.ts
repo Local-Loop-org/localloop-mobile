@@ -36,6 +36,16 @@ describe('nearbyGroupsKey', () => {
       'groups',
       'nearby',
       '-23.550,-46.633',
+      null,
+    ]);
+  });
+
+  it('includes radiusKm when provided', () => {
+    expect(nearbyGroupsKey({ lat: -23.5501, lng: -46.6333 }, 10)).toEqual([
+      'groups',
+      'nearby',
+      '-23.550,-46.633',
+      10,
     ]);
   });
 
@@ -73,7 +83,7 @@ describe('useNearbyGroups', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockedGetNearby).toHaveBeenCalledWith(coords);
+    expect(mockedGetNearby).toHaveBeenCalledWith({ ...coords, radiusKm: undefined });
     expect(result.current.data).toEqual([sampleGroup]);
   });
 

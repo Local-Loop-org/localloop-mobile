@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { usePreferencesStore } from '@/application/stores/preferences.store';
 import AuthStack from './AuthStack';
 import AuthenticatedStack from './AuthenticatedStack';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -19,7 +20,10 @@ export default function RootNavigator() {
 
   useEffect(() => {
     const init = async () => {
-      await initialize();
+      await Promise.all([
+        initialize(),
+        usePreferencesStore.getState().initialize(),
+      ]);
       setLoading(false);
     };
     init();

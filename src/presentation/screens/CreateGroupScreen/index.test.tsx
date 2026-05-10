@@ -145,13 +145,14 @@ describe('CreateGroupScreen', () => {
       lat: -23.55,
       lng: -46.63,
       privacy: GroupPrivacy.OPEN,
+      radiusKm: 2,
     });
     expect(navigation.replace).toHaveBeenCalledWith('GroupDetail', {
       groupId: 'g-new',
     });
   });
 
-  it('does not include radiusKm, sendPerm, or sendMediaPerm in the submitted payload', async () => {
+  it('does not include sendPerm or sendMediaPerm in the submitted payload, but does include radiusKm', async () => {
     mutateAsync.mockResolvedValueOnce({
       id: 'g-new',
       name: 'Morumbi Runners',
@@ -174,7 +175,7 @@ describe('CreateGroupScreen', () => {
     });
 
     const payload = mutateAsync.mock.calls[0][0];
-    expect(payload).not.toHaveProperty('radiusKm');
+    expect(payload).toHaveProperty('radiusKm', 5);
     expect(payload).not.toHaveProperty('sendPerm');
     expect(payload).not.toHaveProperty('sendMediaPerm');
   });

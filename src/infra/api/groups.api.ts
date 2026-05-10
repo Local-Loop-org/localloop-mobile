@@ -14,6 +14,7 @@ export interface CreateGroupBody {
   lat: number;
   lng: number;
   privacy: GroupPrivacy;
+  radiusKm?: number;
 }
 
 export interface CreatedGroup {
@@ -100,6 +101,7 @@ export const groupsApi = {
   getNearbyGroups: async (params: {
     lat: number;
     lng: number;
+    radiusKm?: number;
   }): Promise<NearbyGroup[]> => {
     const { data } = await apiClient.get<{ data: NearbyGroup[] }>(
       '/groups/nearby',
