@@ -1,24 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { MemberStatus, GroupPrivacy } from '@localloop/shared-types';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import { styles } from './styles';
+import { StatusBadge } from './StatusBadge';
 
 interface Props {
   group: NearbyGroup;
   onPress: (id: string) => void;
-}
-
-function StatusBadge({ group }: { group: NearbyGroup }) {
-  if (group.memberStatus === MemberStatus.ACTIVE)
-    return <View style={styles.cardMemberBtn}><Text style={styles.cardJoinText}>Conversar</Text></View>;
-  if (group.memberStatus === MemberStatus.PENDING)
-    return <View style={styles.cardPendingBtn}><Text style={styles.cardPendingText}>Aguardando</Text></View>;
-  if (group.privacy === GroupPrivacy.APPROVAL_REQUIRED)
-    return <View style={styles.cardRequestBtn}><Text style={styles.cardJoinText}>Solicitar</Text></View>;
-  return <View style={styles.cardJoinBtn}><Text style={styles.cardJoinText}>Entrar</Text></View>;
 }
 
 export function DiscoverCard({ group, onPress }: Props) {
@@ -26,7 +16,7 @@ export function DiscoverCard({ group, onPress }: Props) {
     <TouchableOpacity
       style={styles.card}
       onPress={() => onPress(group.id)}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={`Abrir ${group.name}`}
     >
       <View style={styles.cardHeader}>

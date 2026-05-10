@@ -1,7 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
+import {
+  GroupPrivacy,
+  MemberRole,
+  MemberStatus,
+} from '@localloop/shared-types';
 import {
   type Coords,
   useCurrentLocation,
@@ -9,6 +13,7 @@ import {
 import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
 import { useMyGroups } from '@/application/hooks/useMyGroups';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
+import type { NearbyGroup } from '@/infra/api/groups.api';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
 import HomeLayout from './layout';
@@ -24,6 +29,9 @@ export default function HomeScreen({ navigation }: Props) {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [optimisticPending, setOptimisticPending] = useState<Set<string>>(
+    new Set(),
+  );
 
   const { request: requestLocation } = useCurrentLocation();
   const query = useNearbyGroups(coords);
@@ -60,73 +68,109 @@ export default function HomeScreen({ navigation }: Props) {
 
   const groups = query.data ?? [];
   const myGroups = myGroupsQuery.data ?? [];
+
+  const effectiveGroups = useMemo(
+    () =>
+      groups.map((g) =>
+        optimisticPending.has(g.id)
+          ? { ...g, memberStatus: MemberStatus.PENDING }
+          : g,
+      ),
+    [groups, optimisticPending],
+  );
+
   const errorMessage = locationDenied
     ? LOCATION_DENIED_MESSAGE
     : query.isError
       ? FETCH_FAILED_MESSAGE
       : null;
 
+  const navigateToChat = useCallback(
+    (
+      id: string,
+      groupName: string,
+      anchorType: NearbyGroup['anchorType'],
+      myRole: NearbyGroup['myRole'],
+    ) => {
+      navigation.navigate('GroupChat', {
+        groupId: id,
+        groupName,
+        anchorType,
+        myRole,
+      });
+    },
+    [navigation],
+  );
+
+  const promptJoinRequest = useCallback(
+    (id: string, group: NearbyGroup) => {
+      Alert.alert(
+        'Solicitar entrada?',
+        `${group.name} requer aprovação de um moderador para participar. Deseja enviar uma solicitação?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Solicitar',
+            onPress: async () => {
+              setOptimisticPending((prev) => new Set([...prev, id]));
+              try {
+                await joinMutation.mutateAsync({ groupId: id, group });
+                Alert.alert(
+                  'Solicitação enviada',
+                  'Aguarde a aprovação de um moderador para entrar no grupo.',
+                );
+              } catch {
+                setOptimisticPending((prev) => {
+                  const next = new Set(prev);
+                  next.delete(id);
+                  return next;
+                });
+                Alert.alert(
+                  'Erro',
+                  'Não foi possível enviar sua solicitação. Tente novamente.',
+                );
+              }
+            },
+          },
+        ],
+      );
+    },
+    [joinMutation],
+  );
+
+  const handlePressGroup = useCallback(
+    (id: string) => {
+      const group = effectiveGroups.find((g) => g.id === id);
+      if (!group) return;
+
+      if (group.memberStatus === MemberStatus.PENDING) return;
+
+      if (joinMutation.isPending) return;
+
+      if (group.memberStatus === MemberStatus.ACTIVE) {
+        navigateToChat(id, group.name, group.anchorType, group.myRole);
+        return;
+      }
+
+      if (group.privacy === GroupPrivacy.OPEN) {
+        joinMutation.mutate({ groupId: id, group });
+        navigateToChat(id, group.name, group.anchorType, MemberRole.MEMBER);
+        return;
+      }
+
+      promptJoinRequest(id, group);
+    },
+    [effectiveGroups, joinMutation, navigateToChat, promptJoinRequest],
+  );
+
   return (
     <HomeLayout
-      groups={groups}
+      groups={effectiveGroups}
       loading={query.isLoading && !!coords}
       refreshing={refreshing}
       errorMessage={errorMessage}
       onRefresh={handleRefresh}
-      onPressGroup={(id) => {
-        const group = groups.find((g) => g.id === id);
-        if (!group) return;
-
-        if (group.memberStatus === MemberStatus.ACTIVE) {
-          navigation.navigate('GroupChat', {
-            groupId: id,
-            groupName: group.name,
-            anchorType: group.anchorType,
-            myRole: group.myRole,
-          });
-          return;
-        }
-
-        if (group.memberStatus === MemberStatus.PENDING) return;
-
-        if (joinMutation.isPending) return;
-
-        if (group.privacy === GroupPrivacy.OPEN) {
-          joinMutation.mutate({ groupId: id, group });
-          navigation.navigate('GroupChat', {
-            groupId: id,
-            groupName: group.name,
-            anchorType: group.anchorType,
-            myRole: MemberRole.MEMBER,
-          });
-          return;
-        }
-
-        Alert.alert(
-          'Solicitar entrada?',
-          `${group.name} requer aprovação de um moderador para participar. Deseja enviar uma solicitação?`,
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Solicitar',
-              onPress: async () => {
-                try {
-                  await joinMutation.mutateAsync({ groupId: id, group });
-                  Alert.alert(
-                    'Solicitação enviada',
-                    'Aguarde a aprovação de um moderador para entrar no grupo.',
-                  );
-                } catch {
-                  Alert.alert(
-                    'Erro',
-                    'Não foi possível enviar sua solicitação. Tente novamente.',
-                  );
-                }
-              },
-            },
-          ],
-        );
-      }}
+      onPressGroup={handlePressGroup}
       myGroups={myGroups}
       myGroupsLoading={myGroupsQuery.isLoading}
       onPressMyGroup={(id) => {
