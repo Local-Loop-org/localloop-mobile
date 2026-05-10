@@ -7,6 +7,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { MemberRole } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { GradientButton } from '@/presentation/screens/CreateGroupScreen/layout/atoms/GradientButton';
@@ -39,6 +41,13 @@ function pillRoleFor(
   if (myRole) return myRole;
   if (joinButtonState === 'pending') return 'pending';
   return null;
+}
+
+function formatCreatedAt(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return `CRIADO EM ${format(date, 'dd MMM yyyy', { locale: ptBR }).toUpperCase()}`;
 }
 
 export default function GroupDetailLayout({
@@ -181,6 +190,15 @@ export default function GroupDetailLayout({
             ) : null}
           </View>
         )}
+
+        {(() => {
+          const caption = formatCreatedAt(group.createdAt);
+          return caption ? (
+            <Text style={styles.createdAt} testID="group-created-at">
+              {caption}
+            </Text>
+          ) : null;
+        })()}
       </ScrollView>
     </SafeAreaView>
   );

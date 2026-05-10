@@ -49,4 +49,12 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
+  createdAt: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.faint,
+    letterSpacing: 0.6,
+    textAlign: 'center',
+    marginTop: 18,
+  },
 });

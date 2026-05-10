@@ -83,6 +83,7 @@ const buildGroup = (
   privacy: GroupPrivacy.OPEN,
   memberCount: 10,
   myRole: null,
+  createdAt: '2026-03-12T15:00:00.000Z',
   ...overrides,
 });
 
@@ -119,6 +120,26 @@ describe('GroupDetailScreen', () => {
     expect(queryByText('Sair do grupo')).toBeNull();
     expect(queryByTestId('danger-delete')).toBeNull();
     expect(queryByTestId('role-pill-owner')).toBeNull();
+  });
+
+  it('render: shows the CRIADO EM caption from group.createdAt', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ createdAt: '2026-03-12T15:00:00.000Z' }),
+    );
+
+    const { findByTestId } = renderScreen();
+    const caption = await findByTestId('group-created-at');
+    expect(caption.props.children).toMatch(/^CRIADO EM 12 MAR\.? 2026$/);
+  });
+
+  it('render: hides the CRIADO EM caption when createdAt is absent', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ createdAt: undefined }),
+    );
+
+    const { findByTestId, queryByTestId } = renderScreen();
+    await findByTestId('join-group-cta');
+    expect(queryByTestId('group-created-at')).toBeNull();
   });
 
   it('render: myRole=MEMBER shows MEMBRO pill + Sair, no Excluir, no Solicitações', async () => {

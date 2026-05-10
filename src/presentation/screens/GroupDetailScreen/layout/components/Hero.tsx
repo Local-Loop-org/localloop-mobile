@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { AnchorType } from '@localloop/shared-types';
 import { colors, fonts } from '@/shared/theme';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
@@ -19,6 +20,8 @@ interface HeroProps {
   onPressMembers: () => void;
 }
 
+const GLOW_SIZE = 220;
+
 export function Hero({
   name,
   description,
@@ -35,7 +38,32 @@ export function Hero({
       end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      <View style={styles.glow} />
+      <Svg
+        width={GLOW_SIZE}
+        height={GLOW_SIZE}
+        style={styles.glow}
+        pointerEvents="none"
+      >
+        <Defs>
+          <RadialGradient
+            id="hero-glow"
+            cx="50%"
+            cy="50%"
+            r="50%"
+            fx="50%"
+            fy="50%"
+          >
+            <Stop offset="0%" stopColor={colors.accent2} stopOpacity={0.22} />
+            <Stop offset="70%" stopColor={colors.accent2} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle
+          cx={GLOW_SIZE / 2}
+          cy={GLOW_SIZE / 2}
+          r={GLOW_SIZE / 2}
+          fill="url(#hero-glow)"
+        />
+      </Svg>
 
       <View style={styles.head}>
         <GroupAvatar anchorType={anchorType} size={64} />
@@ -84,15 +112,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(0,209,255,0.20)',
+    marginTop: 4,
   },
   glow: {
     position: 'absolute',
-    right: -50,
-    top: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(167,139,250,0.18)',
+    right: -GLOW_SIZE * 0.25,
+    top: -GLOW_SIZE * 0.25,
   },
   head: {
     flexDirection: 'row',
