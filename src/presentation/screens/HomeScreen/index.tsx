@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import { GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
 import {
   type Coords,
   useCurrentLocation,
@@ -76,6 +76,19 @@ export default function HomeScreen({ navigation }: Props) {
       onPressGroup={(id) => {
         const group = groups.find((g) => g.id === id);
         if (!group) return;
+
+        if (group.memberStatus === MemberStatus.ACTIVE) {
+          navigation.navigate('GroupChat', {
+            groupId: id,
+            groupName: group.name,
+            anchorType: group.anchorType,
+            myRole: group.myRole,
+          });
+          return;
+        }
+
+        if (group.memberStatus === MemberStatus.PENDING) return;
+
         if (joinMutation.isPending) return;
 
         if (group.privacy === GroupPrivacy.OPEN) {

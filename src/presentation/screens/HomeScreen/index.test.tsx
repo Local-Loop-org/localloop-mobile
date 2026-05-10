@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import { AnchorType, GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
 
@@ -76,6 +76,9 @@ const sampleNeighborhood = {
   distanceMeters: 210,
   privacy: GroupPrivacy.OPEN,
   memberCount: 5,
+  radiusKm: 25,
+  myRole: null,
+  memberStatus: null,
 };
 
 const sampleEstablishment = {
@@ -87,6 +90,9 @@ const sampleEstablishment = {
   distanceMeters: 30,
   privacy: GroupPrivacy.OPEN,
   memberCount: 18,
+  radiusKm: 25,
+  myRole: null,
+  memberStatus: null,
 };
 
 const sampleEvent = {
@@ -98,6 +104,9 @@ const sampleEvent = {
   distanceMeters: 1234,
   privacy: GroupPrivacy.OPEN,
   memberCount: 128,
+  radiusKm: 25,
+  myRole: null,
+  memberStatus: null,
 };
 
 const samplePrivateNeighborhood = {
@@ -109,6 +118,9 @@ const samplePrivateNeighborhood = {
   distanceMeters: 80,
   privacy: GroupPrivacy.APPROVAL_REQUIRED,
   memberCount: 42,
+  radiusKm: 25,
+  myRole: null,
+  memberStatus: null,
 };
 
 const sampleMyGroup = {
@@ -349,5 +361,72 @@ describe('HomeScreen', () => {
     fireEvent.press(await findByText('Ver todos →'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('MyGroups');
+  });
+
+  // --- membership status handler tests ---
+
+  it('ACTIVE member card press: navigates to GroupChat with real myRole, does not call joinGroup', async () => {
+    const activeGroup = {
+      ...sampleNeighborhood,
+      myRole: MemberRole.OWNER,
+      memberStatus: MemberStatus.ACTIVE,
+    };
+    mockedGetNearby.mockResolvedValueOnce([activeGroup]);
+    const { findByText } = renderScreen();
+    fireEvent.press(await findByText('Morumbi Runners'));
+
+    expect(mockedJoin).not.toHaveBeenCalled();
+    expect(navigation.navigate).toHaveBeenCalledWith('GroupChat', {
+      groupId: 'g-1',
+      groupName: 'Morumbi Runners',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      myRole: MemberRole.OWNER,
+    });
+  });
+
+  it('PENDING member card press: does not call joinGroup or navigate', async () => {
+    const pendingGroup = { ...sampleNeighborhood, memberStatus: MemberStatus.PENDING };
+    mockedGetNearby.mockResolvedValueOnce([pendingGroup]);
+    const { findByText } = renderScreen();
+    fireEvent.press(await findByText('Morumbi Runners'));
+
+    expect(mockedJoin).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  // --- badge text tests ---
+
+  it('shows "Entrar" badge for an OPEN non-member group', async () => {
+    mockedGetNearby.mockResolvedValueOnce([sampleNeighborhood]);
+    const { findByText } = renderScreen();
+    await findByText('Morumbi Runners');
+    expect(await findByText('Entrar')).toBeTruthy();
+  });
+
+  it('shows "Solicitar" badge for an APPROVAL_REQUIRED non-member group', async () => {
+    mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
+    const { findByText } = renderScreen();
+    await findByText('Condomínio Vista Verde');
+    expect(await findByText('Solicitar')).toBeTruthy();
+  });
+
+  it('shows "Conversar" badge when memberStatus is ACTIVE', async () => {
+    const activeGroup = {
+      ...sampleNeighborhood,
+      myRole: MemberRole.MEMBER,
+      memberStatus: MemberStatus.ACTIVE,
+    };
+    mockedGetNearby.mockResolvedValueOnce([activeGroup]);
+    const { findByText } = renderScreen();
+    await findByText('Morumbi Runners');
+    expect(await findByText('Conversar')).toBeTruthy();
+  });
+
+  it('shows "Aguardando" badge when memberStatus is PENDING', async () => {
+    const pendingGroup = { ...sampleNeighborhood, memberStatus: MemberStatus.PENDING };
+    mockedGetNearby.mockResolvedValueOnce([pendingGroup]);
+    const { findByText } = renderScreen();
+    await findByText('Morumbi Runners');
+    expect(await findByText('Aguardando')).toBeTruthy();
   });
 });
