@@ -137,6 +137,14 @@ export const groupsApi = {
   },
 
   /**
+   * Delete a group permanently. Caller must be the owner. Server returns 204
+   * and cascades members, requests, and messages.
+   */
+  deleteGroup: async (groupId: string): Promise<void> => {
+    await apiClient.delete(`/groups/${groupId}`);
+  },
+
+  /**
    * List pending join requests for a group. Caller must be owner or moderator.
    */
   listJoinRequests: async (groupId: string): Promise<JoinRequest[]> => {

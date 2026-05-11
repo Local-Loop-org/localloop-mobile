@@ -16,9 +16,9 @@ interface MemberStackProps {
 }
 
 /**
- * Reserved for the next PR — once members are fetched into the detail screen,
- * pass them in. Until then, the parent passes `members={[]}` and this returns
- * `null` (so the hero subtitle row collapses cleanly to count-only).
+ * Renders up to `max` overlapping gradient avatars with an optional `+N` chip.
+ * Returns `null` for an empty list so the parent section can render a fallback
+ * (e.g. the MEMBROS placeholder line) without an extra wrapper view.
  */
 export function MemberStack({ members, max = 5, size = 32 }: MemberStackProps) {
   if (members.length === 0) return null;

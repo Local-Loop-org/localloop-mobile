@@ -1,4 +1,8 @@
-import type { GroupDetail, JoinRequest } from '@/infra/api/groups.api';
+import type {
+  GroupDetail,
+  GroupMember,
+  JoinRequest,
+} from '@/infra/api/groups.api';
 
 export type JoinButtonState = 'join' | 'pending' | 'joined';
 
@@ -21,6 +25,9 @@ export interface GroupDetailLayoutProps {
   onApproveRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
 
+  /** Top of the members list (up to 5 entries). Empty array falls back to a placeholder card. */
+  members: GroupMember[];
+
   /** Active members reach the GroupMembersScreen via either the hero chevron or the section action. */
   onPressMembers: () => void;
 
@@ -28,6 +35,7 @@ export interface GroupDetailLayoutProps {
   isLeaving: boolean;
   onLeave: () => void;
 
-  /** Owner / moderator delete affordance — `onPress` is a stub for now. */
+  /** Owner-only delete affordance. */
+  isDeleting: boolean;
   onPressDelete: () => void;
 }
