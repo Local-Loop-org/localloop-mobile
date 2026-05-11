@@ -1,13 +1,77 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { colors, fonts } from '@/shared/theme';
 import { Icon } from '@/shared/icons';
 
 interface HeaderBarProps {
   onBack: () => void;
+  canEdit?: boolean;
+  isEditing?: boolean;
+  isSaving?: boolean;
+  onEdit?: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
 }
 
-export function HeaderBar({ onBack }: HeaderBarProps) {
+export function HeaderBar({
+  onBack,
+  canEdit,
+  isEditing,
+  isSaving,
+  onEdit,
+  onSave,
+  onCancel,
+}: HeaderBarProps) {
+  const renderRight = () => {
+    if (!canEdit) {
+      return <View style={styles.spacer} />;
+    }
+    if (isEditing) {
+      if (isSaving) {
+        return (
+          <View style={styles.savingWrap}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        );
+      }
+      return (
+        <View style={styles.editActions}>
+          <Pressable
+            onPress={onCancel}
+            accessibilityRole="button"
+            testID="group-detail-cancel-edit"
+          >
+            <Text style={styles.cancelText}>Cancelar</Text>
+          </Pressable>
+          <Pressable
+            onPress={onSave}
+            accessibilityRole="button"
+            testID="group-detail-save-edit"
+          >
+            <Text style={styles.saveText}>Salvar</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return (
+      <Pressable
+        onPress={onEdit}
+        style={styles.iconBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Editar grupo"
+        testID="group-detail-edit"
+      >
+        <Icon name="edit" size={15} color={colors.text} strokeWidth={2} />
+      </Pressable>
+    );
+  };
+
   return (
     <View style={styles.bar}>
       <Pressable
@@ -20,7 +84,7 @@ export function HeaderBar({ onBack }: HeaderBarProps) {
         <Icon name="back" size={15} color={colors.text} strokeWidth={2} />
       </Pressable>
       <Text style={styles.title}>GRUPO</Text>
-      <View style={styles.spacer} />
+      {renderRight()}
     </View>
   );
 }
@@ -53,5 +117,26 @@ const styles = StyleSheet.create({
   spacer: {
     width: 36,
     height: 36,
+  },
+  editActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cancelText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.dim,
+  },
+  saveText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  savingWrap: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

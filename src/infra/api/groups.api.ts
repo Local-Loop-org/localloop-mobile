@@ -34,11 +34,20 @@ export interface GroupDetail {
   anchorType: AnchorType;
   anchorLabel: string;
   privacy: GroupPrivacy;
+  radiusKm?: number;
   memberCount: number;
   /** null when the caller is not a member. */
   myRole: MemberRole | null;
   /** ISO-8601 timestamp from the API. Optional for forward-compat with older responses. */
   createdAt?: string;
+}
+
+export interface UpdateGroupBody {
+  name?: string;
+  description?: string | null;
+  anchorLabel?: string;
+  privacy?: GroupPrivacy;
+  radiusKm?: number;
 }
 
 export type JoinGroupResult =
@@ -193,6 +202,20 @@ export const groupsApi = {
    */
   banMember: async (groupId: string, userId: string): Promise<void> => {
     await apiClient.delete(`/groups/${groupId}/members/${userId}`);
+  },
+
+  /**
+   * Update group settings. Caller must be owner or moderator.
+   */
+  updateGroup: async (
+    groupId: string,
+    body: UpdateGroupBody,
+  ): Promise<GroupDetail> => {
+    const { data } = await apiClient.patch<GroupDetail>(
+      `/groups/${groupId}`,
+      body,
+    );
+    return data;
   },
 
   /**

@@ -15,6 +15,7 @@ jest.mock('@/infra/api/groups.api', () => ({
     listJoinRequests: jest.fn(),
     listMembers: jest.fn(),
     resolveJoinRequest: jest.fn(),
+    updateGroup: jest.fn(),
   },
 }));
 
@@ -51,6 +52,9 @@ const mockedResolveJoinRequest =
   groupsApi.resolveJoinRequest as jest.MockedFunction<
     typeof groupsApi.resolveJoinRequest
   >;
+const mockedUpdateGroup = groupsApi.updateGroup as jest.MockedFunction<
+  typeof groupsApi.updateGroup
+>;
 
 const navigation = {
   goBack: jest.fn(),
@@ -515,6 +519,78 @@ describe('GroupDetailScreen', () => {
       'Não foi possível sair do grupo. Tente novamente.',
     );
     expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  // --- inline edit ---
+
+  it('edit: edit icon absent for regular member', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.MEMBER }),
+    );
+
+    const { findByTestId, queryByTestId } = renderScreen();
+    await findByTestId('role-pill-member');
+
+    expect(queryByTestId('group-detail-edit')).toBeNull();
+  });
+
+  it('edit: edit icon present for owner', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER }),
+    );
+
+    const { findByTestId } = renderScreen();
+    expect(await findByTestId('group-detail-edit')).toBeTruthy();
+  });
+
+  it('edit: save calls updateGroup with draft values', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER, name: 'Original Name' }),
+    );
+    mockedUpdateGroup.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER, name: 'Updated Name' }),
+    );
+
+    const { findByTestId } = renderScreen();
+
+    // Enter edit mode
+    fireEvent.press(await findByTestId('group-detail-edit'));
+
+    // Change name
+    const nameInput = await findByTestId('hero-name-input');
+    fireEvent.changeText(nameInput, 'Updated Name');
+
+    // Save
+    await act(async () => {
+      fireEvent.press(await findByTestId('group-detail-save-edit'));
+    });
+
+    expect(mockedUpdateGroup).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ name: 'Updated Name' }),
+    );
+  });
+
+  it('edit: cancel discards draft without calling updateGroup', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER, name: 'Original Name' }),
+    );
+
+    const { findByTestId } = renderScreen();
+
+    // Enter edit mode
+    fireEvent.press(await findByTestId('group-detail-edit'));
+
+    // Change name
+    const nameInput = await findByTestId('hero-name-input');
+    fireEvent.changeText(nameInput, 'Discarded Name');
+
+    // Cancel
+    fireEvent.press(await findByTestId('group-detail-cancel-edit'));
+
+    // Edit icon reappears (we're out of edit mode)
+    expect(await findByTestId('group-detail-edit')).toBeTruthy();
+    expect(mockedUpdateGroup).not.toHaveBeenCalled();
   });
 
   // --- members short list ---
