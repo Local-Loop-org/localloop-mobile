@@ -11,7 +11,6 @@ import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { AnchorType } from '@localloop/shared-types';
 import { colors, fonts } from '@/shared/theme';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
-import { initialsFor } from '@/shared/format/initials';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { GroupAvatar } from '../atoms/GroupAvatar';
 import { MemberStack } from '../atoms/MemberStack';
@@ -51,7 +50,8 @@ export function Hero({
 }: HeroProps) {
   const stack = members.map((m) => ({
     id: m.userId,
-    initials: initialsFor(m.displayName),
+    displayName: m.displayName,
+    avatarUrl: m.avatarUrl,
   }));
 
   return (
