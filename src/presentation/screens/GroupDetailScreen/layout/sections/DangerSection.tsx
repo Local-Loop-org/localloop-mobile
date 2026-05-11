@@ -8,6 +8,7 @@ interface DangerSectionProps {
   /** Membership role of the current user. `null` = non-member (block hidden). */
   role: MemberRole | null;
   isLeaving: boolean;
+  isDeleting: boolean;
   onLeave: () => void;
   onDelete: () => void;
 }
@@ -22,6 +23,7 @@ interface DangerSectionProps {
 export function DangerSection({
   role,
   isLeaving,
+  isDeleting,
   onLeave,
   onDelete,
 }: DangerSectionProps) {
@@ -47,6 +49,7 @@ export function DangerSection({
           icon="trash"
           variant="filled"
           disabled={!isOwner}
+          loading={isDeleting}
           onPress={onDelete}
           testID="danger-delete"
         />

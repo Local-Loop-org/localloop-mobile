@@ -1,23 +1,39 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '@/shared/theme';
+import type { GroupMember } from '@/infra/api/groups.api';
 import { Card } from '@/presentation/screens/CreateGroupScreen/layout/atoms/Card';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
+import { MemberStack } from '../atoms/MemberStack';
 
 interface MembersSectionProps {
   memberCount: number;
+  members: GroupMember[];
   onPressViewAll: () => void;
 }
 
-/**
- * Placeholder for the upcoming short-list of members. The next PR will fetch
- * the top N members and render rows here. For now we surface the count + a
- * primary entry point to the existing members screen.
- */
+function initialsFor(name: string): string {
+  return (
+    name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
+
 export function MembersSection({
   memberCount,
+  members,
   onPressViewAll,
 }: MembersSectionProps) {
+  const stack = members.map((m) => ({
+    id: m.userId,
+    initials: initialsFor(m.displayName),
+  }));
+
   return (
     <View>
       <SectionLabel
@@ -39,7 +55,11 @@ export function MembersSection({
           style={styles.body}
           testID="members-section-body"
         >
-          <Text style={styles.bodyText}>Ver lista completa de membros</Text>
+          {stack.length > 0 ? (
+            <MemberStack members={stack} />
+          ) : (
+            <Text style={styles.bodyText}>Ver lista completa de membros</Text>
+          )}
           <Text style={styles.chevron}>›</Text>
         </Pressable>
       </Card>

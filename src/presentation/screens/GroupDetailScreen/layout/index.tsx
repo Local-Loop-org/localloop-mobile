@@ -64,7 +64,9 @@ export default function GroupDetailLayout({
   onApproveRequest,
   onRejectRequest,
   onPressMembers,
+  members,
   isLeaving,
+  isDeleting,
   onLeave,
   onPressDelete,
 }: GroupDetailLayoutProps) {
@@ -136,6 +138,7 @@ export default function GroupDetailLayout({
 
         <MembersSection
           memberCount={group.memberCount}
+          members={members}
           onPressViewAll={onPressMembers}
         />
 
@@ -168,6 +171,7 @@ export default function GroupDetailLayout({
           <DangerSection
             role={myRole}
             isLeaving={isLeaving}
+            isDeleting={isDeleting}
             onLeave={onLeave}
             onDelete={onPressDelete}
           />

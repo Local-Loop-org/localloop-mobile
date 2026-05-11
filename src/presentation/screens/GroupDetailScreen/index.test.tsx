@@ -11,7 +11,9 @@ jest.mock('@/infra/api/groups.api', () => ({
     getGroupDetail: jest.fn(),
     joinGroup: jest.fn(),
     leaveGroup: jest.fn(),
+    deleteGroup: jest.fn(),
     listJoinRequests: jest.fn(),
+    listMembers: jest.fn(),
     resolveJoinRequest: jest.fn(),
   },
 }));
@@ -36,8 +38,14 @@ const mockedJoin = groupsApi.joinGroup as jest.MockedFunction<
 const mockedLeave = groupsApi.leaveGroup as jest.MockedFunction<
   typeof groupsApi.leaveGroup
 >;
+const mockedDelete = groupsApi.deleteGroup as jest.MockedFunction<
+  typeof groupsApi.deleteGroup
+>;
 const mockedListJoinRequests = groupsApi.listJoinRequests as jest.MockedFunction<
   typeof groupsApi.listJoinRequests
+>;
+const mockedListMembers = groupsApi.listMembers as jest.MockedFunction<
+  typeof groupsApi.listMembers
 >;
 const mockedResolveJoinRequest =
   groupsApi.resolveJoinRequest as jest.MockedFunction<
@@ -94,6 +102,7 @@ describe('GroupDetailScreen', () => {
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockedListJoinRequests.mockResolvedValue([]);
+    mockedListMembers.mockResolvedValue({ data: [], next_cursor: null });
   });
 
   afterEach(() => {
@@ -246,7 +255,7 @@ describe('GroupDetailScreen', () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER }),
     );
-    mockedListJoinRequests.mockResolvedValueOnce([
+    mockedListJoinRequests.mockResolvedValue([
       {
         id: 'req-1',
         userId: 'u-9',
@@ -276,7 +285,7 @@ describe('GroupDetailScreen', () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER, memberCount: 10 }),
     );
-    mockedListJoinRequests.mockResolvedValueOnce([
+    mockedListJoinRequests.mockResolvedValue([
       {
         id: 'req-1',
         userId: 'u-9',
@@ -306,7 +315,7 @@ describe('GroupDetailScreen', () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER, memberCount: 10 }),
     );
-    mockedListJoinRequests.mockResolvedValueOnce([
+    mockedListJoinRequests.mockResolvedValue([
       {
         id: 'req-1',
         userId: 'u-9',
@@ -334,7 +343,7 @@ describe('GroupDetailScreen', () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER, memberCount: 10 }),
     );
-    mockedListJoinRequests.mockResolvedValueOnce([
+    mockedListJoinRequests.mockResolvedValue([
       {
         id: 'req-1',
         userId: 'u-9',
@@ -364,7 +373,7 @@ describe('GroupDetailScreen', () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER }),
     );
-    mockedListJoinRequests.mockResolvedValueOnce([
+    mockedListJoinRequests.mockResolvedValue([
       {
         id: 'req-1',
         userId: 'u-9',
@@ -418,27 +427,54 @@ describe('GroupDetailScreen', () => {
     });
   });
 
-  // --- delete (stub) ---
+  // --- delete ---
 
-  it('delete: owner Excluir tap shows the "Em breve" alert', async () => {
+  it('delete: owner confirm → success → navigates to Home', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER }),
     );
+    mockedDelete.mockResolvedValueOnce(undefined);
 
     const { findByTestId } = renderScreen();
     fireEvent.press(await findByTestId('danger-delete'));
 
-    await waitFor(() =>
-      expect(alertSpy).toHaveBeenCalledWith(
-        'Em breve',
-        'A exclusão de grupos será adicionada em uma próxima atualização.',
-      ),
+    const confirmButton = alertSpy.mock.calls[0][2][1];
+    expect(confirmButton.text).toBe('Excluir');
+    await act(async () => {
+      await confirmButton.onPress();
+    });
+
+    expect(mockedDelete).toHaveBeenCalledWith('g-1');
+    expect(navigation.navigate).toHaveBeenCalledWith({
+      name: 'HomeTabs',
+      params: { screen: 'Home' },
+    });
+  });
+
+  it('delete: API failure shows Alert and does not navigate', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER }),
     );
+    mockedDelete.mockRejectedValueOnce(new Error('network'));
+
+    const { findByTestId } = renderScreen();
+    fireEvent.press(await findByTestId('danger-delete'));
+
+    const confirmButton = alertSpy.mock.calls[0][2][1];
+    await act(async () => {
+      await confirmButton.onPress();
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Erro',
+      'Não foi possível excluir o grupo. Tente novamente.',
+    );
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   // --- leave ---
 
-  it('leave: confirm → success → goBack', async () => {
+  it('leave: confirm → success → navigates to Home', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER }),
     );
@@ -454,7 +490,10 @@ describe('GroupDetailScreen', () => {
     });
 
     expect(mockedLeave).toHaveBeenCalledWith('g-1');
-    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+    expect(navigation.navigate).toHaveBeenCalledWith({
+      name: 'HomeTabs',
+      params: { screen: 'Home' },
+    });
   });
 
   it('leave: API failure shows Alert and does not navigate', async () => {
@@ -475,6 +514,46 @@ describe('GroupDetailScreen', () => {
       'Erro',
       'Não foi possível sair do grupo. Tente novamente.',
     );
-    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  // --- members short list ---
+
+  it('members: fetched short list renders an avatar stack in MembersSection', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.MEMBER, memberCount: 12 }),
+    );
+    mockedListMembers.mockResolvedValueOnce({
+      data: [
+        {
+          userId: 'u-1',
+          displayName: 'Ana Souza',
+          avatarUrl: null,
+          role: MemberRole.MEMBER,
+        },
+        {
+          userId: 'u-2',
+          displayName: 'Bruno Lima',
+          avatarUrl: null,
+          role: MemberRole.MEMBER,
+        },
+        {
+          userId: 'u-3',
+          displayName: 'Carla Reis',
+          avatarUrl: null,
+          role: MemberRole.MODERATOR,
+        },
+      ],
+      next_cursor: null,
+    });
+
+    const { findByText, queryByText } = renderScreen();
+    await findByText('VER TODOS (12)');
+
+    await waitFor(() => expect(mockedListMembers).toHaveBeenCalledWith('g-1'));
+    // Once members arrive, the "Ver lista completa" placeholder hides.
+    await waitFor(() =>
+      expect(queryByText('Ver lista completa de membros')).toBeNull(),
+    );
   });
 });
