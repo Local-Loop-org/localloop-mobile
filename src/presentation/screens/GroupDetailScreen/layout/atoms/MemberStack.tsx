@@ -49,7 +49,13 @@ export function MemberStack({ members, max = 5, size = 32 }: MemberStackProps) {
             end={{ x: 1, y: 1 }}
             style={[
               styles.avatar,
-              { width: size, height: size, borderRadius: radius },
+              {
+                width: size,
+                height: size,
+                borderRadius: radius,
+                borderWidth: 2,
+                borderColor: colors.background,
+              },
             ]}
           >
             <Text style={[styles.label, { fontSize: size * 0.36 }]}>
@@ -82,10 +88,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarWrap: {
-    borderColor: colors.background,
-    borderWidth: 2,
-  },
+  avatarWrap: {},
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',

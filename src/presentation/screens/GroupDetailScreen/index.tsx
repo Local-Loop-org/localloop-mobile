@@ -8,6 +8,7 @@ import { useGroupJoinRequests } from '@/application/hooks/useGroupJoinRequests';
 import { useGroupMembers } from '@/application/hooks/useGroupMembers';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
 import { useLeaveGroup } from '@/application/hooks/useLeaveGroup';
+import { useBanMember } from '@/application/hooks/useBanMember';
 import { useDeleteGroup } from '@/application/hooks/useDeleteGroup';
 import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest';
 import { confirmDestructive } from '@/shared/ui/confirmDestructive';
@@ -55,6 +56,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   const joinMutation = useJoinGroup();
   const leaveMutation = useLeaveGroup();
   const deleteMutation = useDeleteGroup();
+  const banMutation = useBanMember();
   const resolveMutation = useResolveJoinRequest();
 
   const [localPending, setLocalPending] = useState(false);
@@ -142,6 +144,16 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
     });
   };
 
+  const handleBanMember = (userId: string) => {
+    banMutation.mutate(
+      { groupId, userId },
+      {
+        onError: () =>
+          Alert.alert('Erro', 'Não foi possível banir este membro.'),
+      },
+    );
+  };
+
   const handlePressMembers = () => {
     navigation.navigate(StackRoutes.GroupMembers, {
       groupId,
@@ -179,6 +191,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       isDeleting={deleteMutation.isPending}
       onLeave={handleLeave}
       onPressDelete={handleDelete}
+      onBanMember={handleBanMember}
     />
   );
 }

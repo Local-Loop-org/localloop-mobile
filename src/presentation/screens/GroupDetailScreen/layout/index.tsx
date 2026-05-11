@@ -69,6 +69,8 @@ export default function GroupDetailLayout({
   isDeleting,
   onLeave,
   onPressDelete,
+  onBanMember,
+  onPromoteMember,
 }: GroupDetailLayoutProps) {
   if (loading) {
     return (
@@ -140,7 +142,10 @@ export default function GroupDetailLayout({
         <MembersSection
           memberCount={group.memberCount}
           members={members}
+          myRole={myRole}
           onPressViewAll={onPressMembers}
+          onBanMember={onBanMember}
+          onPromoteMember={onPromoteMember}
         />
 
         {showAboutStats ? (

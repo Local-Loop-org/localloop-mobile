@@ -24,7 +24,7 @@ interface HeroProps {
   onPressMembers: () => void;
 }
 
-const GLOW_SIZE = 220;
+const GLOW_SIZE = 200;
 
 export function Hero({
   name,
@@ -43,7 +43,7 @@ export function Hero({
 
   return (
     <LinearGradient
-      colors={['rgba(0,209,255,0.38)', 'rgba(167,139,250,0.30)']}
+      colors={['rgba(0,217,255,0.15)', 'rgba(176,108,255,0.15)']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.card}
@@ -63,8 +63,8 @@ export function Hero({
             fx="50%"
             fy="50%"
           >
-            <Stop offset="0%" stopColor={colors.accent2} stopOpacity={0.22} />
-            <Stop offset="70%" stopColor={colors.accent2} stopOpacity={0} />
+            <Stop offset="0%" stopColor="#B06CFF" stopOpacity={0.20} />
+            <Stop offset="70%" stopColor="#B06CFF" stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Circle
@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
     padding: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: 'rgba(0,217,255,0.20)',
     marginTop: 4,
   },
   glow: {
     position: 'absolute',
-    right: -GLOW_SIZE * 0.25,
-    top: -GLOW_SIZE * 0.25,
+    right: -50,
+    top: -50,
   },
   head: {
     flexDirection: 'row',
