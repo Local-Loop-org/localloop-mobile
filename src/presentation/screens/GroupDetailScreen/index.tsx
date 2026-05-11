@@ -11,11 +11,12 @@ import { useLeaveGroup } from '@/application/hooks/useLeaveGroup';
 import { useBanMember } from '@/application/hooks/useBanMember';
 import { useDeleteGroup } from '@/application/hooks/useDeleteGroup';
 import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest';
+import { useUpdateGroup } from '@/application/hooks/useUpdateGroup';
 import { confirmDestructive } from '@/shared/ui/confirmDestructive';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes, TabRoutes } from '@/presentation/navigation/routes';
 import GroupDetailLayout from './layout';
-import type { JoinButtonState } from './layout/types';
+import type { GroupEditDraft, JoinButtonState } from './layout/types';
 
 type Props = AuthenticatedStackScreenProps<'GroupDetail'>;
 
@@ -58,8 +59,40 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   const deleteMutation = useDeleteGroup();
   const banMutation = useBanMember();
   const resolveMutation = useResolveJoinRequest();
+  const updateMutation = useUpdateGroup();
 
   const [localPending, setLocalPending] = useState(false);
+  const [editDraft, setEditDraft] = useState<GroupEditDraft | null>(null);
+
+  const handleStartEdit = () => {
+    if (!group) return;
+    setEditDraft({
+      name: group.name,
+      description: group.description,
+      anchorLabel: group.anchorLabel,
+      privacy: group.privacy,
+      radiusKm: group.radiusKm ?? 25,
+    });
+  };
+
+  const handleCancelEdit = () => setEditDraft(null);
+
+  const handleSaveEdit = () => {
+    if (!editDraft) return;
+    updateMutation.mutate(
+      { groupId, body: editDraft },
+      {
+        onSuccess: () => setEditDraft(null),
+        onError: () =>
+          Alert.alert('Erro', 'Não foi possível salvar as alterações.'),
+      },
+    );
+  };
+
+  const handleDraftChange = <K extends keyof GroupEditDraft>(
+    field: K,
+    value: GroupEditDraft[K],
+  ) => setEditDraft((prev) => (prev ? { ...prev, [field]: value } : prev));
 
   useFocusEffect(
     useCallback(() => {
@@ -192,6 +225,13 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       onLeave={handleLeave}
       onPressDelete={handleDelete}
       onBanMember={handleBanMember}
+      isEditing={editDraft !== null}
+      editDraft={editDraft}
+      isSaving={updateMutation.isPending}
+      onStartEdit={handleStartEdit}
+      onCancelEdit={handleCancelEdit}
+      onSaveEdit={handleSaveEdit}
+      onDraftChange={handleDraftChange}
     />
   );
 }

@@ -15,6 +15,8 @@ interface LocationSectionProps {
   onAnchorLabelChange?: (value: string) => void;
   /** When true, render fields as read-only display. */
   readOnly?: boolean;
+  /** When true, locks only the type chips while the label stays editable. Defaults to `readOnly`. */
+  typeReadOnly?: boolean;
 }
 
 export function LocationSection({
@@ -24,6 +26,7 @@ export function LocationSection({
   onPlaceTypeChange,
   onAnchorLabelChange,
   readOnly,
+  typeReadOnly,
 }: LocationSectionProps) {
   return (
     <View>
@@ -33,7 +36,7 @@ export function LocationSection({
         <PlaceTypeChips
           value={placeType}
           onChange={onPlaceTypeChange}
-          readOnly={readOnly}
+          readOnly={typeReadOnly ?? readOnly}
         />
         <View style={styles.gap} />
         <FieldLabel

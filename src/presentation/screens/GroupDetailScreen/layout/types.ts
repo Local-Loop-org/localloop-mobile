@@ -1,8 +1,17 @@
+import type { GroupPrivacy } from '@localloop/shared-types';
 import type {
   GroupDetail,
   GroupMember,
   JoinRequest,
 } from '@/infra/api/groups.api';
+
+export interface GroupEditDraft {
+  name: string;
+  description: string | null;
+  anchorLabel: string;
+  privacy: GroupPrivacy;
+  radiusKm: number;
+}
 
 export type JoinButtonState = 'join' | 'pending' | 'joined';
 
@@ -43,4 +52,17 @@ export interface GroupDetailLayoutProps {
   /** Owner-only delete affordance. */
   isDeleting: boolean;
   onPressDelete: () => void;
+
+  /** Inline edit mode — owners and moderators only. */
+  isEditing: boolean;
+  /** Non-null iff isEditing. */
+  editDraft: GroupEditDraft | null;
+  isSaving: boolean;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  onDraftChange: <K extends keyof GroupEditDraft>(
+    field: K,
+    value: GroupEditDraft[K],
+  ) => void;
 }

@@ -1,5 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { AnchorType } from '@localloop/shared-types';
@@ -22,6 +28,10 @@ interface HeroProps {
   /** Pass `null` to render no role pill (non-member). */
   role: RolePillRole | null;
   onPressMembers: () => void;
+  /** When false, name and description become editable TextInputs. Defaults to true. */
+  readOnly?: boolean;
+  onNameChange?: (v: string) => void;
+  onDescriptionChange?: (v: string) => void;
 }
 
 const GLOW_SIZE = 200;
@@ -35,6 +45,9 @@ export function Hero({
   members,
   role,
   onPressMembers,
+  readOnly = true,
+  onNameChange,
+  onDescriptionChange,
 }: HeroProps) {
   const stack = members.map((m) => ({
     id: m.userId,
@@ -79,14 +92,41 @@ export function Hero({
         <GroupAvatar anchorType={anchorType} size={64} />
         <View style={styles.headBody}>
           {role ? <RolePill role={role} /> : null}
-          <Text style={styles.title} numberOfLines={2}>
-            {name}
-          </Text>
-          {description ? (
-            <Text style={styles.description} numberOfLines={3}>
-              {description}
+          {readOnly ? (
+            <Text style={styles.title} numberOfLines={2}>
+              {name}
             </Text>
-          ) : null}
+          ) : (
+            <TextInput
+              style={styles.titleInput}
+              value={name}
+              onChangeText={onNameChange}
+              maxLength={80}
+              returnKeyType="next"
+              testID="hero-name-input"
+              placeholderTextColor={colors.dim}
+              placeholder="Nome do grupo"
+            />
+          )}
+          {readOnly ? (
+            description ? (
+              <Text style={styles.description} numberOfLines={3}>
+                {description}
+              </Text>
+            ) : null
+          ) : (
+            <TextInput
+              style={styles.descriptionInput}
+              value={description ?? ''}
+              onChangeText={onDescriptionChange}
+              maxLength={500}
+              multiline
+              numberOfLines={3}
+              testID="hero-description-input"
+              placeholderTextColor={colors.dim}
+              placeholder="Descrição (opcional)"
+            />
+          )}
         </View>
       </View>
 
@@ -147,10 +187,34 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginTop: 2,
   },
+  titleInput: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.6,
+    lineHeight: 26,
+    marginTop: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingBottom: 2,
+    paddingTop: 0,
+    paddingHorizontal: 0,
+  },
   description: {
     fontSize: 12.5,
     color: colors.dim,
     lineHeight: 18,
+  },
+  descriptionInput: {
+    fontSize: 12.5,
+    color: colors.dim,
+    lineHeight: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingBottom: 2,
+    paddingTop: 0,
+    paddingHorizontal: 0,
+    minHeight: 36,
   },
   membersRow: {
     marginTop: 16,

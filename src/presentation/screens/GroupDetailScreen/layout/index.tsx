@@ -26,8 +26,6 @@ import { styles } from './styles';
 import type { GroupDetailLayoutProps, JoinButtonState } from './types';
 import type { RolePillRole } from './atoms/RolePill';
 
-const PLACEHOLDER_RADIUS_KM = 2;
-
 const JOIN_BUTTON_LABEL: Record<JoinButtonState, string> = {
   join: 'Entrar no grupo',
   pending: 'Aguardando aprovação',
@@ -71,6 +69,13 @@ export default function GroupDetailLayout({
   onPressDelete,
   onBanMember,
   onPromoteMember,
+  isEditing,
+  editDraft,
+  isSaving,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDraftChange,
 }: GroupDetailLayoutProps) {
   if (loading) {
     return (
@@ -108,23 +113,47 @@ export default function GroupDetailLayout({
   const showAboutStats = !isPrivileged;
   const showLocationCard = isPrivileged;
 
+  // Derive display values: draft when editing, real group data otherwise
+  const displayName = isEditing && editDraft ? editDraft.name : group.name;
+  const displayDescription =
+    isEditing && editDraft ? editDraft.description : group.description;
+  const displayAnchorLabel =
+    isEditing && editDraft ? editDraft.anchorLabel : group.anchorLabel;
+  const displayPrivacy =
+    isEditing && editDraft ? editDraft.privacy : group.privacy;
+  const displayRadiusKm =
+    isEditing && editDraft ? editDraft.radiusKm : (group.radiusKm ?? 25);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <HeaderBar onBack={onBack} />
+      <HeaderBar
+        onBack={onBack}
+        canEdit={isPrivileged}
+        isEditing={isEditing}
+        isSaving={isSaving}
+        onEdit={onStartEdit}
+        onSave={onSaveEdit}
+        onCancel={onCancelEdit}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Hero
-          name={group.name}
-          description={group.description}
+          name={displayName}
+          description={displayDescription}
           anchorType={group.anchorType}
           anchorLabel={group.anchorLabel}
           memberCount={group.memberCount}
           members={members}
           role={pillRoleFor(myRole, joinButtonState)}
           onPressMembers={onPressMembers}
+          readOnly={!isEditing}
+          onNameChange={(v) => onDraftChange('name', v)}
+          onDescriptionChange={(v) =>
+            onDraftChange('description', v || null)
+          }
         />
 
         {showModerationSection ? (
@@ -160,15 +189,25 @@ export default function GroupDetailLayout({
         {showLocationCard ? (
           <LocationSection
             placeType={group.anchorType}
-            anchorLabel={group.anchorLabel}
-            readOnly
+            anchorLabel={displayAnchorLabel}
+            readOnly={!isEditing}
+            typeReadOnly
+            onAnchorLabelChange={(v) => onDraftChange('anchorLabel', v)}
           />
         ) : null}
 
-        <VisibilitySection radiusKm={PLACEHOLDER_RADIUS_KM} readOnly />
+        <VisibilitySection
+          radiusKm={displayRadiusKm}
+          readOnly={!isEditing}
+          onChange={(v) => onDraftChange('radiusKm', v)}
+        />
 
         {!showAboutStats ? (
-          <PrivacySection value={group.privacy} readOnly />
+          <PrivacySection
+            value={displayPrivacy}
+            readOnly={!isEditing}
+            onChange={(v) => onDraftChange('privacy', v)}
+          />
         ) : null}
 
         <PermissionsSummarySection />
