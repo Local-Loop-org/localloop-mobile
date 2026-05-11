@@ -35,6 +35,11 @@ export interface GroupDetailLayoutProps {
   isLeaving: boolean;
   onLeave: () => void;
 
+  /** Privileged members (owner/moderator) can ban others from the members preview. */
+  onBanMember: (userId: string) => void;
+  /** Owner can promote a member to moderator from the members preview. */
+  onPromoteMember?: (userId: string) => void;
+
   /** Owner-only delete affordance. */
   isDeleting: boolean;
   onPressDelete: () => void;
