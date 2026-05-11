@@ -33,7 +33,7 @@ function MemberRow({ member, isLast, canManage, onBan, onPromote }: MemberRowPro
   return (
     <View testID={`members-section-row-${member.userId}`}>
       <View style={styles.row}>
-        <MemberAvatar displayName={member.displayName} size={36} />
+        <MemberAvatar displayName={member.displayName} avatarUrl={member.avatarUrl} size={36} />
         <View style={styles.rowBody}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>
