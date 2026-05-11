@@ -7,17 +7,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MemberRole } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
+import { MEMBER_ROLE_LABEL } from '@/shared/labels/memberRole';
 import { styles } from './styles';
 import type { GroupMembersLayoutProps } from './types';
 import type { GroupMember } from '@/infra/api/groups.api';
-
-const ROLE_LABEL: Record<MemberRole, string> = {
-  [MemberRole.OWNER]: 'Líder',
-  [MemberRole.MODERATOR]: 'Moderador',
-  [MemberRole.MEMBER]: 'Membro',
-};
 
 function MemberRow({
   member,
@@ -34,7 +28,7 @@ function MemberRow({
     <View style={styles.row}>
       <View style={styles.rowMain}>
         <Text style={styles.name}>{member.displayName}</Text>
-        <Text style={styles.role}>{ROLE_LABEL[member.role]}</Text>
+        <Text style={styles.role}>{MEMBER_ROLE_LABEL[member.role]}</Text>
       </View>
       {canBan ? (
         <TouchableOpacity

@@ -519,7 +519,7 @@ describe('GroupDetailScreen', () => {
 
   // --- members short list ---
 
-  it('members: fetched short list renders an avatar stack in MembersSection', async () => {
+  it('members: fetched short list renders rows in MembersSection', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER, memberCount: 12 }),
     );
@@ -551,9 +551,13 @@ describe('GroupDetailScreen', () => {
     await findByText('VER TODOS (12)');
 
     await waitFor(() => expect(mockedListMembers).toHaveBeenCalledWith('g-1'));
-    // Once members arrive, the "Ver lista completa" placeholder hides.
-    await waitFor(() =>
-      expect(queryByText('Ver lista completa de membros')).toBeNull(),
-    );
+    // Once members arrive, each row renders the display name and the
+    // empty-state placeholder hides.
+    await waitFor(() => {
+      expect(queryByText('Ana Souza')).not.toBeNull();
+      expect(queryByText('Bruno Lima')).not.toBeNull();
+      expect(queryByText('Carla Reis')).not.toBeNull();
+      expect(queryByText('Ainda não há membros')).toBeNull();
+    });
   });
 });
