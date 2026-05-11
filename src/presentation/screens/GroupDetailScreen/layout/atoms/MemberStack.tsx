@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/shared/theme';
+import { MemberAvatar } from './MemberAvatar';
 
 interface StackMember {
   id: string | number;
-  initials: string;
+  displayName: string;
+  avatarUrl?: string | null;
 }
 
 interface MemberStackProps {
@@ -40,28 +41,16 @@ export function MemberStack({ members, max = 5, size = 32 }: MemberStackProps) {
               borderRadius: radius,
               marginLeft: i === 0 ? 0 : -10,
               zIndex: shown.length - i,
+              borderWidth: 2,
+              borderColor: colors.background,
             },
           ]}
         >
-          <LinearGradient
-            colors={[colors.primary, colors.accent2]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[
-              styles.avatar,
-              {
-                width: size,
-                height: size,
-                borderRadius: radius,
-                borderWidth: 2,
-                borderColor: colors.background,
-              },
-            ]}
-          >
-            <Text style={[styles.label, { fontSize: size * 0.36 }]}>
-              {m.initials}
-            </Text>
-          </LinearGradient>
+          <MemberAvatar
+            displayName={m.displayName}
+            avatarUrl={m.avatarUrl}
+            size={size}
+          />
         </View>
       ))}
       {extra > 0 ? (
@@ -88,15 +77,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarWrap: {},
-  avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    color: colors.accentInk,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+  avatarWrap: {
+    overflow: 'hidden',
   },
   extra: {
     backgroundColor: colors.surface2,

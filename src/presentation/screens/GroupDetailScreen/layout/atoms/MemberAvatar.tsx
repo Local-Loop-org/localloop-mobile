@@ -1,16 +1,25 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Image, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/shared/theme';
 import { initialsFor } from '@/shared/format/initials';
 
 interface MemberAvatarProps {
   displayName: string;
+  avatarUrl?: string | null;
   size?: number;
 }
 
-export function MemberAvatar({ displayName, size = 28 }: MemberAvatarProps) {
+export function MemberAvatar({ displayName, avatarUrl, size = 28 }: MemberAvatarProps) {
   const radius = size / 2;
+  if (avatarUrl) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={[styles.image, { width: size, height: size, borderRadius: radius }]}
+      />
+    );
+  }
   return (
     <LinearGradient
       colors={[colors.primary, colors.accent2]}
@@ -29,6 +38,7 @@ export function MemberAvatar({ displayName, size = 28 }: MemberAvatarProps) {
 }
 
 const styles = StyleSheet.create({
+  image: {},
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
