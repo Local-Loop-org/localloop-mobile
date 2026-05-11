@@ -1,10 +1,12 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MemberRole } from '@localloop/shared-types';
 import { colors, fonts } from '@/shared/theme';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { Card } from '@/presentation/screens/CreateGroupScreen/layout/atoms/Card';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
-import { MemberStack } from '../atoms/MemberStack';
+import { MemberAvatar } from '../atoms/MemberAvatar';
+import { RolePill, type RolePillRole } from '../atoms/RolePill';
 
 interface MembersSectionProps {
   memberCount: number;
@@ -12,28 +14,11 @@ interface MembersSectionProps {
   onPressViewAll: () => void;
 }
 
-function initialsFor(name: string): string {
-  return (
-    name
-      .split(' ')
-      .filter(Boolean)
-      .map((part) => part[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase() || '?'
-  );
-}
-
 export function MembersSection({
   memberCount,
   members,
   onPressViewAll,
 }: MembersSectionProps) {
-  const stack = members.map((m) => ({
-    id: m.userId,
-    initials: initialsFor(m.displayName),
-  }));
-
   return (
     <View>
       <SectionLabel
@@ -49,19 +34,34 @@ export function MembersSection({
         }
       />
       <Card>
-        <Pressable
-          onPress={onPressViewAll}
-          accessibilityRole="button"
-          style={styles.body}
-          testID="members-section-body"
-        >
-          {stack.length > 0 ? (
-            <MemberStack members={stack} />
-          ) : (
-            <Text style={styles.bodyText}>Ver lista completa de membros</Text>
-          )}
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
+        {members.length > 0 ? (
+          <View testID="members-section-body">
+            {members.map((m, i) => (
+              <Pressable
+                key={m.userId}
+                accessibilityRole="button"
+                style={[styles.row, i === 0 && styles.rowFirst]}
+                testID={`members-section-row-${m.userId}`}
+              >
+                <MemberAvatar displayName={m.displayName} size={36} />
+                <View style={styles.rowBody}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {m.displayName}
+                    </Text>
+                    {m.role !== MemberRole.MEMBER ? (
+                      <RolePill role={m.role as RolePillRole} />
+                    ) : null}
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.empty} testID="members-section-empty">
+            <Text style={styles.emptyText}>Ainda não há membros</Text>
+          </View>
+        )}
       </Card>
     </View>
   );
@@ -75,20 +75,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     fontWeight: '700',
   },
-  body: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  rowFirst: {
+    borderTopWidth: 0,
+  },
+  rowBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  name: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  empty: {
     paddingVertical: 14,
     paddingHorizontal: 14,
   },
-  bodyText: {
+  emptyText: {
     fontSize: 13,
     color: colors.dim,
-  },
-  chevron: {
-    color: colors.faint,
-    fontSize: 18,
-    fontWeight: '600',
   },
 });

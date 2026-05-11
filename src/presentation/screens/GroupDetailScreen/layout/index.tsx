@@ -120,6 +120,7 @@ export default function GroupDetailLayout({
           anchorType={group.anchorType}
           anchorLabel={group.anchorLabel}
           memberCount={group.memberCount}
+          members={members}
           role={pillRoleFor(myRole, joinButtonState)}
           onPressMembers={onPressMembers}
         />

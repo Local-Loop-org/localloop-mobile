@@ -5,6 +5,8 @@ import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { AnchorType } from '@localloop/shared-types';
 import { colors, fonts } from '@/shared/theme';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
+import { initialsFor } from '@/shared/format/initials';
+import type { GroupMember } from '@/infra/api/groups.api';
 import { GroupAvatar } from '../atoms/GroupAvatar';
 import { MemberStack } from '../atoms/MemberStack';
 import { RolePill, type RolePillRole } from '../atoms/RolePill';
@@ -15,6 +17,8 @@ interface HeroProps {
   anchorType: AnchorType;
   anchorLabel: string;
   memberCount: number;
+  /** Top of the members list — fed into the inline MemberStack. */
+  members: GroupMember[];
   /** Pass `null` to render no role pill (non-member). */
   role: RolePillRole | null;
   onPressMembers: () => void;
@@ -28,12 +32,18 @@ export function Hero({
   anchorType,
   anchorLabel,
   memberCount,
+  members,
   role,
   onPressMembers,
 }: HeroProps) {
+  const stack = members.map((m) => ({
+    id: m.userId,
+    initials: initialsFor(m.displayName),
+  }));
+
   return (
     <LinearGradient
-      colors={['rgba(0,209,255,0.15)', 'rgba(167,139,250,0.15)']}
+      colors={['rgba(0,209,255,0.38)', 'rgba(167,139,250,0.30)']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.card}
@@ -88,7 +98,7 @@ export function Hero({
         testID="hero-members-button"
       >
         <View style={styles.membersLeft}>
-          <MemberStack members={[]} />
+          <MemberStack members={stack} />
           <View>
             <Text style={styles.membersCount}>{memberCount} membros</Text>
             <Text style={styles.membersMeta} numberOfLines={1}>
@@ -111,7 +121,7 @@ const styles = StyleSheet.create({
     padding: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,209,255,0.20)',
+    borderColor: colors.line,
     marginTop: 4,
   },
   glow: {
