@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
@@ -17,6 +18,10 @@ jest.mock('@/infra/api/groups.api', () => ({
     getMyGroups: jest.fn(),
     joinGroup: jest.fn(),
   },
+}));
+
+jest.mock('@/application/hooks/useGroupPresence', () => ({
+  useGroupPresence: jest.fn(),
 }));
 
 jest.mock('@react-navigation/native', () => {
@@ -38,6 +43,9 @@ const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
 >;
 const mockedJoin = groupsApi.joinGroup as jest.MockedFunction<
   typeof groupsApi.joinGroup
+>;
+const mockedUseGroupPresence = useGroupPresence as jest.MockedFunction<
+  typeof useGroupPresence
 >;
 const mockedRequestPermissions =
   Location.requestForegroundPermissionsAsync as jest.Mock;
@@ -151,6 +159,7 @@ describe('HomeScreen', () => {
       sampleEvent,
     ]);
     mockedGetMyGroups.mockResolvedValue({ data: [], next_cursor: null });
+    mockedUseGroupPresence.mockReturnValue({});
   });
 
   it('useFocusEffect triggers an initial load and renders groups under sections', async () => {
@@ -361,6 +370,42 @@ describe('HomeScreen', () => {
     fireEvent.press(await findByText('Ver todos →'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('MyGroups');
+  });
+
+  it('shows live presence on open discovery cards and rows', async () => {
+    mockedGetNearby.mockResolvedValueOnce([
+      sampleNeighborhood,
+      sampleEstablishment,
+      { ...sampleEstablishment, id: 'g-5', name: 'Bar do Alemão' },
+    ]);
+    mockedUseGroupPresence.mockReturnValue({ 'g-1': 7, 'g-2': 5 });
+    const { findByText } = renderScreen();
+
+    expect(await findByText('Pedalada do Sábado')).toBeTruthy();
+    expect(await findByText('5')).toBeTruthy();
+    expect(await findByText(/7 Online/)).toBeTruthy();
+  });
+
+  it('shows the live dot on my-groups rows when a count is present', async () => {
+    mockedGetMyGroups.mockResolvedValueOnce({
+      data: [sampleMyGroup],
+      next_cursor: null,
+    });
+    mockedUseGroupPresence.mockReturnValue({ 'mg-1': 2 });
+    const { findByText, findByTestId } = renderScreen();
+
+    expect(await findByText('Clube dos Corredores')).toBeTruthy();
+    expect(await findByTestId('my-group-live-dot-mg-1')).toBeTruthy();
+  });
+
+  it('does not show presence for a closed discovery group when the caller is not a member', async () => {
+    mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
+    mockedUseGroupPresence.mockReturnValue({ 'g-4': 9 });
+    const { findByText, queryByText } = renderScreen();
+
+    expect(await findByText('Condomínio Vista Verde')).toBeTruthy();
+    expect(queryByText(/9 Online/)).toBeNull();
+    expect(queryByText('9')).toBeNull();
   });
 
   // --- membership status handler tests ---

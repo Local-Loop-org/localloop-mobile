@@ -1,2 +1,9 @@
-// Screen-level types for HomeScreen.
-// No selectors or derived types needed yet — add here when introduced.
+import type { MyGroup, NearbyGroup } from '@/infra/api/groups.api';
+
+export type HomeNearbyGroup = NearbyGroup & {
+  liveCount?: number;
+};
+
+export type HomeMyGroup = MyGroup & {
+  liveCount?: number;
+};
