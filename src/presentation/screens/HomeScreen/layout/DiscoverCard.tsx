@@ -2,16 +2,18 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
-import type { NearbyGroup } from '@/infra/api/groups.api';
+import type { HomeNearbyGroup } from '../types';
 import { styles } from './styles';
 import { StatusBadge } from './StatusBadge';
 
 interface Props {
-  group: NearbyGroup;
+  group: HomeNearbyGroup;
   onPress: (id: string) => void;
 }
 
 export function DiscoverCard({ group, onPress }: Props) {
+  const live = group.liveCount ?? 0;
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -26,6 +28,12 @@ export function DiscoverCard({ group, onPress }: Props) {
           iconSize={17}
           borderRadius={10}
         />
+        {live > 0 ? (
+          <View style={styles.cardLiveBadge}>
+            <View style={styles.cardLiveDot} />
+            <Text style={styles.cardLiveText}>{live}</Text>
+          </View>
+        ) : null}
       </View>
       <Text style={styles.cardName} numberOfLines={1}>
         {group.name}

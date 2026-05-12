@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatLastActivity } from '@/shared/format/lastActivity';
-import type { MyGroup } from '@/infra/api/groups.api';
+import type { HomeMyGroup } from '../types';
 import { styles } from './styles';
 
 interface Props {
-  group: MyGroup;
+  group: HomeMyGroup;
   onPress: (id: string) => void;
 }
 
@@ -36,7 +36,12 @@ export function MyGroupRow({ group, onPress }: Props) {
           iconSize={20}
           borderRadius={14}
         />
-        {isLive ? <View style={styles.myRowLiveDot} /> : null}
+        {isLive ? (
+          <View
+            style={styles.myRowLiveDot}
+            testID={`my-group-live-dot-${group.id}`}
+          />
+        ) : null}
       </View>
       <View style={styles.myRowBody}>
         <View style={styles.myRowTopLine}>
