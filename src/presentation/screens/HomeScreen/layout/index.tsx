@@ -76,7 +76,7 @@ export default function HomeLayout({
           />
         }
       >
-        <HomeHeader onPressSearch={() => {}} />
+        <HomeHeader />
 
         {!myGroupsLoading && myGroups.length > 0 ? (
           <>

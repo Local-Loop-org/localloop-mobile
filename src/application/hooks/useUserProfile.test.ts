@@ -1,7 +1,11 @@
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DmPermission, Provider } from '@localloop/shared-types';
+import {
+  DmPermission,
+  Provider,
+  PushPermissionStatus,
+} from '@localloop/shared-types';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { USER_PROFILE_KEY, useUserProfile } from './useUserProfile';
 
@@ -26,6 +30,7 @@ const sampleProfile: UserProfileResponse = {
   displayName: 'Andrey',
   avatarUrl: null,
   dmPermission: DmPermission.MEMBERS,
+  pushPermissionStatus: PushPermissionStatus.GRANTED,
   provider: Provider.GOOGLE,
   createdAt: '2025-03-12T00:00:00.000Z',
 };

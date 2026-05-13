@@ -3,6 +3,7 @@ import { render, waitFor, act } from '@testing-library/react-native';
 import RootNavigator from './RootNavigator';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { DmPermission, Provider, User } from '@/domain/user.entity';
+import { PushPermissionStatus } from '@localloop/shared-types';
 
 jest.mock('@react-navigation/native', () => {
   const ReactLib = require('react');
@@ -74,6 +75,7 @@ const buildUser = (overrides: Partial<User> = {}): User => ({
   displayName: 'Alice',
   avatarUrl: null,
   dmPermission: DmPermission.MEMBERS,
+  pushPermissionStatus: PushPermissionStatus.GRANTED,
   createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 });

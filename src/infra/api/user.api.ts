@@ -1,4 +1,8 @@
-import { DmPermission, Provider } from "@localloop/shared-types";
+import {
+  DmPermission,
+  Provider,
+  PushPermissionStatus,
+} from "@localloop/shared-types";
 import { apiClient } from "./api-client";
 
 export interface UserProfileResponse {
@@ -6,6 +10,7 @@ export interface UserProfileResponse {
   displayName: string;
   avatarUrl: string | null;
   dmPermission: DmPermission;
+  pushPermissionStatus: PushPermissionStatus | null;
   provider: Provider;
   createdAt: string;
 }

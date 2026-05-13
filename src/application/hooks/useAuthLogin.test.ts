@@ -6,6 +6,7 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import { authApi } from '@/infra/api/auth.api';
 import { supabase } from '@/infra/supabase/supabase';
 import { DmPermission, Provider, User } from '@/domain/user.entity';
+import { PushPermissionStatus } from '@localloop/shared-types';
 
 jest.mock('@/infra/api/auth.api', () => ({
   authApi: {
@@ -29,6 +30,7 @@ const buildUser = (overrides: Partial<User> = {}): User => ({
   displayName: 'Alice',
   avatarUrl: null,
   dmPermission: DmPermission.MEMBERS,
+  pushPermissionStatus: PushPermissionStatus.GRANTED,
   createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 });
