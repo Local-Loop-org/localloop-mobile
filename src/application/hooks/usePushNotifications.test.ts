@@ -138,22 +138,4 @@ describe('usePushNotifications', () => {
       PushPermissionStatus.DENIED,
     );
   });
-
-  it('Profile enable opens settings path when the OS cannot ask again', async () => {
-    mockedGetPermissions.mockResolvedValueOnce({
-      status: Notifications.PermissionStatus.DENIED,
-      canAskAgain: false,
-    } as Notifications.NotificationPermissionsStatus);
-    const { result } = renderHook(() => usePushNotifications(), {
-      wrapper: makeWrapper(),
-    });
-
-    await expect(result.current.enableFromProfile()).rejects.toThrow(
-      PushPermissionDeniedError,
-    );
-    expect(mockedRequestPermissions).not.toHaveBeenCalled();
-    expect(mockedUpdatePermission).toHaveBeenCalledWith(
-      PushPermissionStatus.DENIED,
-    );
-  });
 });

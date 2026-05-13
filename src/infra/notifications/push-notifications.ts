@@ -22,16 +22,6 @@ export class PushPermissionDeniedError extends Error {
   }
 }
 
-export class PushRegistrationError extends Error {
-  readonly originalError: unknown;
-
-  constructor(message: string, originalError: unknown) {
-    super(message);
-    this.name = 'PushRegistrationError';
-    this.originalError = originalError;
-  }
-}
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: false,
@@ -45,7 +35,7 @@ function projectId(): string | null {
   const extra = Constants.expoConfig?.extra as
     | { eas?: { projectId?: string } }
     | undefined;
-  return extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? null;
+  return Constants.easConfig?.projectId ?? extra?.eas?.projectId ?? null;
 }
 
 function devicePlatform(): DevicePlatform {
@@ -73,12 +63,8 @@ export async function ensureAndroidNotificationChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync('default', {
     name: 'default',
-    importance: Notifications.AndroidImportance.MAX,
+    importance: Notifications.AndroidImportance.DEFAULT,
   });
-}
-
-export async function preparePushNotifications(): Promise<void> {
-  await ensureAndroidNotificationChannel();
 }
 
 export async function getPermissionStatus(): Promise<Notifications.PermissionStatus> {
@@ -86,46 +72,24 @@ export async function getPermissionStatus(): Promise<Notifications.PermissionSta
   return permissions.status;
 }
 
-export async function getPermissionState(): Promise<Notifications.NotificationPermissionsStatus> {
-  return Notifications.getPermissionsAsync();
-}
-
 export async function requestPermissionStatus(): Promise<Notifications.PermissionStatus> {
   const permissions = await Notifications.requestPermissionsAsync();
   return permissions.status;
 }
 
-export async function requestPermissionState(): Promise<Notifications.NotificationPermissionsStatus> {
-  return Notifications.requestPermissionsAsync();
-}
-
 export async function buildPushRegistration(
   tokenOverride?: string,
 ): Promise<PushRegistration> {
-  await preparePushNotifications();
+  await ensureAndroidNotificationChannel();
 
   const id = projectId();
   if (!id) {
     throw new Error('Expo EAS projectId is required for push notifications');
   }
 
-  let token = tokenOverride;
-  if (!token) {
-    try {
-      token = (await Notifications.getExpoPushTokenAsync({ projectId: id }))
-        .data;
-    } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
-      const androidHint =
-        Platform.OS === 'android'
-          ? ' Android builds must include Firebase google-services.json and EAS FCM V1 push credentials.'
-          : '';
-      throw new PushRegistrationError(
-        `Could not get an Expo push token.${androidHint} ${detail}`,
-        err,
-      );
-    }
-  }
+  const token =
+    tokenOverride ??
+    (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
 
   return {
     installationId: await getInstallationId(),

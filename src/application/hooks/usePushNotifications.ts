@@ -8,10 +8,9 @@ import type { UserProfileResponse } from '@/infra/api/user.api';
 import {
   addPushTokenListener,
   buildPushRegistration,
-  getPermissionState,
-  preparePushNotifications,
+  getPermissionStatus,
   PushPermissionDeniedError,
-  requestPermissionState,
+  requestPermissionStatus,
 } from '@/infra/notifications/push-notifications';
 import { USER_PROFILE_KEY } from './useUserProfile';
 
@@ -80,19 +79,18 @@ export function usePushNotifications() {
       if (!accessToken) return;
       if (status !== null && status !== undefined) return;
 
-      await preparePushNotifications();
-      const current = await getPermissionState();
-      if (isGranted(current.status)) {
+      const current = await getPermissionStatus();
+      if (isGranted(current)) {
         await registerGrantedDevice();
         return;
       }
-      if (isDenied(current.status)) {
+      if (isDenied(current)) {
         await markDenied();
         return;
       }
 
-      const requested = await requestPermissionState();
-      if (isGranted(requested.status)) {
+      const requested = await requestPermissionStatus();
+      if (isGranted(requested)) {
         await registerGrantedDevice();
         return;
       }
@@ -102,18 +100,10 @@ export function usePushNotifications() {
   );
 
   const enableFromProfile = useCallback(async () => {
-    await preparePushNotifications();
-    const current = await getPermissionState();
-    let finalStatus = current.status;
-
-    if (!isGranted(current.status)) {
-      if (isDenied(current.status) && current.canAskAgain === false) {
-        await markDenied();
-        throw new PushPermissionDeniedError();
-      }
-      finalStatus = (await requestPermissionState()).status;
-    }
-
+    const current = await getPermissionStatus();
+    const finalStatus = isGranted(current)
+      ? current
+      : await requestPermissionStatus();
     if (!isGranted(finalStatus)) {
       await markDenied();
       throw new PushPermissionDeniedError();
