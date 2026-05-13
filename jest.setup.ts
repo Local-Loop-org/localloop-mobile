@@ -30,6 +30,31 @@ jest.mock('expo-location', () => ({
   })),
 }));
 
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    easConfig: { projectId: 'test-project-id' },
+    expoConfig: { extra: { eas: { projectId: 'test-project-id' } } },
+  },
+}));
+
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { DEFAULT: 3 },
+  PermissionStatus: {
+    GRANTED: 'granted',
+    DENIED: 'denied',
+    UNDETERMINED: 'undetermined',
+  },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => undefined),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(async () => ({
+    data: 'ExponentPushToken[test]',
+  })),
+  addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     auth: {

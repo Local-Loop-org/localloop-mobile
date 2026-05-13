@@ -10,6 +10,8 @@ import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
+import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
@@ -17,6 +19,14 @@ jest.mock('@/infra/api/groups.api', () => ({
     getMyGroups: jest.fn(),
     joinGroup: jest.fn(),
   },
+}));
+
+jest.mock('@/application/hooks/usePushNotifications', () => ({
+  useHomePushBootstrap: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useUserProfile', () => ({
+  useUserProfile: jest.fn(),
 }));
 
 jest.mock('@react-navigation/native', () => {
@@ -38,6 +48,11 @@ const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
 >;
 const mockedJoin = groupsApi.joinGroup as jest.MockedFunction<
   typeof groupsApi.joinGroup
+>;
+const mockedUseHomePushBootstrap =
+  useHomePushBootstrap as jest.MockedFunction<typeof useHomePushBootstrap>;
+const mockedUseUserProfile = useUserProfile as jest.MockedFunction<
+  typeof useUserProfile
 >;
 const mockedRequestPermissions =
   Location.requestForegroundPermissionsAsync as jest.Mock;
@@ -151,6 +166,11 @@ describe('HomeScreen', () => {
       sampleEvent,
     ]);
     mockedGetMyGroups.mockResolvedValue({ data: [], next_cursor: null });
+    mockedUseUserProfile.mockReturnValue({
+      data: { pushPermissionStatus: null },
+      isLoading: false,
+      isSuccess: true,
+    } as ReturnType<typeof useUserProfile>);
   });
 
   it('useFocusEffect triggers an initial load and renders groups under sections', async () => {
@@ -164,6 +184,7 @@ describe('HomeScreen', () => {
     expect(await findByText('Bairros')).toBeTruthy();
     expect(await findByText('Eventos')).toBeTruthy();
     expect(mockedGetNearby).toHaveBeenCalledTimes(1);
+    expect(mockedUseHomePushBootstrap).toHaveBeenCalledWith(null, true);
   });
 
   it('hides empty section buckets', async () => {

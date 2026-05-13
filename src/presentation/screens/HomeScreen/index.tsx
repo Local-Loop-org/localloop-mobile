@@ -13,6 +13,8 @@ import {
 import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
 import { useMyGroups } from '@/application/hooks/useMyGroups';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
+import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile';
 import { usePreferencesStore } from '@/application/stores/preferences.store';
 import type { NearbyGroup } from '@/infra/api/groups.api';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
@@ -39,7 +41,13 @@ export default function HomeScreen({ navigation }: Props) {
   const { request: requestLocation } = useCurrentLocation();
   const query = useNearbyGroups(coords, discoveryRadiusKm);
   const myGroupsQuery = useMyGroups();
+  const profileQuery = useUserProfile();
   const joinMutation = useJoinGroup();
+
+  useHomePushBootstrap(
+    profileQuery.data?.pushPermissionStatus,
+    profileQuery.isSuccess,
+  );
 
   const fetchCoords = useCallback(async () => {
     const next = await requestLocation();
