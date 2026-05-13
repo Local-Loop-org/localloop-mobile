@@ -35,6 +35,8 @@ const baseDetail: GroupDetail = {
   name: 'G',
   description: null,
   anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLat: -23.55,
+  anchorLng: -46.63,
   anchorLabel: 'L',
   privacy: GroupPrivacy.APPROVAL_REQUIRED,
   memberCount: 10,

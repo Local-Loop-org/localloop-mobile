@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import GroupDetailScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
@@ -55,6 +56,9 @@ const mockedResolveJoinRequest =
 const mockedUpdateGroup = groupsApi.updateGroup as jest.MockedFunction<
   typeof groupsApi.updateGroup
 >;
+const mockedRequestPermissions =
+  Location.requestForegroundPermissionsAsync as jest.Mock;
+const mockedGetPosition = Location.getCurrentPositionAsync as jest.Mock;
 
 const navigation = {
   goBack: jest.fn(),
@@ -91,6 +95,8 @@ const buildGroup = (
   name: 'Morumbi Runners',
   description: 'Weekly runs',
   anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLat: -23.55,
+  anchorLng: -46.63,
   anchorLabel: 'Morumbi',
   privacy: GroupPrivacy.OPEN,
   memberCount: 10,
@@ -105,6 +111,10 @@ describe('GroupDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockedRequestPermissions.mockResolvedValue({ status: 'granted' });
+    mockedGetPosition.mockResolvedValue({
+      coords: { latitude: -23.55, longitude: -46.63 },
+    });
     mockedListJoinRequests.mockResolvedValue([]);
     mockedListMembers.mockResolvedValue({ data: [], next_cursor: null });
   });
@@ -153,6 +163,16 @@ describe('GroupDetailScreen', () => {
     const { findByTestId, queryByTestId } = renderScreen();
     await findByTestId('join-group-cta');
     expect(queryByTestId('group-created-at')).toBeNull();
+  });
+
+  it('render: shows current distance in the SOBRE O GRUPO second row', async () => {
+    mockedGetDetail.mockResolvedValueOnce(buildGroup({ myRole: null }));
+
+    const { findByTestId, findByText } = renderScreen();
+
+    expect(await findByTestId('group-detail-distance-card')).toBeTruthy();
+    expect(await findByText('DISTÂNCIA')).toBeTruthy();
+    expect(await findByText('0M')).toBeTruthy();
   });
 
   it('render: myRole=MEMBER shows MEMBRO pill + Sair, no Excluir, no Solicitações', async () => {

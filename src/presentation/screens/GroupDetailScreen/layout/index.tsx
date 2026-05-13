@@ -52,6 +52,7 @@ export default function GroupDetailLayout({
   group,
   loading,
   errorMessage,
+  distanceLabel,
   joinButtonState,
   isJoining,
   onJoin,
@@ -183,6 +184,7 @@ export default function GroupDetailLayout({
             anchorType={group.anchorType}
             anchorLabel={group.anchorLabel}
             privacy={group.privacy}
+            distanceLabel={distanceLabel}
           />
         ) : null}
 

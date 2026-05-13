@@ -29,6 +29,8 @@ const baseDetail = {
   name: 'Morumbi Runners',
   description: null,
   anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLat: -23.55,
+  anchorLng: -46.63,
   anchorLabel: 'Morumbi',
   privacy: GroupPrivacy.OPEN,
   memberCount: 10,

@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MemberRole } from '@localloop/shared-types';
+import { distanceMeters } from '@localloop/geo-utils';
 import { type GroupDetail } from '@/infra/api/groups.api';
 import { useGroupDetail } from '@/application/hooks/useGroupDetail';
+import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
 import { useGroupJoinRequests } from '@/application/hooks/useGroupJoinRequests';
 import { useGroupMembers } from '@/application/hooks/useGroupMembers';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup';
@@ -13,6 +15,7 @@ import { useDeleteGroup } from '@/application/hooks/useDeleteGroup';
 import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest';
 import { useUpdateGroup } from '@/application/hooks/useUpdateGroup';
 import { confirmDestructive } from '@/shared/ui/confirmDestructive';
+import { formatDistance } from '@/shared/format/distance';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes, TabRoutes } from '@/presentation/navigation/routes';
 import GroupDetailLayout from './layout';
@@ -46,6 +49,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   const detailQuery = useGroupDetail(groupId);
   const group = detailQuery.data;
   const privileged = isPrivileged(group?.myRole);
+  const { coords, request: requestLocation } = useCurrentLocation();
 
   const requestsQuery = useGroupJoinRequests(groupId, { enabled: privileged });
   const { refetch: refetchRequests } = requestsQuery;
@@ -101,6 +105,24 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       }
     }, [privileged, refetchRequests]),
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      void requestLocation();
+    }, [requestLocation]),
+  );
+
+  const distanceLabel = useMemo(() => {
+    if (!group || !coords) return null;
+    return formatDistance(
+      distanceMeters(
+        coords.lat,
+        coords.lng,
+        group.anchorLat,
+        group.anchorLng,
+      ),
+    );
+  }, [coords, group]);
 
   const handleJoin = async () => {
     if (!group) return;
@@ -209,6 +231,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       errorMessage={
         detailQuery.isError ? 'Não foi possível carregar o grupo.' : null
       }
+      distanceLabel={distanceLabel}
       joinButtonState={deriveJoinButtonState(group, localPending)}
       isJoining={joinMutation.isPending}
       onJoin={handleJoin}
