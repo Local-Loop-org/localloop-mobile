@@ -1,0 +1,107 @@
+import React from 'react';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { useAuthStore } from '@/application/stores/auth.store';
+import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useGroupPresence } from './useGroupPresence';
+
+jest.mock('@/infra/socket/chat-socket', () => ({
+  createChatSocket: jest.fn(),
+}));
+
+type SocketHandler = (...args: unknown[]) => void;
+
+function makeSocketMock() {
+  const handlers = new Map<string, SocketHandler>();
+  const emit = jest.fn();
+  const on = jest.fn((event: string, handler: SocketHandler) => {
+    handlers.set(event, handler);
+  });
+  const removeAllListeners = jest.fn();
+  const disconnect = jest.fn();
+  return {
+    mock: { emit, on, removeAllListeners, disconnect },
+    fire: (event: string, payload?: unknown) => {
+      handlers.get(event)?.(payload);
+    },
+  };
+}
+
+const mockedCreateChatSocket = createChatSocket as jest.Mock;
+
+describe('useGroupPresence', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useAuthStore.setState({
+      user: {
+        id: 'me',
+        displayName: 'Me',
+        avatarUrl: null,
+      } as never,
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      isAuthenticated: true,
+      isNewUser: false,
+    });
+  });
+
+  it('connects and watches the unique visible group ids on socket connect', async () => {
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupPresence(['g-2', 'g-1', 'g-1']));
+
+    await waitFor(() =>
+      expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok'),
+    );
+    act(() => {
+      fire('connect');
+    });
+
+    expect(mock.emit).toHaveBeenCalledWith('watch_presence', {
+      groupIds: ['g-1', 'g-2'],
+    });
+  });
+
+  it('updates counts from presence_update events and ignores unwatched groups', async () => {
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useGroupPresence(['g-1']));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('presence_update', { groupId: 'g-other', count: 99 });
+    });
+    expect(result.current).toEqual({});
+
+    act(() => {
+      fire('presence_update', { groupId: 'g-1', count: 3 });
+    });
+    await waitFor(() => expect(result.current['g-1']).toBe(3));
+  });
+
+  it('unwatches and disconnects on cleanup', async () => {
+    const { mock } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { unmount } = renderHook(() => useGroupPresence(['g-1', 'g-2']));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    unmount();
+
+    expect(mock.emit).toHaveBeenCalledWith('unwatch_presence', {
+      groupIds: ['g-1', 'g-2'],
+    });
+    expect(mock.removeAllListeners).toHaveBeenCalled();
+    expect(mock.disconnect).toHaveBeenCalled();
+  });
+
+  it('does not create a socket without a token or watched group ids', () => {
+    useAuthStore.setState({ accessToken: null } as never);
+
+    renderHook(() => useGroupPresence(['g-1']));
+    renderHook(() => useGroupPresence([]));
+
+    expect(mockedCreateChatSocket).not.toHaveBeenCalled();
+  });
+});
