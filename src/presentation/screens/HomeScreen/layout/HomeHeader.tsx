@@ -1,26 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { View, Text } from 'react-native';
 import { styles } from './styles';
 
-interface Props {
-  onPressSearch: () => void;
-}
-
-export function HomeHeader({ onPressSearch }: Props) {
+export function HomeHeader() {
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>LocalLoop</Text>
-      <View style={styles.headerActions}>
-        <TouchableOpacity
-          accessibilityLabel="Buscar"
-          style={styles.iconBtn}
-          onPress={onPressSearch}
-        >
-          <Icon name="search" size={16} color={colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
+      <View style={styles.headerActions} />
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useAuthStore } from './auth.store';
+import { PushPermissionStatus } from '@localloop/shared-types';
 import { DmPermission, Provider, User } from '@/domain/user.entity';
 
 const resetStore = () =>
@@ -18,6 +19,7 @@ const buildUser = (overrides: Partial<User> = {}): User => ({
   displayName: 'Alice',
   avatarUrl: null,
   dmPermission: DmPermission.MEMBERS,
+  pushPermissionStatus: PushPermissionStatus.GRANTED,
   createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 });
