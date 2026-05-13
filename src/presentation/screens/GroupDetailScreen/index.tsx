@@ -113,14 +113,9 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
   );
 
   const distanceLabel = useMemo(() => {
-    if (!group || !coords) return null;
+    if (!group?.anchorLat || !group?.anchorLng || !coords) return null;
     return formatDistance(
-      distanceMeters(
-        coords.lat,
-        coords.lng,
-        group.anchorLat,
-        group.anchorLng,
-      ),
+      distanceMeters(coords.lat, coords.lng, group.anchorLat, group.anchorLng),
     );
   }, [coords, group]);
 
