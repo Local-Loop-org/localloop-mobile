@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { DmPermission } from '@localloop/shared-types';
+import { DmPermission, PushPermissionStatus } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { usePreferencesStore } from '@/application/stores/preferences.store';
+import {
+  PushPermissionDeniedError,
+  usePushNotifications,
+} from '@/application/hooks/usePushNotifications';
 import { useUserProfile } from '@/application/hooks/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile';
 import ProfileLayout from './layout';
@@ -28,18 +32,20 @@ export default function ProfileScreen() {
 
   const profileQuery = useUserProfile();
   const updateMutation = useUpdateUserProfile();
+  const pushNotifications = usePushNotifications();
 
   const profile = profileQuery.data;
   const displayName = profile?.displayName ?? fallbackUser?.displayName ?? '';
   const avatarUrl = profile?.avatarUrl ?? fallbackUser?.avatarUrl ?? null;
   const dmPermission = profile?.dmPermission ?? fallbackUser?.dmPermission ?? DmPermission.MEMBERS;
+  const pushPermissionStatus =
+    profile?.pushPermissionStatus ?? fallbackUser?.pushPermissionStatus ?? null;
   const createdAt = profile?.createdAt ?? null;
 
   const radiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
   const setDiscoveryRadiusKm = usePreferencesStore((s) => s.setDiscoveryRadiusKm);
 
-  // Local-only state: backend support deferred (push provider, theming/i18n, DM exception list).
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  // Local-only state: backend support deferred (theming/i18n, DM exception list).
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [language, setLanguage] = useState<LanguageCode>('pt');
   const [exceptionIds, setExceptionIds] = useState<string[]>([]);
@@ -65,6 +71,25 @@ export default function ProfileScreen() {
 
   const handleComingSoon = () => Alert.alert(COMING_SOON, COMING_SOON_BODY);
 
+  const handleToggleNotifications = async (next: boolean) => {
+    try {
+      if (next) {
+        await pushNotifications.enableFromProfile();
+        return;
+      }
+      await pushNotifications.disableFromProfile();
+    } catch (err) {
+      if (err instanceof PushPermissionDeniedError) {
+        Alert.alert(
+          'Permissão bloqueada',
+          'Ative as notificações do LocalLoop nas configurações do sistema para receber avisos.',
+        );
+        return;
+      }
+      Alert.alert('Erro', 'Não foi possível atualizar as notificações.');
+    }
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       'Excluir conta',
@@ -81,7 +106,9 @@ export default function ProfileScreen() {
       dmExceptions={dmExceptions}
       candidateExceptions={candidateExceptions}
       radiusKm={radiusKm}
-      notificationsEnabled={notificationsEnabled}
+      notificationsEnabled={
+        pushPermissionStatus === PushPermissionStatus.GRANTED
+      }
       theme={theme}
       language={language}
       isSavingName={updateMutation.isPending}
@@ -94,7 +121,7 @@ export default function ProfileScreen() {
         setExceptionIds((prev) => prev.filter((x) => x !== id))
       }
       onChangeRadius={setDiscoveryRadiusKm}
-      onToggleNotifications={setNotificationsEnabled}
+      onToggleNotifications={handleToggleNotifications}
       onChangeTheme={setTheme}
       onChangeLanguage={setLanguage}
       onPressPrivacy={handleComingSoon}

@@ -2,7 +2,11 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import * as Location from 'expo-location';
-import { DmPermission, Provider } from '@localloop/shared-types';
+import {
+  DmPermission,
+  Provider,
+  PushPermissionStatus,
+} from '@localloop/shared-types';
 import OnboardingScreen from './index';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { userApi } from '@/infra/api/user.api';
@@ -22,6 +26,7 @@ const resetStore = () =>
       displayName: '',
       avatarUrl: null,
       dmPermission: DmPermission.MEMBERS,
+      pushPermissionStatus: null,
       createdAt: '2026-01-01T00:00:00Z',
     },
     accessToken: 'access',
@@ -104,6 +109,7 @@ describe('OnboardingScreen', () => {
       displayName: 'Alice',
       avatarUrl: null,
       dmPermission: DmPermission.MEMBERS,
+      pushPermissionStatus: PushPermissionStatus.GRANTED,
       provider: Provider.GOOGLE,
       createdAt: '2026-01-01T00:00:00.000Z',
     });

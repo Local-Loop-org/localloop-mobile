@@ -2,10 +2,15 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DmPermission, Provider } from '@localloop/shared-types';
+import {
+  DmPermission,
+  Provider,
+  PushPermissionStatus,
+} from '@localloop/shared-types';
 import ProfileScreen from './index';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { usePushNotifications } from '@/application/hooks/usePushNotifications';
 
 const mockGoBack = jest.fn();
 
@@ -24,20 +29,31 @@ jest.mock('@/application/stores/auth.store', () => ({
   useAuthStore: jest.fn(),
 }));
 
+jest.mock('@/application/hooks/usePushNotifications', () => ({
+  PushPermissionDeniedError: class PushPermissionDeniedError extends Error {},
+  usePushNotifications: jest.fn(),
+}));
+
 const mockedGetMe = userApi.getMe as jest.MockedFunction<typeof userApi.getMe>;
 const mockedUpdateProfile = userApi.updateProfile as jest.MockedFunction<
   typeof userApi.updateProfile
 >;
 const mockedUseAuthStore = useAuthStore as unknown as jest.Mock;
+const mockedUsePushNotifications = usePushNotifications as jest.MockedFunction<
+  typeof usePushNotifications
+>;
 
 const logoutMock = jest.fn().mockResolvedValue(undefined);
 const updateUserMock = jest.fn().mockResolvedValue(undefined);
+const enableFromProfileMock = jest.fn().mockResolvedValue(undefined);
+const disableFromProfileMock = jest.fn().mockResolvedValue(undefined);
 
 const profile: UserProfileResponse = {
   id: 'user-1',
   displayName: 'Andrey Viktor',
   avatarUrl: null,
   dmPermission: DmPermission.MEMBERS,
+  pushPermissionStatus: PushPermissionStatus.GRANTED,
   provider: Provider.GOOGLE,
   createdAt: '2025-03-12T00:00:00.000Z',
 };
@@ -63,11 +79,20 @@ beforeEach(() => {
         displayName: 'Andrey Viktor',
         avatarUrl: null,
         dmPermission: DmPermission.MEMBERS,
+        pushPermissionStatus: PushPermissionStatus.GRANTED,
       },
       logout: logoutMock,
       updateUser: updateUserMock,
     };
     return selector ? selector(state) : state;
+  });
+  mockedUsePushNotifications.mockReturnValue({
+    bootstrapIfUnasked: jest.fn(),
+    enableFromProfile: enableFromProfileMock,
+    disableFromProfile: disableFromProfileMock,
+    listenForTokenChanges: jest.fn(),
+    isRegistering: false,
+    isUpdatingPermission: false,
   });
 });
 
@@ -117,6 +142,19 @@ describe('ProfileScreen', () => {
     const logoutButtons = getAllByLabelText('Sair');
     fireEvent.press(logoutButtons[0]);
     expect(logoutMock).toHaveBeenCalled();
+  });
+
+  it('notification toggle disables notifications through the push hook', async () => {
+    mockedGetMe.mockResolvedValue(profile);
+
+    const { getByLabelText } = render(<ProfileScreen />, {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(mockedGetMe).toHaveBeenCalled());
+    fireEvent(getByLabelText('Receber notificações'), 'valueChange', false);
+
+    await waitFor(() => expect(disableFromProfileMock).toHaveBeenCalled());
   });
 
   it('Excluir conta opens the "em breve" alert', async () => {

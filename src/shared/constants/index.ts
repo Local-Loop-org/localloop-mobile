@@ -6,4 +6,5 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
   DISCOVERY_RADIUS_KM: 'discovery_radius_km',
+  PUSH_INSTALLATION_ID: 'push_installation_id',
 };

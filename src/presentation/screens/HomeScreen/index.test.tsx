@@ -1,15 +1,18 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import {
-  fireEvent,
-  render,
-  waitFor,
-} from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { AnchorType, GroupPrivacy, MemberRole, MemberStatus } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MemberRole,
+  MemberStatus,
+} from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
+import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile';
 import { useGroupPresence } from '@/application/hooks/useGroupPresence';
 
 jest.mock('@/infra/api/groups.api', () => ({
@@ -18,6 +21,14 @@ jest.mock('@/infra/api/groups.api', () => ({
     getMyGroups: jest.fn(),
     joinGroup: jest.fn(),
   },
+}));
+
+jest.mock('@/application/hooks/usePushNotifications', () => ({
+  useHomePushBootstrap: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useUserProfile', () => ({
+  useUserProfile: jest.fn(),
 }));
 
 jest.mock('@/application/hooks/useGroupPresence', () => ({
@@ -43,6 +54,12 @@ const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
 >;
 const mockedJoin = groupsApi.joinGroup as jest.MockedFunction<
   typeof groupsApi.joinGroup
+>;
+const mockedUseHomePushBootstrap = useHomePushBootstrap as jest.MockedFunction<
+  typeof useHomePushBootstrap
+>;
+const mockedUseUserProfile = useUserProfile as jest.MockedFunction<
+  typeof useUserProfile
 >;
 const mockedUseGroupPresence = useGroupPresence as jest.MockedFunction<
   typeof useGroupPresence
@@ -159,6 +176,11 @@ describe('HomeScreen', () => {
       sampleEvent,
     ]);
     mockedGetMyGroups.mockResolvedValue({ data: [], next_cursor: null });
+    mockedUseUserProfile.mockReturnValue({
+      data: { pushPermissionStatus: null },
+      isLoading: false,
+      isSuccess: true,
+    } as ReturnType<typeof useUserProfile>);
     mockedUseGroupPresence.mockReturnValue({});
   });
 
@@ -173,6 +195,7 @@ describe('HomeScreen', () => {
     expect(await findByText('Bairros')).toBeTruthy();
     expect(await findByText('Eventos')).toBeTruthy();
     expect(mockedGetNearby).toHaveBeenCalledTimes(1);
+    expect(mockedUseHomePushBootstrap).toHaveBeenCalledWith(null, true);
   });
 
   it('hides empty section buckets', async () => {
@@ -299,7 +322,10 @@ describe('HomeScreen', () => {
     mockedJoin.mockImplementation(
       () =>
         new Promise((resolve) =>
-          setTimeout(() => resolve({ status: 'joined', role: MemberRole.MEMBER }), 100),
+          setTimeout(
+            () => resolve({ status: 'joined', role: MemberRole.MEMBER }),
+            100,
+          ),
         ),
     );
     const { findByText } = renderScreen();
@@ -430,7 +456,10 @@ describe('HomeScreen', () => {
   });
 
   it('PENDING member card press: does not call joinGroup or navigate', async () => {
-    const pendingGroup = { ...sampleNeighborhood, memberStatus: MemberStatus.PENDING };
+    const pendingGroup = {
+      ...sampleNeighborhood,
+      memberStatus: MemberStatus.PENDING,
+    };
     mockedGetNearby.mockResolvedValueOnce([pendingGroup]);
     const { findByText } = renderScreen();
     fireEvent.press(await findByText('Morumbi Runners'));
@@ -468,7 +497,10 @@ describe('HomeScreen', () => {
   });
 
   it('shows "Aguardando" badge when memberStatus is PENDING', async () => {
-    const pendingGroup = { ...sampleNeighborhood, memberStatus: MemberStatus.PENDING };
+    const pendingGroup = {
+      ...sampleNeighborhood,
+      memberStatus: MemberStatus.PENDING,
+    };
     mockedGetNearby.mockResolvedValueOnce([pendingGroup]);
     const { findByText } = renderScreen();
     await findByText('Morumbi Runners');
