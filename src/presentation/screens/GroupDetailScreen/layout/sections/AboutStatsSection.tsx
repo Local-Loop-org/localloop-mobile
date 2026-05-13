@@ -11,6 +11,7 @@ interface AboutStatsSectionProps {
   anchorType: AnchorType;
   anchorLabel: string;
   privacy: GroupPrivacy;
+  distanceLabel?: string | null;
   /** Optional: hide the radius pill if data isn't available yet. */
   radiusKm?: number;
 }
@@ -35,6 +36,7 @@ export function AboutStatsSection({
   anchorType,
   anchorLabel,
   privacy,
+  distanceLabel,
   radiusKm,
 }: AboutStatsSectionProps) {
   return (
@@ -59,6 +61,14 @@ export function AboutStatsSection({
           label={ANCHOR_TYPE_LABELS[anchorType].toUpperCase()}
           value={anchorLabel}
         />
+        {distanceLabel ? (
+          <StatPill
+            icon="compass"
+            label="DISTÂNCIA"
+            value={distanceLabel}
+            testID="group-detail-distance-card"
+          />
+        ) : null}
       </View>
     </View>
   );

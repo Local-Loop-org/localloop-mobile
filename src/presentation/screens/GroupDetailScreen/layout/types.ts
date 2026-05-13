@@ -19,6 +19,7 @@ export interface GroupDetailLayoutProps {
   group: GroupDetail | null;
   loading: boolean;
   errorMessage: string | null;
+  distanceLabel?: string | null;
 
   /** Join CTA state for non-members (and locally-pending users). */
   joinButtonState: JoinButtonState;
