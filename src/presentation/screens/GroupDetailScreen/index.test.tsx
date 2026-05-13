@@ -170,7 +170,7 @@ describe('GroupDetailScreen', () => {
     const { findByTestId, findByText } = renderScreen();
 
     expect(await findByTestId('group-detail-distance-card')).toBeTruthy();
-    expect(await findByText('Distância')).toBeTruthy();
+    expect(await findByText('Sua distância do grupo')).toBeTruthy();
     expect(await findByText('0M')).toBeTruthy();
   });
 
