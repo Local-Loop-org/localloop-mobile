@@ -175,6 +175,29 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
+  cardLiveBadge: {
+    minWidth: 40,
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 230, 118, 0.18)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  cardLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.success,
+  },
+  cardLiveText: {
+    fontSize: 11,
+    fontFamily: monoFamily,
+    fontWeight: '700',
+    color: colors.success,
+  },
   cardName: {
     fontSize: 15,
     fontWeight: '700',
@@ -281,6 +304,10 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.4,
     fontWeight: '600',
     marginTop: 2,
+  },
+  rowLiveMeta: {
+    color: colors.success,
+    fontWeight: '700',
   },
 
   // My groups row (design: bare list-item, gradient icon, lastAt, unread badge)

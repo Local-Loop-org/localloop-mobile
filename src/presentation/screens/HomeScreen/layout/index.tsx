@@ -11,7 +11,7 @@ import { AnchorType } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
-import type { NearbyGroup } from '@/infra/api/groups.api';
+import type { HomeNearbyGroup } from '../types';
 import { styles } from './styles';
 import type { HomeLayoutProps } from './types';
 import { HomeHeader } from './HomeHeader';
@@ -36,8 +36,10 @@ const SECTION_ORDER: SectionSpec[] = Object.values(AnchorType)
   .filter((type) => typeof type === 'string')
   .map((type) => ({ type: type as AnchorType }));
 
-function bucketByAnchor(groups: NearbyGroup[]): Map<AnchorType, NearbyGroup[]> {
-  const map = new Map<AnchorType, NearbyGroup[]>();
+function bucketByAnchor(
+  groups: HomeNearbyGroup[],
+): Map<AnchorType, HomeNearbyGroup[]> {
+  const map = new Map<AnchorType, HomeNearbyGroup[]>();
   for (const g of groups) {
     const list = map.get(g.anchorType) ?? [];
     list.push(g);
