@@ -32,6 +32,8 @@ export interface GroupDetail {
   name: string;
   description: string | null;
   anchorType: AnchorType;
+  anchorLat: number;
+  anchorLng: number;
   anchorLabel: string;
   privacy: GroupPrivacy;
   radiusKm?: number;
