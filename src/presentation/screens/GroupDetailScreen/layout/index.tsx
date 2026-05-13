@@ -184,6 +184,7 @@ export default function GroupDetailLayout({
             anchorType={group.anchorType}
             anchorLabel={group.anchorLabel}
             privacy={group.privacy}
+            radiusKm={displayRadiusKm}
             distanceLabel={distanceLabel}
           />
         ) : null}
