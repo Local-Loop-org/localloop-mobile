@@ -41,17 +41,17 @@ export function AboutStatsSection({
 }: AboutStatsSectionProps) {
   return (
     <View>
-      <SectionLabel label="SOBRE O GRUPO" />
+      <SectionLabel label='SOBRE O GRUPO' />
       <View style={styles.row}>
-        <StatPill icon="users" label="MEMBROS" value={memberCount} />
+        <StatPill icon='users' label='MEMBROS' value={memberCount} />
         <StatPill
-          icon="radar"
-          label="VISÍVEL EM"
+          icon='radar'
+          label='VISÍVEL EM'
           value={radiusKm !== undefined ? formatRadius(radiusKm) : '—'}
         />
         <StatPill
           icon={PRIVACY_ICON[privacy]}
-          label="ENTRADA"
+          label='ENTRADA'
           value={PRIVACY_VALUE[privacy]}
         />
       </View>
@@ -63,10 +63,10 @@ export function AboutStatsSection({
         />
         {distanceLabel ? (
           <StatPill
-            icon="compass"
-            label="DISTÂNCIA"
+            icon='compass'
+            label='DISTÂNCIA'
             value={distanceLabel}
-            testID="group-detail-distance-card"
+            testID='group-detail-distance-card'
           />
         ) : null}
       </View>
