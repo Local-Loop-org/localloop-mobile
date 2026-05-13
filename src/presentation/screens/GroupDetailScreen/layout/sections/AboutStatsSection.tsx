@@ -64,7 +64,7 @@ export function AboutStatsSection({
         {distanceLabel ? (
           <StatPill
             icon='compass'
-            label='Sua Distância até o grupo'
+            label='Sua distância do grupo'
             value={distanceLabel}
             testID='group-detail-distance-card'
           />
