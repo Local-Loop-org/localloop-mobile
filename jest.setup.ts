@@ -39,7 +39,7 @@ jest.mock('expo-constants', () => ({
 }));
 
 jest.mock('expo-notifications', () => ({
-  AndroidImportance: { DEFAULT: 3 },
+  AndroidImportance: { DEFAULT: 3, MAX: 5 },
   PermissionStatus: {
     GRANTED: 'granted',
     DENIED: 'denied',

@@ -103,6 +103,15 @@ Required environment variables (all `EXPO_PUBLIC_*` so they're embedded at build
 - `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL (used for OAuth)
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
 
+### Android push notifications
+
+Expo Push on Android requires a development or production EAS build with Firebase Cloud Messaging configured. Expo Go does not support push notification functionality on SDK 53 and later.
+
+1. Create or reuse a Firebase project for `com.localloop.app`.
+2. Download `google-services.json` from Firebase and place it at the mobile repo root, or set `GOOGLE_SERVICES_FILE` to its path before building. `app.config.js` includes `android.googleServicesFile` only when that file exists.
+3. Upload the FCM V1 service account key in EAS credentials for the Android app identifier.
+4. Rebuild the Android APK/development build after changing credentials or `google-services.json`.
+
 ## CI/CD — APK delivery
 
 Pipeline at [.github/workflows/ci.yml](.github/workflows/ci.yml):

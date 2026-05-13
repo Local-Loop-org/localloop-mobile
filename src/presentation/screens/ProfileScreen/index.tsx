@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DmPermission, PushPermissionStatus } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
@@ -24,6 +24,13 @@ const SUGGESTED_EXCEPTIONS: DmException[] = [
 
 const COMING_SOON = 'Em breve';
 const COMING_SOON_BODY = 'Esta funcionalidade ainda não está disponível.';
+const NOTIFICATION_ERROR =
+  'Não foi possível atualizar as notificações. Tente novamente em instantes.';
+
+function pushErrorMessage(err: unknown): string {
+  if (!__DEV__ || !(err instanceof Error)) return NOTIFICATION_ERROR;
+  return `${NOTIFICATION_ERROR}\n\nDetalhe: ${err.message}`;
+}
 
 export default function ProfileScreen() {
   const navigation = useNavigation<HomeTabsScreenProps<'Profile'>['navigation']>();
@@ -83,10 +90,15 @@ export default function ProfileScreen() {
         Alert.alert(
           'Permissão bloqueada',
           'Ative as notificações do LocalLoop nas configurações do sistema para receber avisos.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Abrir configurações', onPress: () => Linking.openSettings() },
+          ],
         );
         return;
       }
-      Alert.alert('Erro', 'Não foi possível atualizar as notificações.');
+      console.warn('[push] profile toggle failed', err);
+      Alert.alert('Erro', pushErrorMessage(err));
     }
   };
 
