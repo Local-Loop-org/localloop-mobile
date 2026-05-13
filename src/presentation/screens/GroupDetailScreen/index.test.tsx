@@ -175,6 +175,17 @@ describe('GroupDetailScreen', () => {
     expect(await findByText('0M')).toBeTruthy();
   });
 
+  it('render: shows API radius in the VISÍVEL EM pill', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({ myRole: null, radiusKm: 7.5 }),
+    );
+
+    const { findByText } = renderScreen();
+
+    expect(await findByText('VISÍVEL EM')).toBeTruthy();
+    expect(await findByText('7.5 km')).toBeTruthy();
+  });
+
   it('render: myRole=MEMBER shows MEMBRO pill + Sair, no Excluir, no Solicitações', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.MEMBER }),
