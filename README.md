@@ -13,7 +13,7 @@ Expo / React Native client for [LocalLoop](https://github.com/Local-Loop-org/loc
 
 ## What this app does
 
-A pixel-tuned client for browsing groups anchored to your location, joining them, and chatting in real time. Eleven screens cover the full surface today: [HomeScreen](src/presentation/screens/HomeScreen/) (sectioned discovery + pinned "my groups"), [GroupChatScreen](src/presentation/screens/GroupChatScreen/) (real-time chat with day separators and gradient bubbles), [GroupDetailScreen](src/presentation/screens/GroupDetailScreen/) and [GroupMembersScreen](src/presentation/screens/GroupMembersScreen/) (moderation surfaces), plus [LoginScreen](src/presentation/screens/LoginScreen/), [OnboardingScreen](src/presentation/screens/OnboardingScreen/), [CreateGroupScreen](src/presentation/screens/CreateGroupScreen/), [InboxScreen](src/presentation/screens/InboxScreen/), [MapScreen](src/presentation/screens/MapScreen/), [ProfileScreen](src/presentation/screens/ProfileScreen/), and [MyGroupsScreen](src/presentation/screens/MyGroupsScreen/).
+A pixel-tuned client for browsing groups anchored to your location, joining them, and chatting in real time.
 
 <p align="center">
   <img width="200" alt="Screenshot 2026-05-08 at 16 36 40" src="https://github.com/user-attachments/assets/aa1e8161-fbfc-4037-8cb6-620ea6f06c82" />
