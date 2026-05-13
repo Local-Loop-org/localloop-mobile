@@ -43,9 +43,10 @@ const mockedLeave = groupsApi.leaveGroup as jest.MockedFunction<
 const mockedDelete = groupsApi.deleteGroup as jest.MockedFunction<
   typeof groupsApi.deleteGroup
 >;
-const mockedListJoinRequests = groupsApi.listJoinRequests as jest.MockedFunction<
-  typeof groupsApi.listJoinRequests
->;
+const mockedListJoinRequests =
+  groupsApi.listJoinRequests as jest.MockedFunction<
+    typeof groupsApi.listJoinRequests
+  >;
 const mockedListMembers = groupsApi.listMembers as jest.MockedFunction<
   typeof groupsApi.listMembers
 >;
@@ -156,9 +157,7 @@ describe('GroupDetailScreen', () => {
   });
 
   it('render: hides the CRIADO EM caption when createdAt is absent', async () => {
-    mockedGetDetail.mockResolvedValueOnce(
-      buildGroup({ createdAt: undefined }),
-    );
+    mockedGetDetail.mockResolvedValueOnce(buildGroup({ createdAt: undefined }));
 
     const { findByTestId, queryByTestId } = renderScreen();
     await findByTestId('join-group-cta');
@@ -171,7 +170,7 @@ describe('GroupDetailScreen', () => {
     const { findByTestId, findByText } = renderScreen();
 
     expect(await findByTestId('group-detail-distance-card')).toBeTruthy();
-    expect(await findByText('DISTÂNCIA')).toBeTruthy();
+    expect(await findByText('Distância')).toBeTruthy();
     expect(await findByText('0M')).toBeTruthy();
   });
 
@@ -182,7 +181,7 @@ describe('GroupDetailScreen', () => {
 
     const { findByText } = renderScreen();
 
-    expect(await findByText('VISÍVEL EM')).toBeTruthy();
+    expect(await findByText('Visível até')).toBeTruthy();
     expect(await findByText('7.5 km')).toBeTruthy();
   });
 
