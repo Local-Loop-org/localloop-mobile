@@ -41,30 +41,30 @@ export function AboutStatsSection({
 }: AboutStatsSectionProps) {
   return (
     <View>
-      <SectionLabel label='SOBRE O GRUPO' />
+      <SectionLabel label='Sobre o Grupo' />
       <View style={styles.row}>
-        <StatPill icon='users' label='MEMBROS' value={memberCount} />
+        <StatPill icon='users' label='Membros' value={memberCount} />
         <StatPill
           icon='radar'
-          label='VISÍVEL EM'
+          label='Visível até'
           value={radiusKm !== undefined ? formatRadius(radiusKm) : '—'}
         />
         <StatPill
           icon={PRIVACY_ICON[privacy]}
-          label='ENTRADA'
+          label='Entrada'
           value={PRIVACY_VALUE[privacy]}
         />
       </View>
       <View style={[styles.row, styles.rowGap]}>
         <StatPill
           icon={anchorIconName(anchorType)}
-          label={ANCHOR_TYPE_LABELS[anchorType].toUpperCase()}
+          label={ANCHOR_TYPE_LABELS[anchorType]}
           value={anchorLabel}
         />
         {distanceLabel ? (
           <StatPill
             icon='compass'
-            label='DISTÂNCIA'
+            label='Sua Distância até o grupo'
             value={distanceLabel}
             testID='group-detail-distance-card'
           />
