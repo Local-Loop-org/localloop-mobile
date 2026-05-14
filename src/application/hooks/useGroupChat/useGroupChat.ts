@@ -192,30 +192,40 @@ export function useGroupChat(groupId: string) {
     const socket = createChatSocket(accessToken);
     socketRef.current = socket;
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       socket.emit('join_group', { groupId });
       markGroupRead(socket);
       setConnected(true);
-    });
-    socket.on('disconnect', () => {
+    };
+
+    const handleDisconnect = () => {
       setConnected(false);
-    });
-    socket.on('new_message', (message: ChatMessage) => {
+    };
+
+    const handleNewMessage = (message: ChatMessage) => {
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         chatHistoryKey(groupId),
         (old) => upsertIncomingMessage(old, message),
       );
       markGroupRead(socket);
-    });
-    socket.on('presence_update', (payload: PresenceUpdate) => {
+    };
+
+    const handlePresenceUpdate = (payload: PresenceUpdate) => {
       if (payload.groupId !== groupId) return;
       setOnlineCount(payload.count);
-    });
-    socket.on('error', (payload: SocketErrorPayload) => {
+    };
+
+    const handleSocketError = (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
       console.warn('[chat] socket error', payload);
-    });
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('new_message', handleNewMessage);
+    socket.on('presence_update', handlePresenceUpdate);
+    socket.on('error', handleSocketError);
 
     return () => {
       socket.emit('leave_group', { groupId });

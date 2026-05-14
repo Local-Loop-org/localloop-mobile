@@ -69,26 +69,34 @@ export function useGroupListRealtime({
 
     const socket = createChatSocket(accessToken);
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       if (watchedPresenceIds.length > 0) {
         socket.emit('watch_presence', { groupIds: watchedPresenceIds });
       }
       if (watchedSummaryIds.length > 0) {
         socket.emit('watch_group_summaries', { groupIds: watchedSummaryIds });
       }
-    });
-    socket.on('presence_update', (payload: PresenceUpdate) => {
+    };
+
+    const handlePresenceUpdate = (payload: PresenceUpdate) => {
       if (!watchedPresence.has(payload.groupId)) return;
       setCounts((prev) => ({ ...prev, [payload.groupId]: payload.count }));
-    });
-    socket.on('group_summary_update', (payload: GroupSummaryUpdate) => {
+    };
+
+    const handleGroupSummaryUpdate = (payload: GroupSummaryUpdate) => {
       if (!watchedSummaries.has(payload.groupId)) return;
       applyGroupSummaryUpdate(queryClient, payload);
-    });
-    socket.on('error', (payload: { code?: string; message?: string }) => {
+    };
+
+    const handleSocketError = (payload: { code?: string; message?: string }) => {
       // eslint-disable-next-line no-console
       console.warn('[group-list-realtime] socket error', payload);
-    });
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('presence_update', handlePresenceUpdate);
+    socket.on('group_summary_update', handleGroupSummaryUpdate);
+    socket.on('error', handleSocketError);
 
     return () => {
       if (watchedPresenceIds.length > 0) {
