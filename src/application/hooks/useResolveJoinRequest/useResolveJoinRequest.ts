@@ -10,8 +10,8 @@ import {
   type JoinRequestAction,
   type ResolveJoinRequestResult,
 } from '@/infra/api/groups.api';
-import { groupDetailKey } from './useGroupDetail';
-import { groupJoinRequestsKey } from './useGroupJoinRequests';
+import { groupDetailKey } from '../useGroupDetail/useGroupDetail';
+import { groupJoinRequestsKey } from '../useGroupJoinRequests/useGroupJoinRequests';
 
 export type ResolveJoinRequestVars = {
   groupId: string;

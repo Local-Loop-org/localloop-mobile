@@ -7,7 +7,7 @@ import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
 import { groupsApi } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { useGroupChat } from './useGroupChat';
-import { useJoinGroup } from './useJoinGroup';
+import { useJoinGroup } from '../useJoinGroup/useJoinGroup';
 
 jest.mock('@/infra/api/messages.api', () => ({
   messagesApi: {

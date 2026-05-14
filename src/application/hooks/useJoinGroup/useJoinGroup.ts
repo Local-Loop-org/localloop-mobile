@@ -5,7 +5,7 @@ import {
   type JoinGroupResult,
   type MyGroup,
 } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY, myGroupsKey, updateMyGroupsCaches } from './useMyGroups';
+import { MY_GROUPS_KEY, myGroupsKey, updateMyGroupsCaches } from '../useMyGroups/useMyGroups';
 
 export type JoinGroupVars = {
   groupId: string;

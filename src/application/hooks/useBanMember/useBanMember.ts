@@ -8,7 +8,7 @@ import {
   type GroupDetail,
   type GroupMember,
 } from '@/infra/api/groups.api';
-import { groupDetailKey } from './useGroupDetail';
+import { groupDetailKey } from '../useGroupDetail/useGroupDetail';
 
 export type BanMemberVars = { groupId: string; userId: string };
 

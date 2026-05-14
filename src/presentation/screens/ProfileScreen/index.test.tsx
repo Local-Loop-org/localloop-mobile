@@ -10,7 +10,7 @@ import {
 import ProfileScreen from './index';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
-import { usePushNotifications } from '@/application/hooks/usePushNotifications';
+import { usePushNotifications } from '@/application/hooks/usePushNotifications/usePushNotifications';
 
 const mockGoBack = jest.fn();
 
@@ -29,7 +29,7 @@ jest.mock('@/application/stores/auth.store', () => ({
   useAuthStore: jest.fn(),
 }));
 
-jest.mock('@/application/hooks/usePushNotifications', () => ({
+jest.mock('@/application/hooks/usePushNotifications/usePushNotifications', () => ({
   PushPermissionDeniedError: class PushPermissionDeniedError extends Error {},
   usePushNotifications: jest.fn(),
 }));

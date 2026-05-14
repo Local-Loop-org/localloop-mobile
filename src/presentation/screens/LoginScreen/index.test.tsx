@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import LoginScreen from './index';
-import { useAuthLogin } from '@/application/hooks/useAuthLogin';
+import { useAuthLogin } from '@/application/hooks/useAuthLogin/useAuthLogin';
 
-jest.mock('@/application/hooks/useAuthLogin', () => ({
+jest.mock('@/application/hooks/useAuthLogin/useAuthLogin', () => ({
   useAuthLogin: jest.fn(),
 }));
 

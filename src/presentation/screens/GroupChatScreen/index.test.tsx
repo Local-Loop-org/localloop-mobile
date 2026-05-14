@@ -2,10 +2,10 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import GroupChatScreen from './index';
-import { useGroupChat } from '@/application/hooks/useGroupChat';
+import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import type { ChatMessage } from '@/infra/api/messages.api';
 
-jest.mock('@/application/hooks/useGroupChat', () => ({
+jest.mock('@/application/hooks/useGroupChat/useGroupChat', () => ({
   useGroupChat: jest.fn(),
 }));
 

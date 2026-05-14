@@ -9,13 +9,13 @@ import {
 import {
   type Coords,
   useCurrentLocation,
-} from '@/application/hooks/useCurrentLocation';
-import { useNearbyGroups } from '@/application/hooks/useNearbyGroups';
-import { useMyGroups } from '@/application/hooks/useMyGroups';
-import { useJoinGroup } from '@/application/hooks/useJoinGroup';
-import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications';
-import { useUserProfile } from '@/application/hooks/useUserProfile';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence';
+} from '@/application/hooks/useCurrentLocation/useCurrentLocation';
+import { useNearbyGroups } from '@/application/hooks/useNearbyGroups/useNearbyGroups';
+import { useMyGroups } from '@/application/hooks/useMyGroups/useMyGroups';
+import { useJoinGroup } from '@/application/hooks/useJoinGroup/useJoinGroup';
+import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
 import { usePreferencesStore } from '@/application/stores/preferences.store';
 import type { MyGroup, NearbyGroup } from '@/infra/api/groups.api';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
