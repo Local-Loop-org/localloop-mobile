@@ -4,9 +4,9 @@ import { act, fireEvent, render, waitFor, type RenderResult } from '@testing-lib
 import * as Location from 'expo-location';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import CreateGroupScreen from './index';
-import { useCreateGroup } from '@/application/hooks/useCreateGroup';
+import { useCreateGroup } from '@/application/hooks/useCreateGroup/useCreateGroup';
 
-jest.mock('@/application/hooks/useCreateGroup', () => ({
+jest.mock('@/application/hooks/useCreateGroup/useCreateGroup', () => ({
   useCreateGroup: jest.fn(),
 }));
 

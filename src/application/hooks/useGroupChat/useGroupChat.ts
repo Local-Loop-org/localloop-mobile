@@ -1,4 +1,4 @@
-// src/application/hooks/useGroupChat.ts
+// src/application/hooks/useGroupChat/useGroupChat.ts
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
@@ -17,7 +17,7 @@ import {
   messagesApi,
 } from '@/infra/api/messages.api';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
-import { applyGroupSummaryUpdate } from './useMyGroups';
+import { applyGroupSummaryUpdate } from '../useMyGroups/useMyGroups';
 
 export type ChatErrorKind = 'load_failed' | 'socket_error';
 

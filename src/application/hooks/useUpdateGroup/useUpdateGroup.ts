@@ -4,8 +4,8 @@ import {
   type UpdateGroupBody,
   groupsApi,
 } from '@/infra/api/groups.api';
-import { groupDetailKey } from './useGroupDetail';
-import { MY_GROUPS_KEY } from './useMyGroups';
+import { groupDetailKey } from '../useGroupDetail/useGroupDetail';
+import { MY_GROUPS_KEY } from '../useMyGroups/useMyGroups';
 
 interface UpdateGroupVars {
   groupId: string;

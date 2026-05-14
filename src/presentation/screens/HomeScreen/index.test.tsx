@@ -11,9 +11,9 @@ import {
 } from '@localloop/shared-types';
 import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
-import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications';
-import { useUserProfile } from '@/application/hooks/useUserProfile';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence';
+import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
@@ -23,15 +23,15 @@ jest.mock('@/infra/api/groups.api', () => ({
   },
 }));
 
-jest.mock('@/application/hooks/usePushNotifications', () => ({
+jest.mock('@/application/hooks/usePushNotifications/usePushNotifications', () => ({
   useHomePushBootstrap: jest.fn(),
 }));
 
-jest.mock('@/application/hooks/useUserProfile', () => ({
+jest.mock('@/application/hooks/useUserProfile/useUserProfile', () => ({
   useUserProfile: jest.fn(),
 }));
 
-jest.mock('@/application/hooks/useGroupPresence', () => ({
+jest.mock('@/application/hooks/useGroupPresence/useGroupPresence', () => ({
   useGroupPresence: jest.fn(),
 }));
 

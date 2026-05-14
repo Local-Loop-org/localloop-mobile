@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { userApi } from '@/infra/api/user.api';
-import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
+import { useCurrentLocation } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import OnboardingLayout from './layout';
 
 export default function OnboardingScreen() {

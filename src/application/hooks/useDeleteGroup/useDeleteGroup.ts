@@ -10,8 +10,8 @@ import {
   snapshotMyGroupsCaches,
   updateMyGroupsCaches,
   type MyGroupsSnapshot,
-} from './useMyGroups';
-import { groupDetailKey } from './useGroupDetail';
+} from '../useMyGroups/useMyGroups';
+import { groupDetailKey } from '../useGroupDetail/useGroupDetail';
 
 export type DeleteGroupVars = { groupId: string };
 

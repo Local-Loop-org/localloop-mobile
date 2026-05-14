@@ -4,7 +4,7 @@ import {
   type CreateGroupBody,
   type CreatedGroup,
 } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY } from './useMyGroups';
+import { MY_GROUPS_KEY } from '../useMyGroups/useMyGroups';
 
 const NEARBY_GROUPS_PREFIX = ['groups', 'nearby'] as const;
 

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AnchorType } from '@localloop/shared-types';
-import { useMyGroups } from '@/application/hooks/useMyGroups';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence';
+import { useMyGroups } from '@/application/hooks/useMyGroups/useMyGroups';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';

@@ -5,7 +5,7 @@ import { AnchorType, MemberRole } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { MyGroup } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
-import { myGroupsKey } from './useMyGroups';
+import { myGroupsKey } from '../useMyGroups/useMyGroups';
 import { useGroupPresence } from './useGroupPresence';
 
 jest.mock('@/infra/socket/chat-socket', () => ({
