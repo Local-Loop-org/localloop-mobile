@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query';
 import type { PresenceUpdate } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
+import type { User } from '@/domain/user.entity';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import {
   ChatMessage,
@@ -17,7 +18,11 @@ import {
   messagesApi,
 } from '@/infra/api/messages.api';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
-import { applyGroupSummaryUpdate } from '../useMyGroups/useMyGroups';
+import {
+  applyGroupSummaryUpdate,
+  markMyGroupReadInCaches,
+  MY_GROUPS_KEY,
+} from '../useMyGroups/useMyGroups';
 
 export type ChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -28,6 +33,83 @@ interface SocketErrorPayload {
 
 const chatHistoryKey = (groupId: string) =>
   ['chat', 'history', groupId] as const;
+
+const MARK_READ_ACK_TIMEOUT_MS = 4_000;
+
+function upsertIncomingMessage(
+  old: InfiniteData<MessageHistoryResponse> | undefined,
+  message: ChatMessage,
+): InfiniteData<MessageHistoryResponse> | undefined {
+  if (!old) return old;
+  const already = old.pages.some((p) =>
+    p.data.some((m) => m.id === message.id),
+  );
+  if (already) return old;
+
+  const [first, ...rest] = old.pages;
+  if (!first) return old;
+
+  const tempIdx = first.data.findIndex(
+    (m) =>
+      m.id.startsWith('temp-') &&
+      m.senderId === message.senderId &&
+      m.content === message.content,
+  );
+  const cleaned =
+    tempIdx >= 0
+      ? [...first.data.slice(0, tempIdx), ...first.data.slice(tempIdx + 1)]
+      : first.data;
+
+  return {
+    ...old,
+    pages: [{ ...first, data: [message, ...cleaned] }, ...rest],
+  };
+}
+
+function prependTempMessage(
+  old: InfiniteData<MessageHistoryResponse> | undefined,
+  message: ChatMessage,
+): InfiniteData<MessageHistoryResponse> | undefined {
+  if (!old) return old;
+  const [first, ...rest] = old.pages;
+  if (!first) return old;
+
+  return {
+    ...old,
+    pages: [{ ...first, data: [message, ...first.data] }, ...rest],
+  };
+}
+
+function createOptimisticMessage(user: User, content: string): ChatMessage {
+  return {
+    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    senderId: user.id,
+    senderName: user.displayName,
+    senderAvatar: user.avatarUrl,
+    content,
+    mediaUrl: null,
+    mediaType: null,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function isGroupSummaryUpdate(value: unknown): value is GroupSummaryUpdate {
+  if (!value || typeof value !== 'object') return false;
+  const summary = value as Partial<GroupSummaryUpdate>;
+  return (
+    typeof summary.groupId === 'string' &&
+    typeof summary.lastActivityAt === 'string' &&
+    'lastMessage' in summary &&
+    typeof summary.unreadCount === 'number'
+  );
+}
+
+function getAckSummary(payload: unknown): GroupSummaryUpdate | null {
+  if (isGroupSummaryUpdate(payload)) return payload;
+  if (!payload || typeof payload !== 'object') return null;
+  const maybeWrapped = payload as { summary?: unknown };
+  return isGroupSummaryUpdate(maybeWrapped.summary) ? maybeWrapped.summary : null;
+}
 
 /**
  * Owns the lifecycle of a single group's chat: history via React Query
@@ -76,6 +158,32 @@ export function useGroupChat(groupId: string) {
 
   const historyReady = !historyQuery.isLoading && !historyQuery.isError;
 
+  const markGroupRead = useCallback(
+    (socket: Socket) => {
+      markMyGroupReadInCaches(queryClient, groupId);
+
+      socket.timeout(MARK_READ_ACK_TIMEOUT_MS).emit(
+        'mark_group_read',
+        { groupId },
+        (error: Error | null, payload?: unknown) => {
+          if (error) {
+            queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+            return;
+          }
+
+          const summary = getAckSummary(payload);
+          if (!summary) {
+            queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+            return;
+          }
+
+          applyGroupSummaryUpdate(queryClient, summary);
+        },
+      );
+    },
+    [groupId, queryClient],
+  );
+
   useEffect(() => {
     if (!accessToken) return;
     if (isJoining) return;
@@ -86,7 +194,7 @@ export function useGroupChat(groupId: string) {
 
     socket.on('connect', () => {
       socket.emit('join_group', { groupId });
-      socket.emit('mark_group_read', { groupId });
+      markGroupRead(socket);
       setConnected(true);
     });
     socket.on('disconnect', () => {
@@ -95,48 +203,9 @@ export function useGroupChat(groupId: string) {
     socket.on('new_message', (message: ChatMessage) => {
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         chatHistoryKey(groupId),
-        (old) => {
-          if (!old) return old;
-          const already = old.pages.some((p) =>
-            p.data.some((m) => m.id === message.id),
-          );
-          if (already) return old;
-          const [first, ...rest] = old.pages;
-          const tempIdx = first.data.findIndex(
-            (m) =>
-              m.id.startsWith('temp-') &&
-              m.senderId === message.senderId &&
-              m.content === message.content,
-          );
-          const cleaned =
-            tempIdx >= 0
-              ? [
-                  ...first.data.slice(0, tempIdx),
-                  ...first.data.slice(tempIdx + 1),
-                ]
-              : first.data;
-          return {
-            ...old,
-            pages: [{ ...first, data: [message, ...cleaned] }, ...rest],
-          };
-        },
+        (old) => upsertIncomingMessage(old, message),
       );
-      applyGroupSummaryUpdate(queryClient, {
-        groupId,
-        lastActivityAt: message.createdAt,
-        lastMessage: {
-          content: message.content,
-          senderName: message.senderName,
-          createdAt: message.createdAt,
-        },
-        lastReadAt: message.createdAt,
-        unreadCount: 0,
-      });
-      socket.emit('mark_group_read', { groupId });
-    });
-    socket.on('group_summary_update', (payload: GroupSummaryUpdate) => {
-      if (payload.groupId !== groupId) return;
-      applyGroupSummaryUpdate(queryClient, payload);
+      markGroupRead(socket);
     });
     socket.on('presence_update', (payload: PresenceUpdate) => {
       if (payload.groupId !== groupId) return;
@@ -156,7 +225,7 @@ export function useGroupChat(groupId: string) {
       setConnected(false);
       setOnlineCount(0);
     };
-  }, [groupId, accessToken, queryClient, historyReady, isJoining]);
+  }, [groupId, accessToken, queryClient, historyReady, isJoining, markGroupRead]);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -166,26 +235,10 @@ export function useGroupChat(groupId: string) {
       if (!socket) return;
       if (!currentUser) return;
 
-      const temp: ChatMessage = {
-        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        senderId: currentUser.id,
-        senderName: currentUser.displayName,
-        senderAvatar: currentUser.avatarUrl,
-        content: trimmed,
-        mediaUrl: null,
-        mediaType: null,
-        createdAt: new Date().toISOString(),
-      };
+      const temp = createOptimisticMessage(currentUser, trimmed);
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         chatHistoryKey(groupId),
-        (old) => {
-          if (!old) return old;
-          const [first, ...rest] = old.pages;
-          return {
-            ...old,
-            pages: [{ ...first, data: [temp, ...first.data] }, ...rest],
-          };
-        },
+        (old) => prependTempMessage(old, temp),
       );
 
       socket.emit('send_message', {

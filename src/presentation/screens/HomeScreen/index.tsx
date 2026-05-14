@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import {
   GroupPrivacy,
   MemberRole,
@@ -15,7 +15,7 @@ import { useMyGroups } from '@/application/hooks/useMyGroups/useMyGroups';
 import { useJoinGroup } from '@/application/hooks/useJoinGroup/useJoinGroup';
 import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications/usePushNotifications';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
+import { useGroupListRealtime } from '@/application/hooks/useGroupListRealtime/useGroupListRealtime';
 import { usePreferencesStore } from '@/application/stores/preferences.store';
 import type { MyGroup, NearbyGroup } from '@/infra/api/groups.api';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
@@ -51,6 +51,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [optimisticPending, setOptimisticPending] = useState<Set<string>>(
     new Set(),
   );
+  const didFocusOnceRef = useRef(false);
 
   const discoveryRadiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
 
@@ -59,6 +60,7 @@ export default function HomeScreen({ navigation }: Props) {
   const myGroupsQuery = useMyGroups();
   const profileQuery = useUserProfile();
   const joinMutation = useJoinGroup();
+  const isFocused = useIsFocused();
 
   useHomePushBootstrap(
     profileQuery.data?.pushPermissionStatus,
@@ -80,7 +82,12 @@ export default function HomeScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       fetchCoords();
-    }, [fetchCoords]),
+      if (didFocusOnceRef.current) {
+        myGroupsQuery.refetch();
+      } else {
+        didFocusOnceRef.current = true;
+      }
+    }, [fetchCoords, myGroupsQuery.refetch]),
   );
 
   const handleRefresh = useCallback(async () => {
@@ -96,6 +103,8 @@ export default function HomeScreen({ navigation }: Props) {
   const groups = query.data ?? [];
   const myGroups = myGroupsQuery.data ?? [];
 
+  const myGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
+
   const effectiveGroups = useMemo(
     () =>
       groups.map((g) =>
@@ -108,14 +117,18 @@ export default function HomeScreen({ navigation }: Props) {
 
   const presenceGroupIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const group of myGroups) ids.add(group.id);
+    for (const id of myGroupIds) ids.add(id);
     for (const group of effectiveGroups) {
       if (canShowPresence(group)) ids.add(group.id);
     }
     return [...ids];
-  }, [effectiveGroups, myGroups]);
+  }, [effectiveGroups, myGroupIds]);
 
-  const presenceCounts = useGroupPresence(presenceGroupIds);
+  const presenceCounts = useGroupListRealtime({
+    presenceGroupIds,
+    summaryGroupIds: myGroupIds,
+    enabled: isFocused,
+  });
 
   const groupsWithPresence = useMemo<HomeNearbyGroup[]>(
     () =>

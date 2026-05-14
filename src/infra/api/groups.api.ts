@@ -90,7 +90,6 @@ export interface MyGroup {
   myRole: MemberRole;
   lastActivityAt: string;
   lastMessage: MyGroupLastMessage | null;
-  lastReadAt: string | null;
   unreadCount: number;
   liveCount?: number;
 }
@@ -99,7 +98,6 @@ export interface GroupSummaryUpdate {
   groupId: string;
   lastActivityAt: string;
   lastMessage: MyGroupLastMessage | null;
-  lastReadAt: string | null;
   unreadCount: number;
 }
 

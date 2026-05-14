@@ -13,7 +13,7 @@ import HomeScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
 import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications/usePushNotifications';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
+import { useGroupListRealtime } from '@/application/hooks/useGroupListRealtime/useGroupListRealtime';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
@@ -31,8 +31,8 @@ jest.mock('@/application/hooks/useUserProfile/useUserProfile', () => ({
   useUserProfile: jest.fn(),
 }));
 
-jest.mock('@/application/hooks/useGroupPresence/useGroupPresence', () => ({
-  useGroupPresence: jest.fn(),
+jest.mock('@/application/hooks/useGroupListRealtime/useGroupListRealtime', () => ({
+  useGroupListRealtime: jest.fn(),
 }));
 
 jest.mock('@react-navigation/native', () => {
@@ -43,6 +43,7 @@ jest.mock('@react-navigation/native', () => {
         cb();
       }, [cb]);
     },
+    useIsFocused: () => true,
   };
 });
 
@@ -61,8 +62,8 @@ const mockedUseHomePushBootstrap = useHomePushBootstrap as jest.MockedFunction<
 const mockedUseUserProfile = useUserProfile as jest.MockedFunction<
   typeof useUserProfile
 >;
-const mockedUseGroupPresence = useGroupPresence as jest.MockedFunction<
-  typeof useGroupPresence
+const mockedUseGroupListRealtime = useGroupListRealtime as jest.MockedFunction<
+  typeof useGroupListRealtime
 >;
 const mockedRequestPermissions =
   Location.requestForegroundPermissionsAsync as jest.Mock;
@@ -156,7 +157,6 @@ const sampleMyGroup = {
   memberCount: 12,
   myRole: MemberRole.OWNER,
   lastActivityAt: '2026-04-29T08:00:00.000Z',
-  lastReadAt: '2026-04-29T07:00:00.000Z',
   unreadCount: 1,
   lastMessage: {
     content: 'Bora amanhã cedo?',
@@ -183,7 +183,7 @@ describe('HomeScreen', () => {
       isLoading: false,
       isSuccess: true,
     } as ReturnType<typeof useUserProfile>);
-    mockedUseGroupPresence.mockReturnValue({});
+    mockedUseGroupListRealtime.mockReturnValue({});
   });
 
   it('useFocusEffect triggers an initial load and renders groups under sections', async () => {
@@ -406,7 +406,7 @@ describe('HomeScreen', () => {
       sampleEstablishment,
       { ...sampleEstablishment, id: 'g-5', name: 'Bar do Alemão' },
     ]);
-    mockedUseGroupPresence.mockReturnValue({ 'g-1': 7, 'g-2': 5 });
+    mockedUseGroupListRealtime.mockReturnValue({ 'g-1': 7, 'g-2': 5 });
     const { findByText } = renderScreen();
 
     expect(await findByText('Pedalada do Sábado')).toBeTruthy();
@@ -414,12 +414,34 @@ describe('HomeScreen', () => {
     expect(await findByText(/7 Online/)).toBeTruthy();
   });
 
+  it('watches summaries only for my groups while presence includes eligible discovery cards', async () => {
+    mockedGetNearby.mockResolvedValueOnce([
+      sampleNeighborhood,
+      samplePrivateNeighborhood,
+    ]);
+    mockedGetMyGroups.mockResolvedValueOnce({
+      data: [sampleMyGroup],
+      next_cursor: null,
+    });
+
+    const { findByText } = renderScreen();
+    await findByText('Clube dos Corredores');
+
+    await waitFor(() =>
+      expect(mockedUseGroupListRealtime).toHaveBeenLastCalledWith({
+        presenceGroupIds: expect.arrayContaining(['mg-1', 'g-1']),
+        summaryGroupIds: ['mg-1'],
+        enabled: true,
+      }),
+    );
+  });
+
   it('shows the live dot on my-groups rows when a count is present', async () => {
     mockedGetMyGroups.mockResolvedValueOnce({
       data: [sampleMyGroup],
       next_cursor: null,
     });
-    mockedUseGroupPresence.mockReturnValue({ 'mg-1': 2 });
+    mockedUseGroupListRealtime.mockReturnValue({ 'mg-1': 2 });
     const { findByText, findByTestId } = renderScreen();
 
     expect(await findByText('Clube dos Corredores')).toBeTruthy();
@@ -428,7 +450,7 @@ describe('HomeScreen', () => {
 
   it('does not show presence for a closed discovery group when the caller is not a member', async () => {
     mockedGetNearby.mockResolvedValueOnce([samplePrivateNeighborhood]);
-    mockedUseGroupPresence.mockReturnValue({ 'g-4': 9 });
+    mockedUseGroupListRealtime.mockReturnValue({ 'g-4': 9 });
     const { findByText, queryByText } = renderScreen();
 
     expect(await findByText('Condomínio Vista Verde')).toBeTruthy();

@@ -63,12 +63,22 @@ export function applyGroupSummaryUpdate(
         ...group,
         lastActivityAt: update.lastActivityAt,
         lastMessage: update.lastMessage,
-        lastReadAt: update.lastReadAt,
         unreadCount: update.unreadCount,
       };
     });
     return touched ? sortByActivity(next) : groups;
   });
+}
+
+export function markMyGroupReadInCaches(
+  queryClient: QueryClient,
+  groupId: string,
+): void {
+  updateMyGroupsCaches(queryClient, (groups) =>
+    groups.map((group) =>
+      group.id === groupId ? { ...group, unreadCount: 0 } : group,
+    ),
+  );
 }
 
 export function useMyGroups(limit = 5): UseQueryResult<MyGroup[], Error> {

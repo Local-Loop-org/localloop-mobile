@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { AnchorType } from '@localloop/shared-types';
 import { useMyGroups } from '@/application/hooks/useMyGroups/useMyGroups';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
+import { useGroupListRealtime } from '@/application/hooks/useGroupListRealtime/useGroupListRealtime';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
@@ -22,12 +23,28 @@ const ANCHOR_DISPLAY_ORDER: AnchorType[] = [
 
 export default function MyGroupsScreen({ navigation }: Props) {
   const myGroupsQuery = useMyGroups(50);
+  const isFocused = useIsFocused();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<MyGroupsFilter>('all');
+  const didFocusOnceRef = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (didFocusOnceRef.current) {
+        myGroupsQuery.refetch();
+      } else {
+        didFocusOnceRef.current = true;
+      }
+    }, [myGroupsQuery.refetch]),
+  );
 
   const groups = myGroupsQuery.data ?? [];
   const groupIds = useMemo(() => groups.map((g) => g.id), [groups]);
-  const presenceCounts = useGroupPresence(groupIds);
+  const presenceCounts = useGroupListRealtime({
+    presenceGroupIds: groupIds,
+    summaryGroupIds: groupIds,
+    enabled: isFocused,
+  });
   const groupsWithPresence = useMemo(
     () =>
       groups.map((group) => {

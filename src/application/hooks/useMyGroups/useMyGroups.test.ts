@@ -29,7 +29,6 @@ const sampleGroup: MyGroup = {
   memberCount: 5,
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-24T10:00:00.000Z',
-  lastReadAt: '2026-04-24T09:00:00.000Z',
   unreadCount: 1,
   lastMessage: {
     content: 'Bora correr amanhã?',
