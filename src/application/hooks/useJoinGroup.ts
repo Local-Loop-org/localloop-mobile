@@ -5,7 +5,7 @@ import {
   type JoinGroupResult,
   type MyGroup,
 } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY } from './useMyGroups';
+import { MY_GROUPS_KEY, myGroupsKey, updateMyGroupsCaches } from './useMyGroups';
 
 export type JoinGroupVars = {
   groupId: string;
@@ -20,6 +20,7 @@ export function useJoinGroup(): UseMutationResult<JoinGroupResult, Error, JoinGr
     mutationFn: ({ groupId }) => groupsApi.joinGroup(groupId),
     onSuccess(result, { group }) {
       if (result.status !== 'joined') return;
+      const joinedAt = new Date().toISOString();
       const optimistic: MyGroup = {
         id: group.id,
         name: group.name,
@@ -27,11 +28,14 @@ export function useJoinGroup(): UseMutationResult<JoinGroupResult, Error, JoinGr
         anchorLabel: group.anchorLabel,
         memberCount: group.memberCount + 1,
         myRole: result.role,
-        lastActivityAt: new Date().toISOString(),
+        lastActivityAt: joinedAt,
         lastMessage: null,
+        lastReadAt: joinedAt,
+        unreadCount: 0,
       };
-      queryClient.setQueryData<MyGroup[]>(MY_GROUPS_KEY, (prev) =>
-        prev ? [optimistic, ...prev] : [optimistic],
+      updateMyGroupsCaches(queryClient, (prev) => [optimistic, ...prev]);
+      queryClient.setQueryData<MyGroup[]>(myGroupsKey(5), (prev) =>
+        prev ? prev : [optimistic],
       );
       queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
     },

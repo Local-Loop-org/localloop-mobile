@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import { groupsApi, type MyGroup } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY } from './useMyGroups';
+import { myGroupsKey } from './useMyGroups';
 import { groupDetailKey } from './useGroupDetail';
 import { useDeleteGroup } from './useDeleteGroup';
 
@@ -36,8 +36,10 @@ function seedMyGroups(client: QueryClient, ids: string[]) {
     myRole: MemberRole.OWNER,
     lastActivityAt: '2026-01-01T00:00:00Z',
     lastMessage: null,
+    lastReadAt: '2026-01-01T00:00:00Z',
+    unreadCount: 0,
   }));
-  client.setQueryData(MY_GROUPS_KEY, groups);
+  client.setQueryData(myGroupsKey(5), groups);
 }
 
 describe('useDeleteGroup', () => {
@@ -54,7 +56,7 @@ describe('useDeleteGroup', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(
-      client.getQueryData<MyGroup[]>(MY_GROUPS_KEY)?.map((g) => g.id),
+      client.getQueryData<MyGroup[]>(myGroupsKey(5))?.map((g) => g.id),
     ).toEqual(['g-2']);
     expect(client.getQueryData(groupDetailKey('g-1'))).toBeUndefined();
     client.clear();
@@ -70,7 +72,7 @@ describe('useDeleteGroup', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(
-      client.getQueryData<MyGroup[]>(MY_GROUPS_KEY)?.map((g) => g.id),
+      client.getQueryData<MyGroup[]>(myGroupsKey(5))?.map((g) => g.id),
     ).toEqual(['g-1']);
     client.clear();
   });

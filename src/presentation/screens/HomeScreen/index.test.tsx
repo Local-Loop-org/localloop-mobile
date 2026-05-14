@@ -156,6 +156,8 @@ const sampleMyGroup = {
   memberCount: 12,
   myRole: MemberRole.OWNER,
   lastActivityAt: '2026-04-29T08:00:00.000Z',
+  lastReadAt: '2026-04-29T07:00:00.000Z',
+  unreadCount: 1,
   lastMessage: {
     content: 'Bora amanhã cedo?',
     senderName: 'Bob',

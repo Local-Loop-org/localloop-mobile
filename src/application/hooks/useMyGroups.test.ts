@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import { groupsApi, type MyGroup } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY, useMyGroups } from './useMyGroups';
+import { MY_GROUPS_KEY, myGroupsKey, useMyGroups } from './useMyGroups';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getMyGroups: jest.fn() },
@@ -29,6 +29,8 @@ const sampleGroup: MyGroup = {
   memberCount: 5,
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-24T10:00:00.000Z',
+  lastReadAt: '2026-04-24T09:00:00.000Z',
+  unreadCount: 1,
   lastMessage: {
     content: 'Bora correr amanhã?',
     senderName: 'Alice',
@@ -39,6 +41,10 @@ const sampleGroup: MyGroup = {
 describe('MY_GROUPS_KEY', () => {
   it('is a stable tuple', () => {
     expect(MY_GROUPS_KEY).toEqual(['groups', 'me']);
+  });
+
+  it('builds limit-specific query keys', () => {
+    expect(myGroupsKey(50)).toEqual(['groups', 'me', 50]);
   });
 });
 

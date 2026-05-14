@@ -16,6 +16,8 @@ import {
   MessageHistoryResponse,
   messagesApi,
 } from '@/infra/api/messages.api';
+import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
+import { applyGroupSummaryUpdate } from './useMyGroups';
 
 export type ChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -84,6 +86,7 @@ export function useGroupChat(groupId: string) {
 
     socket.on('connect', () => {
       socket.emit('join_group', { groupId });
+      socket.emit('mark_group_read', { groupId });
       setConnected(true);
     });
     socket.on('disconnect', () => {
@@ -118,6 +121,22 @@ export function useGroupChat(groupId: string) {
           };
         },
       );
+      applyGroupSummaryUpdate(queryClient, {
+        groupId,
+        lastActivityAt: message.createdAt,
+        lastMessage: {
+          content: message.content,
+          senderName: message.senderName,
+          createdAt: message.createdAt,
+        },
+        lastReadAt: message.createdAt,
+        unreadCount: 0,
+      });
+      socket.emit('mark_group_read', { groupId });
+    });
+    socket.on('group_summary_update', (payload: GroupSummaryUpdate) => {
+      if (payload.groupId !== groupId) return;
+      applyGroupSummaryUpdate(queryClient, payload);
     });
     socket.on('presence_update', (payload: PresenceUpdate) => {
       if (payload.groupId !== groupId) return;
