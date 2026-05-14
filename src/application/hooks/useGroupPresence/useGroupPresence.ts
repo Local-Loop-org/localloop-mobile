@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
-import { applyGroupSummaryUpdate } from './useMyGroups';
+import { applyGroupSummaryUpdate } from '../useMyGroups/useMyGroups';
 
 export type PresenceCountMap = Record<string, number>;
 

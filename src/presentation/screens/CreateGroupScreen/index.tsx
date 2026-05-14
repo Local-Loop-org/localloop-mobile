@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
-import { useCurrentLocation } from '@/application/hooks/useCurrentLocation';
-import { useCreateGroup } from '@/application/hooks/useCreateGroup';
+import { useCurrentLocation } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
+import { useCreateGroup } from '@/application/hooks/useCreateGroup/useCreateGroup';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
 import CreateGroupLayout from './layout';

@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
 import { groupsApi } from '@/infra/api/groups.api';
-import { MY_GROUPS_KEY, myGroupsKey } from './useMyGroups';
+import { MY_GROUPS_KEY, myGroupsKey } from '../useMyGroups/useMyGroups';
 import { useJoinGroup } from './useJoinGroup';
 
 jest.mock('@/infra/api/groups.api', () => ({

@@ -4,13 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import MyGroupsScreen from './index';
 import { groupsApi, type MyGroup } from '@/infra/api/groups.api';
-import { useGroupPresence } from '@/application/hooks/useGroupPresence';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence/useGroupPresence';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getMyGroups: jest.fn() },
 }));
 
-jest.mock('@/application/hooks/useGroupPresence', () => ({
+jest.mock('@/application/hooks/useGroupPresence/useGroupPresence', () => ({
   useGroupPresence: jest.fn(),
 }));
 

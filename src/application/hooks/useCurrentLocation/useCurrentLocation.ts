@@ -1,4 +1,4 @@
-// src/application/hooks/useCurrentLocation.ts
+// src/application/hooks/useCurrentLocation/useCurrentLocation.ts
 
 import { useCallback, useState } from "react";
 import * as Location from "expo-location";
