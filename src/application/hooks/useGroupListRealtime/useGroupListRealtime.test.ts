@@ -1,7 +1,11 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AnchorType, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  ChatSocketEvents,
+  MemberRole,
+} from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { MyGroup } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
@@ -51,6 +55,7 @@ const sampleGroup: MyGroup = {
   memberCount: 5,
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-24T10:00:00.000Z',
+  lastReadAt: '2026-04-24T09:00:00.000Z',
   lastMessage: null,
   unreadCount: 1,
 };
@@ -91,12 +96,15 @@ describe('useGroupListRealtime', () => {
       fire('connect');
     });
 
-    expect(mock.emit).toHaveBeenCalledWith('watch_presence', {
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.WATCH_PRESENCE, {
       groupIds: ['p-1', 'p-2'],
     });
-    expect(mock.emit).toHaveBeenCalledWith('watch_group_summaries', {
-      groupIds: ['s-1', 's-2'],
-    });
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.WATCH_GROUP_SUMMARIES,
+      {
+        groupIds: ['s-1', 's-2'],
+      },
+    );
   });
 
   it('updates counts from presence_update events and ignores unwatched groups', async () => {
@@ -114,12 +122,12 @@ describe('useGroupListRealtime', () => {
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
-      fire('presence_update', { groupId: 'g-other', count: 99 });
+      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-other', count: 99 });
     });
     expect(result.current).toEqual({});
 
     act(() => {
-      fire('presence_update', { groupId: 'g-1', count: 3 });
+      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-1', count: 3 });
     });
     await waitFor(() => expect(result.current['g-1']).toBe(3));
   });
@@ -141,21 +149,23 @@ describe('useGroupListRealtime', () => {
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
-      fire('group_summary_update', {
+      fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
         groupId: 'g-other',
         lastActivityAt: '2026-04-24T12:00:00.000Z',
+        lastReadAt: '2026-04-24T11:00:00.000Z',
         lastMessage: null,
         unreadCount: 99,
       });
     });
-    expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0].unreadCount).toBe(
-      1,
-    );
+    expect(
+      client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0].unreadCount,
+    ).toBe(1);
 
     act(() => {
-      fire('group_summary_update', {
+      fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
         groupId: 'g-1',
         lastActivityAt: '2026-04-24T11:00:00.000Z',
+        lastReadAt: '2026-04-24T10:45:00.000Z',
         lastMessage: {
           content: 'Cheguei',
           senderName: 'Alice',
@@ -169,6 +179,7 @@ describe('useGroupListRealtime', () => {
       expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject(
         {
           lastActivityAt: '2026-04-24T11:00:00.000Z',
+          lastReadAt: '2026-04-24T10:45:00.000Z',
           unreadCount: 2,
           lastMessage: { content: 'Cheguei' },
         },
@@ -192,12 +203,15 @@ describe('useGroupListRealtime', () => {
 
     unmount();
 
-    expect(mock.emit).toHaveBeenCalledWith('unwatch_presence', {
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.UNWATCH_PRESENCE, {
       groupIds: ['g-1', 'g-2'],
     });
-    expect(mock.emit).toHaveBeenCalledWith('unwatch_group_summaries', {
-      groupIds: ['g-2', 'g-3'],
-    });
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.UNWATCH_GROUP_SUMMARIES,
+      {
+        groupIds: ['g-2', 'g-3'],
+      },
+    );
     expect(mock.removeAllListeners).toHaveBeenCalled();
     expect(mock.disconnect).toHaveBeenCalled();
   });

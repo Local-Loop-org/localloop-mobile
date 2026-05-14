@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { PresenceUpdate } from '@localloop/shared-types';
+import { ChatSocketEvents, type PresenceUpdate } from '@localloop/shared-types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
@@ -71,10 +71,14 @@ export function useGroupListRealtime({
 
     const handleConnect = () => {
       if (watchedPresenceIds.length > 0) {
-        socket.emit('watch_presence', { groupIds: watchedPresenceIds });
+        socket.emit(ChatSocketEvents.WATCH_PRESENCE, {
+          groupIds: watchedPresenceIds,
+        });
       }
       if (watchedSummaryIds.length > 0) {
-        socket.emit('watch_group_summaries', { groupIds: watchedSummaryIds });
+        socket.emit(ChatSocketEvents.WATCH_GROUP_SUMMARIES, {
+          groupIds: watchedSummaryIds,
+        });
       }
     };
 
@@ -88,22 +92,29 @@ export function useGroupListRealtime({
       applyGroupSummaryUpdate(queryClient, payload);
     };
 
-    const handleSocketError = (payload: { code?: string; message?: string }) => {
+    const handleSocketError = (payload: {
+      code?: string;
+      message?: string;
+    }) => {
       // eslint-disable-next-line no-console
       console.warn('[group-list-realtime] socket error', payload);
     };
 
     socket.on('connect', handleConnect);
-    socket.on('presence_update', handlePresenceUpdate);
-    socket.on('group_summary_update', handleGroupSummaryUpdate);
-    socket.on('error', handleSocketError);
+    socket.on(ChatSocketEvents.PRESENCE_UPDATE, handlePresenceUpdate);
+    socket.on(ChatSocketEvents.GROUP_SUMMARY_UPDATE, handleGroupSummaryUpdate);
+    socket.on(ChatSocketEvents.ERROR, handleSocketError);
 
     return () => {
       if (watchedPresenceIds.length > 0) {
-        socket.emit('unwatch_presence', { groupIds: watchedPresenceIds });
+        socket.emit(ChatSocketEvents.UNWATCH_PRESENCE, {
+          groupIds: watchedPresenceIds,
+        });
       }
       if (watchedSummaryIds.length > 0) {
-        socket.emit('unwatch_group_summaries', { groupIds: watchedSummaryIds });
+        socket.emit(ChatSocketEvents.UNWATCH_GROUP_SUMMARIES, {
+          groupIds: watchedSummaryIds,
+        });
       }
       socket.removeAllListeners();
       socket.disconnect();

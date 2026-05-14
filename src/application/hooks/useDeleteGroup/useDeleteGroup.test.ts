@@ -35,6 +35,7 @@ function seedMyGroups(client: QueryClient, ids: string[]) {
     memberCount: 5,
     myRole: MemberRole.OWNER,
     lastActivityAt: '2026-01-01T00:00:00Z',
+    lastReadAt: '2026-01-01T00:00:00Z',
     lastMessage: null,
     unreadCount: 0,
   }));

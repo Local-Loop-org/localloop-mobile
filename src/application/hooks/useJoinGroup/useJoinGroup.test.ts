@@ -40,7 +40,10 @@ describe('useJoinGroup', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('calls joinGroup with the given groupId', async () => {
-    mockedJoin.mockResolvedValueOnce({ status: 'joined', role: MemberRole.MEMBER });
+    mockedJoin.mockResolvedValueOnce({
+      status: 'joined',
+      role: MemberRole.MEMBER,
+    });
     const { client, wrapper } = makeWrapper();
 
     const { result } = renderHook(() => useJoinGroup(), { wrapper });
@@ -52,7 +55,10 @@ describe('useJoinGroup', () => {
   });
 
   it('optimistically inserts the group into the my-groups cache on joined', async () => {
-    mockedJoin.mockResolvedValueOnce({ status: 'joined', role: MemberRole.MEMBER });
+    mockedJoin.mockResolvedValueOnce({
+      status: 'joined',
+      role: MemberRole.MEMBER,
+    });
     const { client, wrapper } = makeWrapper();
 
     const { result } = renderHook(() => useJoinGroup(), { wrapper });
@@ -60,10 +66,9 @@ describe('useJoinGroup', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const cached =
-      client.getQueryData<import('@/infra/api/groups.api').MyGroup[]>(
-        myGroupsKey(5),
-      );
+    const cached = client.getQueryData<
+      import('@/infra/api/groups.api').MyGroup[]
+    >(myGroupsKey(5));
     expect(cached).toHaveLength(1);
     expect(cached![0]).toMatchObject({
       id: 'g-1',
@@ -77,7 +82,10 @@ describe('useJoinGroup', () => {
   });
 
   it('prepends to existing my-groups cache entries', async () => {
-    mockedJoin.mockResolvedValueOnce({ status: 'joined', role: MemberRole.MEMBER });
+    mockedJoin.mockResolvedValueOnce({
+      status: 'joined',
+      role: MemberRole.MEMBER,
+    });
     const { client, wrapper } = makeWrapper();
 
     const existing = [
@@ -89,6 +97,7 @@ describe('useJoinGroup', () => {
         memberCount: 3,
         myRole: MemberRole.MEMBER,
         lastActivityAt: '2026-01-01T00:00:00.000Z',
+        lastReadAt: '2026-01-01T00:00:00.000Z',
         lastMessage: null,
         unreadCount: 0,
       },
@@ -100,10 +109,9 @@ describe('useJoinGroup', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const cached =
-      client.getQueryData<import('@/infra/api/groups.api').MyGroup[]>(
-        myGroupsKey(5),
-      );
+    const cached = client.getQueryData<
+      import('@/infra/api/groups.api').MyGroup[]
+    >(myGroupsKey(5));
     expect(cached).toHaveLength(2);
     expect(cached![0].id).toBe('g-1');
     expect(cached![1].id).toBe('g-0');
