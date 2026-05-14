@@ -10,9 +10,12 @@ jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getMyGroups: jest.fn() },
 }));
 
-jest.mock('@/application/hooks/useGroupListRealtime/useGroupListRealtime', () => ({
-  useGroupListRealtime: jest.fn(),
-}));
+jest.mock(
+  '@/application/hooks/useGroupListRealtime/useGroupListRealtime',
+  () => ({
+    useGroupListRealtime: jest.fn(),
+  }),
+);
 
 jest.mock('@react-navigation/native', () => {
   const ReactLib = require('react');
@@ -69,6 +72,10 @@ const baseGroup = (overrides: Partial<MyGroup>): MyGroup => ({
   unreadCount: 0,
   lastMessage: null,
   ...overrides,
+  lastReadAt:
+    overrides.lastReadAt === undefined
+      ? '2026-04-29T12:00:00.000Z'
+      : overrides.lastReadAt,
 });
 
 const corredores = baseGroup({

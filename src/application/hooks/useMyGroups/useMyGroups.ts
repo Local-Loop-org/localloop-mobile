@@ -12,7 +12,8 @@ import {
 
 export const MY_GROUPS_KEY = ['groups', 'me'] as const;
 
-export const myGroupsKey = (limit: number) => [...MY_GROUPS_KEY, limit] as const;
+export const myGroupsKey = (limit: number) =>
+  [...MY_GROUPS_KEY, limit] as const;
 
 export type MyGroupsSnapshot = Array<[QueryKey, MyGroup[] | undefined]>;
 
@@ -44,9 +45,8 @@ export function updateMyGroupsCaches(
   queryClient: QueryClient,
   updater: (groups: MyGroup[]) => MyGroup[],
 ): void {
-  queryClient.setQueriesData<MyGroup[]>(
-    { queryKey: MY_GROUPS_KEY },
-    (prev) => (prev ? updater(prev) : prev),
+  queryClient.setQueriesData<MyGroup[]>({ queryKey: MY_GROUPS_KEY }, (prev) =>
+    prev ? updater(prev) : prev,
   );
 }
 
@@ -63,6 +63,7 @@ export function applyGroupSummaryUpdate(
         ...group,
         lastActivityAt: update.lastActivityAt,
         lastMessage: update.lastMessage,
+        lastReadAt: update.lastReadAt,
         unreadCount: update.unreadCount,
       };
     });

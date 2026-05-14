@@ -8,7 +8,7 @@ import {
   useIsMutating,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { PresenceUpdate } from '@localloop/shared-types';
+import { ChatSocketEvents, type PresenceUpdate } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { createChatSocket } from '@/infra/socket/chat-socket';
@@ -100,6 +100,9 @@ function isGroupSummaryUpdate(value: unknown): value is GroupSummaryUpdate {
     typeof summary.groupId === 'string' &&
     typeof summary.lastActivityAt === 'string' &&
     'lastMessage' in summary &&
+    ('lastReadAt' in summary
+      ? summary.lastReadAt === null || typeof summary.lastReadAt === 'string'
+      : false) &&
     typeof summary.unreadCount === 'number'
   );
 }
@@ -108,7 +111,9 @@ function getAckSummary(payload: unknown): GroupSummaryUpdate | null {
   if (isGroupSummaryUpdate(payload)) return payload;
   if (!payload || typeof payload !== 'object') return null;
   const maybeWrapped = payload as { summary?: unknown };
-  return isGroupSummaryUpdate(maybeWrapped.summary) ? maybeWrapped.summary : null;
+  return isGroupSummaryUpdate(maybeWrapped.summary)
+    ? maybeWrapped.summary
+    : null;
 }
 
 /**
@@ -162,24 +167,26 @@ export function useGroupChat(groupId: string) {
     (socket: Socket) => {
       markMyGroupReadInCaches(queryClient, groupId);
 
-      socket.timeout(MARK_READ_ACK_TIMEOUT_MS).emit(
-        'mark_group_read',
-        { groupId },
-        (error: Error | null, payload?: unknown) => {
-          if (error) {
-            queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
-            return;
-          }
+      socket
+        .timeout(MARK_READ_ACK_TIMEOUT_MS)
+        .emit(
+          ChatSocketEvents.MARK_GROUP_READ,
+          { groupId },
+          (error: Error | null, payload?: unknown) => {
+            if (error) {
+              queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+              return;
+            }
 
-          const summary = getAckSummary(payload);
-          if (!summary) {
-            queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
-            return;
-          }
+            const summary = getAckSummary(payload);
+            if (!summary) {
+              queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+              return;
+            }
 
-          applyGroupSummaryUpdate(queryClient, summary);
-        },
-      );
+            applyGroupSummaryUpdate(queryClient, summary);
+          },
+        );
     },
     [groupId, queryClient],
   );
@@ -193,7 +200,7 @@ export function useGroupChat(groupId: string) {
     socketRef.current = socket;
 
     const handleConnect = () => {
-      socket.emit('join_group', { groupId });
+      socket.emit(ChatSocketEvents.JOIN_GROUP, { groupId });
       markGroupRead(socket);
       setConnected(true);
     };
@@ -223,19 +230,26 @@ export function useGroupChat(groupId: string) {
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
-    socket.on('new_message', handleNewMessage);
-    socket.on('presence_update', handlePresenceUpdate);
-    socket.on('error', handleSocketError);
+    socket.on(ChatSocketEvents.NEW_MESSAGE, handleNewMessage);
+    socket.on(ChatSocketEvents.PRESENCE_UPDATE, handlePresenceUpdate);
+    socket.on(ChatSocketEvents.ERROR, handleSocketError);
 
     return () => {
-      socket.emit('leave_group', { groupId });
+      socket.emit(ChatSocketEvents.LEAVE_GROUP, { groupId });
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);
       setOnlineCount(0);
     };
-  }, [groupId, accessToken, queryClient, historyReady, isJoining, markGroupRead]);
+  }, [
+    groupId,
+    accessToken,
+    queryClient,
+    historyReady,
+    isJoining,
+    markGroupRead,
+  ]);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -251,7 +265,7 @@ export function useGroupChat(groupId: string) {
         (old) => prependTempMessage(old, temp),
       );
 
-      socket.emit('send_message', {
+      socket.emit(ChatSocketEvents.SEND_MESSAGE, {
         groupId,
         content: trimmed,
         storageKey: null,

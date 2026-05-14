@@ -23,17 +23,23 @@ jest.mock('@/infra/api/groups.api', () => ({
   },
 }));
 
-jest.mock('@/application/hooks/usePushNotifications/usePushNotifications', () => ({
-  useHomePushBootstrap: jest.fn(),
-}));
+jest.mock(
+  '@/application/hooks/usePushNotifications/usePushNotifications',
+  () => ({
+    useHomePushBootstrap: jest.fn(),
+  }),
+);
 
 jest.mock('@/application/hooks/useUserProfile/useUserProfile', () => ({
   useUserProfile: jest.fn(),
 }));
 
-jest.mock('@/application/hooks/useGroupListRealtime/useGroupListRealtime', () => ({
-  useGroupListRealtime: jest.fn(),
-}));
+jest.mock(
+  '@/application/hooks/useGroupListRealtime/useGroupListRealtime',
+  () => ({
+    useGroupListRealtime: jest.fn(),
+  }),
+);
 
 jest.mock('@react-navigation/native', () => {
   const ReactLib = require('react');
@@ -157,6 +163,7 @@ const sampleMyGroup = {
   memberCount: 12,
   myRole: MemberRole.OWNER,
   lastActivityAt: '2026-04-29T08:00:00.000Z',
+  lastReadAt: '2026-04-29T07:00:00.000Z',
   unreadCount: 1,
   lastMessage: {
     content: 'Bora amanhã cedo?',
