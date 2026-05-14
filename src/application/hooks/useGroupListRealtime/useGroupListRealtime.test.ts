@@ -6,7 +6,7 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import type { MyGroup } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { myGroupsKey } from '../useMyGroups/useMyGroups';
-import { useGroupPresence } from './useGroupPresence';
+import { useGroupListRealtime } from './useGroupListRealtime';
 
 jest.mock('@/infra/socket/chat-socket', () => ({
   createChatSocket: jest.fn(),
@@ -52,11 +52,10 @@ const sampleGroup: MyGroup = {
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-24T10:00:00.000Z',
   lastMessage: null,
-  lastReadAt: '2026-04-24T09:00:00.000Z',
   unreadCount: 1,
 };
 
-describe('useGroupPresence', () => {
+describe('useGroupListRealtime', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({
@@ -72,13 +71,18 @@ describe('useGroupPresence', () => {
     });
   });
 
-  it('connects and watches the unique visible group ids on socket connect', async () => {
+  it('watches normalized presence and summary ids on socket connect', async () => {
     const { mock, fire } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    renderHook(() => useGroupPresence(['g-2', 'g-1', 'g-1']), {
-      wrapper: makeWrapper(),
-    });
+    renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: ['p-2', 'p-1', 'p-1'],
+          summaryGroupIds: ['s-2', 's-1', 's-1'],
+        }),
+      { wrapper: makeWrapper() },
+    );
 
     await waitFor(() =>
       expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok'),
@@ -88,10 +92,10 @@ describe('useGroupPresence', () => {
     });
 
     expect(mock.emit).toHaveBeenCalledWith('watch_presence', {
-      groupIds: ['g-1', 'g-2'],
+      groupIds: ['p-1', 'p-2'],
     });
     expect(mock.emit).toHaveBeenCalledWith('watch_group_summaries', {
-      groupIds: ['g-1', 'g-2'],
+      groupIds: ['s-1', 's-2'],
     });
   });
 
@@ -99,9 +103,14 @@ describe('useGroupPresence', () => {
     const { mock, fire } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { result } = renderHook(() => useGroupPresence(['g-1']), {
-      wrapper: makeWrapper(),
-    });
+    const { result } = renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: ['g-1'],
+          summaryGroupIds: [],
+        }),
+      { wrapper: makeWrapper() },
+    );
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
@@ -115,16 +124,33 @@ describe('useGroupPresence', () => {
     await waitFor(() => expect(result.current['g-1']).toBe(3));
   });
 
-  it('writes group_summary_update events into my-groups caches', async () => {
+  it('writes summary updates only for watched summary ids', async () => {
     const client = makeClient();
     client.setQueryData(myGroupsKey(5), [sampleGroup]);
     const { mock, fire } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    renderHook(() => useGroupPresence(['g-1']), {
-      wrapper: makeWrapper(client),
-    });
+    renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: [],
+          summaryGroupIds: ['g-1'],
+        }),
+      { wrapper: makeWrapper(client) },
+    );
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('group_summary_update', {
+        groupId: 'g-other',
+        lastActivityAt: '2026-04-24T12:00:00.000Z',
+        lastMessage: null,
+        unreadCount: 99,
+      });
+    });
+    expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0].unreadCount).toBe(
+      1,
+    );
 
     act(() => {
       fire('group_summary_update', {
@@ -135,7 +161,6 @@ describe('useGroupPresence', () => {
           senderName: 'Alice',
           createdAt: '2026-04-24T11:00:00.000Z',
         },
-        lastReadAt: '2026-04-24T09:00:00.000Z',
         unreadCount: 2,
       });
     });
@@ -155,9 +180,14 @@ describe('useGroupPresence', () => {
     const { mock } = makeSocketMock();
     mockedCreateChatSocket.mockReturnValueOnce(mock);
 
-    const { unmount } = renderHook(() => useGroupPresence(['g-1', 'g-2']), {
-      wrapper: makeWrapper(),
-    });
+    const { unmount } = renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: ['g-1', 'g-2'],
+          summaryGroupIds: ['g-2', 'g-3'],
+        }),
+      { wrapper: makeWrapper() },
+    );
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     unmount();
@@ -166,17 +196,45 @@ describe('useGroupPresence', () => {
       groupIds: ['g-1', 'g-2'],
     });
     expect(mock.emit).toHaveBeenCalledWith('unwatch_group_summaries', {
-      groupIds: ['g-1', 'g-2'],
+      groupIds: ['g-2', 'g-3'],
     });
     expect(mock.removeAllListeners).toHaveBeenCalled();
     expect(mock.disconnect).toHaveBeenCalled();
   });
 
-  it('does not create a socket without a token or watched group ids', () => {
+  it('does not create a socket without token, watched ids, or enabled state', () => {
     useAuthStore.setState({ accessToken: null } as never);
 
-    renderHook(() => useGroupPresence(['g-1']), { wrapper: makeWrapper() });
-    renderHook(() => useGroupPresence([]), { wrapper: makeWrapper() });
+    const withoutToken = renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: ['g-1'],
+          summaryGroupIds: ['g-1'],
+        }),
+      { wrapper: makeWrapper() },
+    );
+    withoutToken.unmount();
+
+    act(() => {
+      useAuthStore.setState({ accessToken: 'tok' } as never);
+    });
+    renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: [],
+          summaryGroupIds: [],
+        }),
+      { wrapper: makeWrapper() },
+    );
+    renderHook(
+      () =>
+        useGroupListRealtime({
+          presenceGroupIds: ['g-1'],
+          summaryGroupIds: ['g-1'],
+          enabled: false,
+        }),
+      { wrapper: makeWrapper() },
+    );
 
     expect(mockedCreateChatSocket).not.toHaveBeenCalled();
   });

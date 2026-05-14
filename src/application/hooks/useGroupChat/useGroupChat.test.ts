@@ -4,10 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
-import { groupsApi } from '@/infra/api/groups.api';
+import {
+  groupsApi,
+  type GroupSummaryUpdate,
+  type MyGroup,
+} from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { useGroupChat } from './useGroupChat';
 import { useJoinGroup } from '../useJoinGroup/useJoinGroup';
+import { MY_GROUPS_KEY, myGroupsKey } from '../useMyGroups/useMyGroups';
 
 jest.mock('@/infra/api/messages.api', () => ({
   messagesApi: {
@@ -26,20 +31,36 @@ jest.mock('@/infra/socket/chat-socket', () => ({
 }));
 
 type SocketHandler = (...args: unknown[]) => void;
+type MarkReadAck = (error: Error | null, payload?: GroupSummaryUpdate) => void;
 
 function makeSocketMock() {
   const handlers = new Map<string, SocketHandler>();
-  const emit = jest.fn();
+  const markReadAcks: MarkReadAck[] = [];
+  const emit = jest.fn(
+    (event: string, _payload?: unknown, ack?: MarkReadAck) => {
+      if (event === 'mark_group_read' && ack) {
+        markReadAcks.push(ack);
+      }
+    },
+  );
   const on = jest.fn((event: string, handler: SocketHandler) => {
     handlers.set(event, handler);
   });
+  const timeout = jest.fn(() => ({ emit }));
   const removeAllListeners = jest.fn();
   const disconnect = jest.fn();
   return {
-    mock: { emit, on, removeAllListeners, disconnect },
+    mock: { emit, on, timeout, removeAllListeners, disconnect },
     fire: (event: string, payload?: unknown) => {
       const h = handlers.get(event);
       if (h) h(payload);
+    },
+    ackMarkRead: (
+      error: Error | null,
+      payload?: GroupSummaryUpdate,
+      index = markReadAcks.length - 1,
+    ) => {
+      markReadAcks[index]?.(error, payload);
     },
   };
 }
@@ -60,13 +81,29 @@ const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   ...over,
 });
 
-function makeWrapper() {
-  const client = new QueryClient({
+function makeClient() {
+  return new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
+}
+
+function makeWrapper(client = makeClient()) {
   return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client }, children);
 }
+
+const baseMyGroup = (overrides: Partial<MyGroup> = {}): MyGroup => ({
+  id: 'g-1',
+  name: 'Morumbi Runners',
+  anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLabel: 'Morumbi',
+  memberCount: 5,
+  myRole: MemberRole.MEMBER,
+  lastActivityAt: '2026-04-24T09:00:00.000Z',
+  lastMessage: null,
+  unreadCount: 3,
+  ...overrides,
+});
 
 describe('useGroupChat', () => {
   beforeEach(() => {
@@ -107,10 +144,96 @@ describe('useGroupChat', () => {
     });
 
     expect(mock.emit).toHaveBeenCalledWith('join_group', { groupId: 'g-1' });
-    expect(mock.emit).toHaveBeenCalledWith('mark_group_read', {
-      groupId: 'g-1',
-    });
+    expect(mock.timeout).toHaveBeenCalledWith(4000);
+    expect(mock.emit).toHaveBeenCalledWith(
+      'mark_group_read',
+      {
+        groupId: 'g-1',
+      },
+      expect.any(Function),
+    );
     expect(result.current.connected).toBe(true);
+  });
+
+  it('clears unread cache on chat entry and applies the mark-read summary ack', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const client = makeClient();
+    client.setQueryData(myGroupsKey(5), [baseMyGroup()]);
+    const { mock, fire, ackMarkRead } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(client),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('connect');
+    });
+
+    expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject({
+      unreadCount: 0,
+      lastMessage: null,
+    });
+
+    act(() => {
+      ackMarkRead(null, {
+        groupId: 'g-1',
+        lastActivityAt: '2026-04-24T10:30:00.000Z',
+        lastMessage: {
+          content: 'Tudo certo',
+          senderName: 'Alice',
+          createdAt: '2026-04-24T10:30:00.000Z',
+        },
+        unreadCount: 0,
+      });
+    });
+
+    await waitFor(() =>
+      expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject(
+        {
+          lastActivityAt: '2026-04-24T10:30:00.000Z',
+          lastMessage: { content: 'Tudo certo' },
+          unreadCount: 0,
+        },
+      ),
+    );
+  });
+
+  it('invalidates my-groups when mark-read ack errors', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const client = makeClient();
+    const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
+    const { mock, fire, ackMarkRead } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(client),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('connect');
+      ackMarkRead(new Error('operation has timed out'));
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: MY_GROUPS_KEY });
+  });
+
+  it('does not subscribe chat sockets to group_summary_update events', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    expect(mock.on).not.toHaveBeenCalledWith(
+      'group_summary_update',
+      expect.any(Function),
+    );
   });
 
   it('appends new_message events to the front of the list and dedupes by id', async () => {
@@ -130,6 +253,13 @@ describe('useGroupChat', () => {
     });
     await waitFor(() =>
       expect(result.current.messages[0]?.id).toBe('m-2'),
+    );
+    expect(mock.emit).toHaveBeenCalledWith(
+      'mark_group_read',
+      {
+        groupId: 'g-1',
+      },
+      expect.any(Function),
     );
 
     const second = baseMessage({ id: 'm-3', content: 'second' });

@@ -30,7 +30,6 @@ export function useJoinGroup(): UseMutationResult<JoinGroupResult, Error, JoinGr
         myRole: result.role,
         lastActivityAt: joinedAt,
         lastMessage: null,
-        lastReadAt: joinedAt,
         unreadCount: 0,
       };
       updateMyGroupsCaches(queryClient, (prev) => [optimistic, ...prev]);
