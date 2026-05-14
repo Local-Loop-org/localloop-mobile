@@ -107,6 +107,9 @@ describe('useGroupChat', () => {
     });
 
     expect(mock.emit).toHaveBeenCalledWith('join_group', { groupId: 'g-1' });
+    expect(mock.emit).toHaveBeenCalledWith('mark_group_read', {
+      groupId: 'g-1',
+    });
     expect(result.current.connected).toBe(true);
   });
 

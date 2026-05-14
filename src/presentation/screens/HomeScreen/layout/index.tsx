@@ -11,6 +11,7 @@ import { AnchorType } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
+import { MyGroupRow } from '@/shared/ui/MyGroupRow';
 import type { HomeNearbyGroup } from '../types';
 import { styles } from './styles';
 import type { HomeLayoutProps } from './types';
@@ -19,7 +20,6 @@ import { DiscoverDivider } from './DiscoverDivider';
 import { SectionLabel } from './SectionLabel';
 import { DiscoverCard } from './DiscoverCard';
 import { DiscoverRow } from './DiscoverRow';
-import { MyGroupRow } from './MyGroupRow';
 
 type Variant = 'horizontal' | 'vertical';
 

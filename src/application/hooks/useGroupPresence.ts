@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { PresenceUpdate } from '@localloop/shared-types';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/application/stores/auth.store';
+import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
+import { applyGroupSummaryUpdate } from './useMyGroups';
 
 export type PresenceCountMap = Record<string, number>;
 
@@ -21,6 +24,7 @@ function normalizeGroupIds(groupIds: string[]): string[] {
  */
 export function useGroupPresence(groupIds: string[]): PresenceCountMap {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const queryClient = useQueryClient();
   const watchKey = normalizeGroupIds(groupIds).join('|');
   const watchedIds = useMemo(
     () => (watchKey.length > 0 ? watchKey.split('|') : []),
@@ -45,10 +49,15 @@ export function useGroupPresence(groupIds: string[]): PresenceCountMap {
 
     socket.on('connect', () => {
       socket.emit('watch_presence', { groupIds: watchedIds });
+      socket.emit('watch_group_summaries', { groupIds: watchedIds });
     });
     socket.on('presence_update', (payload: PresenceUpdate) => {
       if (!watched.has(payload.groupId)) return;
       setCounts((prev) => ({ ...prev, [payload.groupId]: payload.count }));
+    });
+    socket.on('group_summary_update', (payload: GroupSummaryUpdate) => {
+      if (!watched.has(payload.groupId)) return;
+      applyGroupSummaryUpdate(queryClient, payload);
     });
     socket.on('error', (payload: { code?: string; message?: string }) => {
       // eslint-disable-next-line no-console
@@ -57,10 +66,11 @@ export function useGroupPresence(groupIds: string[]): PresenceCountMap {
 
     return () => {
       socket.emit('unwatch_presence', { groupIds: watchedIds });
+      socket.emit('unwatch_group_summaries', { groupIds: watchedIds });
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, [accessToken, watchKey, watchedIds]);
+  }, [accessToken, queryClient, watchKey, watchedIds]);
 
   return counts;
 }

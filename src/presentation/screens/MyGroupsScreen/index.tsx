@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AnchorType } from '@localloop/shared-types';
 import { useMyGroups } from '@/application/hooks/useMyGroups';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
@@ -25,16 +26,26 @@ export default function MyGroupsScreen({ navigation }: Props) {
   const [filter, setFilter] = useState<MyGroupsFilter>('all');
 
   const groups = myGroupsQuery.data ?? [];
+  const groupIds = useMemo(() => groups.map((g) => g.id), [groups]);
+  const presenceCounts = useGroupPresence(groupIds);
+  const groupsWithPresence = useMemo(
+    () =>
+      groups.map((group) => {
+        const liveCount = presenceCounts[group.id] ?? 0;
+        return liveCount > 0 ? { ...group, liveCount } : group;
+      }),
+    [groups, presenceCounts],
+  );
 
   const totals = useMemo(() => {
     const byType = new Map<AnchorType, number>();
     let unread = 0;
-    for (const g of groups) {
+    for (const g of groupsWithPresence) {
       byType.set(g.anchorType, (byType.get(g.anchorType) ?? 0) + 1);
       if ((g.unreadCount ?? 0) > 0) unread += 1;
     }
-    return { total: groups.length, unread, byType };
-  }, [groups]);
+    return { total: groupsWithPresence.length, unread, byType };
+  }, [groupsWithPresence]);
 
   const chips = useMemo<ChipSpec[]>(() => {
     const list: ChipSpec[] = [
@@ -67,7 +78,7 @@ export default function MyGroupsScreen({ navigation }: Props) {
       .toLowerCase()
       .normalize('NFD')
       .replace(/\p{Diacritic}/gu, '');
-    return groups.filter((g) => {
+    return groupsWithPresence.filter((g) => {
       const passesFilter =
         filter === 'all'
           ? true
@@ -82,7 +93,7 @@ export default function MyGroupsScreen({ navigation }: Props) {
         .replace(/\p{Diacritic}/gu, '')
         .includes(q);
     });
-  }, [groups, query, filter]);
+  }, [groupsWithPresence, query, filter]);
 
   return (
     <MyGroupsLayout

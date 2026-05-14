@@ -4,13 +4,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import MyGroupsScreen from './index';
 import { groupsApi, type MyGroup } from '@/infra/api/groups.api';
+import { useGroupPresence } from '@/application/hooks/useGroupPresence';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getMyGroups: jest.fn() },
 }));
 
+jest.mock('@/application/hooks/useGroupPresence', () => ({
+  useGroupPresence: jest.fn(),
+}));
+
 const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
   typeof groupsApi.getMyGroups
+>;
+const mockedUseGroupPresence = useGroupPresence as jest.MockedFunction<
+  typeof useGroupPresence
 >;
 
 const navigation = {
@@ -46,6 +54,8 @@ const baseGroup = (overrides: Partial<MyGroup>): MyGroup => ({
   memberCount: 5,
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-29T13:00:00.000Z',
+  lastReadAt: '2026-04-29T12:00:00.000Z',
+  unreadCount: 0,
   lastMessage: null,
   ...overrides,
 });
@@ -80,16 +90,11 @@ const jadePark = baseGroup({
 describe('MyGroupsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-04-29T13:00:00.000Z'));
+    mockedUseGroupPresence.mockReturnValue({});
     mockedGetMyGroups.mockResolvedValue({
       data: [corredores, cafe, jadePark],
       next_cursor: null,
     });
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   it('renders all groups initially', async () => {
