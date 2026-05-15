@@ -7,9 +7,9 @@ import { usePreferencesStore } from '@/application/stores/preferences.store';
 import {
   PushPermissionDeniedError,
   usePushNotifications,
-} from '@/application/hooks/usePushNotifications';
-import { useUserProfile } from '@/application/hooks/useUserProfile';
-import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile';
+} from '@/application/hooks/usePushNotifications/usePushNotifications';
+import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
+import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile/useUpdateUserProfile';
 import ProfileLayout from './layout';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import type { DmException, LanguageCode, ThemeMode } from './types';

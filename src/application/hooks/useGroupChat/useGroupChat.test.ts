@@ -1,13 +1,22 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AnchorType, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  ChatSocketEvents,
+  MemberRole,
+} from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
-import { groupsApi } from '@/infra/api/groups.api';
+import {
+  groupsApi,
+  type GroupSummaryUpdate,
+  type MyGroup,
+} from '@/infra/api/groups.api';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { useGroupChat } from './useGroupChat';
-import { useJoinGroup } from './useJoinGroup';
+import { useJoinGroup } from '../useJoinGroup/useJoinGroup';
+import { MY_GROUPS_KEY, myGroupsKey } from '../useMyGroups/useMyGroups';
 
 jest.mock('@/infra/api/messages.api', () => ({
   messagesApi: {
@@ -26,20 +35,36 @@ jest.mock('@/infra/socket/chat-socket', () => ({
 }));
 
 type SocketHandler = (...args: unknown[]) => void;
+type MarkReadAck = (error: Error | null, payload?: GroupSummaryUpdate) => void;
 
 function makeSocketMock() {
   const handlers = new Map<string, SocketHandler>();
-  const emit = jest.fn();
+  const markReadAcks: MarkReadAck[] = [];
+  const emit = jest.fn(
+    (event: string, _payload?: unknown, ack?: MarkReadAck) => {
+      if (event === ChatSocketEvents.MARK_GROUP_READ && ack) {
+        markReadAcks.push(ack);
+      }
+    },
+  );
   const on = jest.fn((event: string, handler: SocketHandler) => {
     handlers.set(event, handler);
   });
+  const timeout = jest.fn(() => ({ emit }));
   const removeAllListeners = jest.fn();
   const disconnect = jest.fn();
   return {
-    mock: { emit, on, removeAllListeners, disconnect },
+    mock: { emit, on, timeout, removeAllListeners, disconnect },
     fire: (event: string, payload?: unknown) => {
       const h = handlers.get(event);
       if (h) h(payload);
+    },
+    ackMarkRead: (
+      error: Error | null,
+      payload?: GroupSummaryUpdate,
+      index = markReadAcks.length - 1,
+    ) => {
+      markReadAcks[index]?.(error, payload);
     },
   };
 }
@@ -60,13 +85,30 @@ const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   ...over,
 });
 
-function makeWrapper() {
-  const client = new QueryClient({
+function makeClient() {
+  return new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
+}
+
+function makeWrapper(client = makeClient()) {
   return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client }, children);
 }
+
+const baseMyGroup = (overrides: Partial<MyGroup> = {}): MyGroup => ({
+  id: 'g-1',
+  name: 'Morumbi Runners',
+  anchorType: AnchorType.NEIGHBORHOOD,
+  anchorLabel: 'Morumbi',
+  memberCount: 5,
+  myRole: MemberRole.MEMBER,
+  lastActivityAt: '2026-04-24T09:00:00.000Z',
+  lastReadAt: '2026-04-24T08:00:00.000Z',
+  lastMessage: null,
+  unreadCount: 3,
+  ...overrides,
+});
 
 describe('useGroupChat', () => {
   beforeEach(() => {
@@ -106,8 +148,101 @@ describe('useGroupChat', () => {
       fire('connect');
     });
 
-    expect(mock.emit).toHaveBeenCalledWith('join_group', { groupId: 'g-1' });
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.JOIN_GROUP, {
+      groupId: 'g-1',
+    });
+    expect(mock.timeout).toHaveBeenCalledWith(4000);
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.MARK_GROUP_READ,
+      {
+        groupId: 'g-1',
+      },
+      expect.any(Function),
+    );
     expect(result.current.connected).toBe(true);
+  });
+
+  it('clears unread cache on chat entry and applies the mark-read summary ack', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const client = makeClient();
+    client.setQueryData(myGroupsKey(5), [baseMyGroup()]);
+    const { mock, fire, ackMarkRead } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(client),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('connect');
+    });
+
+    expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject({
+      unreadCount: 0,
+      lastMessage: null,
+    });
+
+    act(() => {
+      ackMarkRead(null, {
+        groupId: 'g-1',
+        lastActivityAt: '2026-04-24T10:30:00.000Z',
+        lastReadAt: '2026-04-24T10:31:00.000Z',
+        lastMessage: {
+          content: 'Tudo certo',
+          senderName: 'Alice',
+          createdAt: '2026-04-24T10:30:00.000Z',
+        },
+        unreadCount: 0,
+      });
+    });
+
+    await waitFor(() =>
+      expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject(
+        {
+          lastActivityAt: '2026-04-24T10:30:00.000Z',
+          lastReadAt: '2026-04-24T10:31:00.000Z',
+          lastMessage: { content: 'Tudo certo' },
+          unreadCount: 0,
+        },
+      ),
+    );
+  });
+
+  it('invalidates my-groups when mark-read ack errors', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const client = makeClient();
+    const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
+    const { mock, fire, ackMarkRead } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(client),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire('connect');
+      ackMarkRead(new Error('operation has timed out'));
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: MY_GROUPS_KEY });
+  });
+
+  it('does not subscribe chat sockets to group_summary_update events', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    expect(mock.on).not.toHaveBeenCalledWith(
+      ChatSocketEvents.GROUP_SUMMARY_UPDATE,
+      expect.any(Function),
+    );
   });
 
   it('appends new_message events to the front of the list and dedupes by id', async () => {
@@ -123,25 +258,27 @@ describe('useGroupChat', () => {
 
     const incoming = baseMessage({ id: 'm-2', content: 'first' });
     act(() => {
-      fire('new_message', incoming);
+      fire(ChatSocketEvents.NEW_MESSAGE, incoming);
     });
-    await waitFor(() =>
-      expect(result.current.messages[0]?.id).toBe('m-2'),
+    await waitFor(() => expect(result.current.messages[0]?.id).toBe('m-2'));
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.MARK_GROUP_READ,
+      {
+        groupId: 'g-1',
+      },
+      expect.any(Function),
     );
 
     const second = baseMessage({ id: 'm-3', content: 'second' });
     act(() => {
-      fire('new_message', second);
+      fire(ChatSocketEvents.NEW_MESSAGE, second);
     });
     await waitFor(() =>
-      expect(result.current.messages.map((m) => m.id)).toEqual([
-        'm-3',
-        'm-2',
-      ]),
+      expect(result.current.messages.map((m) => m.id)).toEqual(['m-3', 'm-2']),
     );
 
     act(() => {
-      fire('new_message', second);
+      fire(ChatSocketEvents.NEW_MESSAGE, second);
     });
     expect(result.current.messages).toHaveLength(2);
   });
@@ -167,7 +304,7 @@ describe('useGroupChat', () => {
     expect(temp.content).toBe('hi');
     expect(temp.senderId).toBe('me');
 
-    expect(mock.emit).toHaveBeenCalledWith('send_message', {
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.SEND_MESSAGE, {
       groupId: 'g-1',
       content: 'hi',
       storageKey: null,
@@ -194,7 +331,7 @@ describe('useGroupChat', () => {
 
     act(() => {
       fire(
-        'new_message',
+        ChatSocketEvents.NEW_MESSAGE,
         baseMessage({
           id: 'server-uuid-1',
           senderId: 'me',
@@ -281,7 +418,9 @@ describe('useGroupChat', () => {
 
     unmount();
 
-    expect(mock.emit).toHaveBeenCalledWith('leave_group', { groupId: 'g-1' });
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.LEAVE_GROUP, {
+      groupId: 'g-1',
+    });
     expect(mock.disconnect).toHaveBeenCalled();
   });
 
@@ -310,12 +449,12 @@ describe('useGroupChat', () => {
     expect(result.current.onlineCount).toBe(0);
 
     act(() => {
-      fire('presence_update', { groupId: 'g-1', count: 3 });
+      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-1', count: 3 });
     });
     await waitFor(() => expect(result.current.onlineCount).toBe(3));
 
     act(() => {
-      fire('presence_update', { groupId: 'g-1', count: 5 });
+      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-1', count: 5 });
     });
     await waitFor(() => expect(result.current.onlineCount).toBe(5));
   });
@@ -332,14 +471,20 @@ describe('useGroupChat', () => {
     await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
-      fire('presence_update', { groupId: 'g-OTHER', count: 99 });
+      fire(ChatSocketEvents.PRESENCE_UPDATE, {
+        groupId: 'g-OTHER',
+        count: 99,
+      });
     });
 
     expect(result.current.onlineCount).toBe(0);
   });
 
   it('gates history fetch and socket creation while a join-group mutation for the same id is pending', async () => {
-    let resolveJoin: (v: { status: 'joined'; role: MemberRole }) => void = () => {};
+    let resolveJoin: (v: {
+      status: 'joined';
+      role: MemberRole;
+    }) => void = () => {};
     mockedJoinGroup.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -388,6 +533,8 @@ describe('useGroupChat', () => {
     });
 
     await waitFor(() => expect(mockedGetHistory).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockedCreateChatSocket).toHaveBeenCalledTimes(1),
+    );
   });
 });

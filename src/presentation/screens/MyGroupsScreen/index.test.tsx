@@ -4,13 +4,36 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnchorType, MemberRole } from '@localloop/shared-types';
 import MyGroupsScreen from './index';
 import { groupsApi, type MyGroup } from '@/infra/api/groups.api';
+import { useGroupListRealtime } from '@/application/hooks/useGroupListRealtime/useGroupListRealtime';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: { getMyGroups: jest.fn() },
 }));
 
+jest.mock(
+  '@/application/hooks/useGroupListRealtime/useGroupListRealtime',
+  () => ({
+    useGroupListRealtime: jest.fn(),
+  }),
+);
+
+jest.mock('@react-navigation/native', () => {
+  const ReactLib = require('react');
+  return {
+    useFocusEffect: (cb: () => void | (() => void)) => {
+      ReactLib.useEffect(() => {
+        cb();
+      }, [cb]);
+    },
+    useIsFocused: () => true,
+  };
+});
+
 const mockedGetMyGroups = groupsApi.getMyGroups as jest.MockedFunction<
   typeof groupsApi.getMyGroups
+>;
+const mockedUseGroupListRealtime = useGroupListRealtime as jest.MockedFunction<
+  typeof useGroupListRealtime
 >;
 
 const navigation = {
@@ -46,8 +69,13 @@ const baseGroup = (overrides: Partial<MyGroup>): MyGroup => ({
   memberCount: 5,
   myRole: MemberRole.MEMBER,
   lastActivityAt: '2026-04-29T13:00:00.000Z',
+  unreadCount: 0,
   lastMessage: null,
   ...overrides,
+  lastReadAt:
+    overrides.lastReadAt === undefined
+      ? '2026-04-29T12:00:00.000Z'
+      : overrides.lastReadAt,
 });
 
 const corredores = baseGroup({
@@ -80,16 +108,11 @@ const jadePark = baseGroup({
 describe('MyGroupsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-04-29T13:00:00.000Z'));
+    mockedUseGroupListRealtime.mockReturnValue({});
     mockedGetMyGroups.mockResolvedValue({
       data: [corredores, cafe, jadePark],
       next_cursor: null,
     });
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   it('renders all groups initially', async () => {
@@ -98,6 +121,19 @@ describe('MyGroupsScreen', () => {
     expect(await findByText('Clube dos Corredores')).toBeTruthy();
     expect(await findByText('Café Manfredini')).toBeTruthy();
     expect(await findByText('Ed. Jade Park')).toBeTruthy();
+  });
+
+  it('watches presence and summaries for the loaded group ids while focused', async () => {
+    const { findByText } = renderScreen();
+    await findByText('Clube dos Corredores');
+
+    await waitFor(() =>
+      expect(mockedUseGroupListRealtime).toHaveBeenLastCalledWith({
+        presenceGroupIds: ['mg-1', 'mg-2', 'mg-3'],
+        summaryGroupIds: ['mg-1', 'mg-2', 'mg-3'],
+        enabled: true,
+      }),
+    );
   });
 
   it('renders header subtitle with total count and hides "NÃO LIDAS" while no unread', async () => {

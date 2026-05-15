@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DmPermission } from '@localloop/shared-types';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
-import { USER_PROFILE_KEY } from './useUserProfile';
+import { USER_PROFILE_KEY } from '../useUserProfile/useUserProfile';
 
 export interface UpdateUserProfileVars {
   displayName?: string;
