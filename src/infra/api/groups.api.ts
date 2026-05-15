@@ -1,10 +1,23 @@
 // src/infra/api/groups.api.ts
 
-import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MemberRole,
+  type MyGroup as SharedMyGroup,
+  type NearbyGroup,
+} from '@localloop/shared-types';
 import { apiClient } from './api-client';
 
-import type { NearbyGroup } from '@localloop/shared-types';
-export type { NearbyGroup } from '@localloop/shared-types';
+export type {
+  GroupSummaryUpdate,
+  MyGroupLastMessage,
+  NearbyGroup,
+} from '@localloop/shared-types';
+
+export type MyGroup = SharedMyGroup & {
+  liveCount?: number;
+};
 
 export interface CreateGroupBody {
   name: string;
@@ -73,25 +86,6 @@ export interface GroupMember {
 export interface ListMembersResponse {
   data: GroupMember[];
   next_cursor: string | null;
-}
-
-export interface MyGroupLastMessage {
-  content: string | null;
-  senderName: string;
-  createdAt: string;
-}
-
-export interface MyGroup {
-  id: string;
-  name: string;
-  anchorType: AnchorType;
-  anchorLabel: string;
-  memberCount: number;
-  myRole: MemberRole;
-  lastActivityAt: string;
-  lastMessage: MyGroupLastMessage | null;
-  unreadCount?: number;
-  liveCount?: number;
 }
 
 export interface ListMyGroupsResponse {

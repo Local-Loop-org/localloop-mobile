@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuthLogin } from '@/application/hooks/useAuthLogin';
+import { useAuthLogin } from '@/application/hooks/useAuthLogin/useAuthLogin';
 import LoginLayout from './layout';
 
 export default function LoginScreen() {

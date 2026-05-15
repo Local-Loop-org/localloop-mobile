@@ -9,7 +9,7 @@ import {
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { useUpdateUserProfile } from './useUpdateUserProfile';
-import { USER_PROFILE_KEY } from './useUserProfile';
+import { USER_PROFILE_KEY } from '../useUserProfile/useUserProfile';
 
 jest.mock('@/infra/api/user.api', () => ({
   userApi: { updateProfile: jest.fn() },

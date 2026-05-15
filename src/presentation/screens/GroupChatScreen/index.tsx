@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGroupChat } from '@/application/hooks/useGroupChat';
+import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';

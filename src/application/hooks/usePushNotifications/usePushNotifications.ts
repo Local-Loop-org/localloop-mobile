@@ -12,7 +12,7 @@ import {
   PushPermissionDeniedError,
   requestPermissionStatus,
 } from '@/infra/notifications/push-notifications';
-import { USER_PROFILE_KEY } from './useUserProfile';
+import { USER_PROFILE_KEY } from '../useUserProfile/useUserProfile';
 
 export { PushPermissionDeniedError };
 

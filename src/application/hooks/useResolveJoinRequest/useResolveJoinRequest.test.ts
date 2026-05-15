@@ -7,8 +7,8 @@ import {
   type GroupDetail,
   type JoinRequest,
 } from '@/infra/api/groups.api';
-import { groupDetailKey } from './useGroupDetail';
-import { groupJoinRequestsKey } from './useGroupJoinRequests';
+import { groupDetailKey } from '../useGroupDetail/useGroupDetail';
+import { groupJoinRequestsKey } from '../useGroupJoinRequests/useGroupJoinRequests';
 import { useResolveJoinRequest } from './useResolveJoinRequest';
 
 jest.mock('@/infra/api/groups.api', () => ({

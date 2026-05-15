@@ -1,6 +1,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { groupsApi, type NearbyGroup } from '@/infra/api/groups.api';
-import type { Coords } from './useCurrentLocation';
+import type { Coords } from '../useCurrentLocation/useCurrentLocation';
 
 const COORD_PRECISION = 3;
 
