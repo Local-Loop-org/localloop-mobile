@@ -8,7 +8,7 @@ import { anchorIconName } from '@/shared/icons/anchorIcon';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
 import MyGroupsLayout from './layout';
-import type { ChipSpec } from './layout/types';
+import type { MyGroupsChipSpec } from './layout/types';
 import type { MyGroupsFilter } from './types';
 
 type Props = AuthenticatedStackScreenProps<'MyGroups'>;
@@ -64,8 +64,8 @@ export default function MyGroupsScreen({ navigation }: Props) {
     return { total: groupsWithPresence.length, unread, byType };
   }, [groupsWithPresence]);
 
-  const chips = useMemo<ChipSpec[]>(() => {
-    const list: ChipSpec[] = [
+  const chips = useMemo<MyGroupsChipSpec[]>(() => {
+    const list: MyGroupsChipSpec[] = [
       { id: 'all', label: 'Todos', count: totals.total },
     ];
     if (totals.unread > 0) {
