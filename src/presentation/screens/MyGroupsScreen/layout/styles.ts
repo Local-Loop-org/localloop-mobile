@@ -65,30 +65,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Search input
-  searchWrap: {
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  searchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    padding: 0,
-  },
-
   // Chip row
   chipScrollOuter: {
     flexGrow: 0,
@@ -98,54 +74,6 @@ export const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     gap: 6,
     alignItems: 'center',
-  },
-  chip: {
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chipIconLeading: {
-    paddingLeft: 9,
-    paddingRight: 11,
-  },
-  chipActive: {
-    borderColor: colors.text,
-    backgroundColor: colors.text,
-  },
-  chipLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-    color: colors.dim,
-  },
-  chipLabelActive: {
-    color: colors.background,
-  },
-  chipCount: {
-    fontSize: 10,
-    fontFamily: monoFamily,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    color: colors.faint,
-  },
-  chipCountActive: {
-    color: colors.background,
-    opacity: 0.7,
-  },
-  chipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-  },
-  chipDotActive: {
-    backgroundColor: colors.background,
   },
 
   // List

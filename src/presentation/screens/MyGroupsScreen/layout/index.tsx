@@ -11,8 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import { MyGroupRow } from '@/shared/ui/MyGroupRow';
-import { FilterChip } from './FilterChip';
-import { SearchInput } from './SearchInput';
+import { FilterChip } from '@/shared/ui/FilterChip';
+import { SearchInput } from '@/shared/ui/SearchInput';
 import { styles } from './styles';
 import type { MyGroupsLayoutProps } from './types';
 
@@ -53,7 +53,12 @@ export default function MyGroupsLayout({
         </View>
       </View>
 
-      <SearchInput value={query} onChange={onChangeQuery} />
+      <SearchInput
+        value={query}
+        onChange={onChangeQuery}
+        placeholder="Buscar nos meus grupos…"
+        accessibilityLabel="Buscar nos meus grupos"
+      />
 
       <ScrollView
         horizontal

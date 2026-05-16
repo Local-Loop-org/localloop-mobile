@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/shared/theme';
+import { colors, fonts } from '@/shared/theme';
 
 export const styles = StyleSheet.create({
   container: {
@@ -7,77 +7,82 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  backBtn: {
-    paddingVertical: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  backText: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  title: {
-    ...typography.h2,
-  },
-  listContent: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 12,
   },
-  rowMain: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  name: {
-    color: colors.text,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  role: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  banBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 8,
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.error,
-  },
-  banBtnDisabled: {
-    opacity: 0.5,
-  },
-  banBtnText: {
-    color: colors.error,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  emptyWrapper: {
-    flex: 1,
+    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
   },
-  emptyTitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  /**
+   * Pad the title block by the back button's width (36) plus the header gap (12)
+   * so the title stays optically centered without a right-side spacer view.
+   */
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 1,
+    paddingRight: 48,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  subtitle: {
+    fontFamily: fonts.mono,
+    fontSize: 9.5,
+    color: colors.dim,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  chipsScrollOuter: {
+    flexGrow: 0,
+  },
+  chipsRow: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 6,
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
   errorText: {
     color: colors.error,
     textAlign: 'center',
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.md,
+    marginHorizontal: 16,
+    marginTop: 12,
+    fontSize: 13,
+  },
+  loaderWrap: {
+    paddingVertical: 48,
+    alignItems: 'center',
+  },
+  footerNote: {
+    fontFamily: fonts.mono,
+    fontSize: 9.5,
+    color: colors.faint,
+    letterSpacing: 0.6,
+    textAlign: 'center',
+    marginTop: 18,
+    lineHeight: 14,
   },
 });

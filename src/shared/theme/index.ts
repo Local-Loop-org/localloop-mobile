@@ -16,6 +16,7 @@ export const colors = {
   dim: '#C4C4C4',
   faint: '#6E6E6E',
   error: '#FF4B4B',
+  warning: '#F0A24A',
   success: '#00E676',
   white: '#FFFFFF',
   black: '#000000',
