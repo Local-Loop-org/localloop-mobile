@@ -1,15 +1,9 @@
 import type { AnchorType } from '@localloop/shared-types';
 import type { MyGroup } from '@/infra/api/groups.api';
-import type { IconName } from '@/shared/icons';
+import type { ChipSpec } from '@/shared/ui/FilterChip';
 import type { MyGroupsFilter } from '../types';
 
-export interface ChipSpec {
-  id: MyGroupsFilter;
-  label: string;
-  count: number;
-  icon?: IconName;
-  dot?: boolean;
-}
+export type MyGroupsChipSpec = ChipSpec<MyGroupsFilter>;
 
 export interface MyGroupsLayoutProps {
   groups: MyGroup[];
@@ -17,7 +11,7 @@ export interface MyGroupsLayoutProps {
   unreadTotal: number;
   query: string;
   filter: MyGroupsFilter;
-  chips: ChipSpec[];
+  chips: MyGroupsChipSpec[];
   loading: boolean;
   onChangeQuery: (next: string) => void;
   onChangeFilter: (next: MyGroupsFilter) => void;

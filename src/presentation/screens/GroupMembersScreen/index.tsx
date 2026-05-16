@@ -1,93 +1,165 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { MemberRole } from '@localloop/shared-types';
-import {
-  groupsApi,
-  type GroupMember as GroupMemberData,
-} from '@/infra/api/groups.api';
+import { useGroupMembers } from '@/application/hooks/useGroupMembers/useGroupMembers';
+import { useGroupJoinRequests } from '@/application/hooks/useGroupJoinRequests/useGroupJoinRequests';
+import { useBanMember } from '@/application/hooks/useBanMember/useBanMember';
+import { useUnbanMember } from '@/application/hooks/useUnbanMember/useUnbanMember';
+import { usePromoteMember } from '@/application/hooks/usePromoteMember/usePromoteMember';
+import { useDemoteMember } from '@/application/hooks/useDemoteMember/useDemoteMember';
+import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest/useResolveJoinRequest';
+import { useGroupDetail } from '@/application/hooks/useGroupDetail/useGroupDetail';
+import { confirmDestructive } from '@/shared/ui/confirmDestructive';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import GroupMembersLayout from './layout';
+import type { FilterChipKey } from './layout/types';
+import type { BannedMember } from './layout/components/BannedMemberRow';
 
 type Props = AuthenticatedStackScreenProps<'GroupMembers'>;
 
-function canBanTarget(
-  callerRole: MemberRole | null,
-  target: GroupMemberData,
-): boolean {
-  if (target.role === MemberRole.OWNER) return false;
-  if (callerRole === MemberRole.OWNER) return true;
-  if (callerRole === MemberRole.MODERATOR) {
-    return target.role === MemberRole.MEMBER;
-  }
-  return false;
-}
+const MEMBERS_PAGE_SIZE = 50;
+
+// Listing of banned members is not yet exposed by the API. The unban mutation is
+// wired so the screen is ready once `?status=banned` lands; until then the
+// Banidos chip renders its empty state.
+const EMPTY_BANNED: BannedMember[] = [];
 
 export default function GroupMembersScreen({ navigation, route }: Props) {
   const { groupId, myRole } = route.params;
 
-  const [members, setMembers] = useState<GroupMemberData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [banningUserId, setBanningUserId] = useState<string | null>(null);
+  const canManage =
+    myRole === MemberRole.OWNER || myRole === MemberRole.MODERATOR;
 
-  const loadMembers = useCallback(async () => {
-    setLoading(true);
-    setErrorMessage(null);
-    try {
-      const response = await groupsApi.listMembers(groupId);
-      // TODO: paginate — use response.next_cursor to fetch subsequent pages.
-      setMembers(response.data);
-    } catch {
-      setErrorMessage('Não foi possível carregar os membros.');
-    } finally {
-      setLoading(false);
-    }
-  }, [groupId]);
+  const groupDetailQuery = useGroupDetail(groupId);
+  const groupName = groupDetailQuery.data?.name ?? null;
 
-  useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
+  const membersQuery = useGroupMembers(groupId, { limit: MEMBERS_PAGE_SIZE });
+  const requestsQuery = useGroupJoinRequests(groupId, { enabled: canManage });
 
-  const handleBan = (target: GroupMemberData) => {
-    Alert.alert(
-      'Banir membro?',
-      `${target.displayName} será removido do grupo e não poderá entrar novamente.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Banir',
-          style: 'destructive',
-          onPress: async () => {
-            setBanningUserId(target.userId);
-            const previous = members;
-            setMembers((list) =>
-              list.filter((m) => m.userId !== target.userId),
-            );
-            try {
-              await groupsApi.banMember(groupId, target.userId);
-            } catch {
-              setMembers(previous);
-              Alert.alert(
-                'Erro',
-                'Não foi possível banir este membro. Tente novamente.',
-              );
-            } finally {
-              setBanningUserId(null);
-            }
-          },
-        },
-      ],
-    );
+  const banMember = useBanMember();
+  const unbanMember = useUnbanMember();
+  const promoteMember = usePromoteMember();
+  const demoteMember = useDemoteMember();
+  const resolveRequest = useResolveJoinRequest();
+
+  const [filter, setFilter] = useState<FilterChipKey>('all');
+  const [query, setQuery] = useState('');
+
+  const errorMessage =
+    membersQuery.isError
+      ? 'Não foi possível carregar os membros.'
+      : null;
+
+  const handleBan = (userId: string) => {
+    const target = membersQuery.data?.find((m) => m.userId === userId);
+    if (!target) return;
+    confirmDestructive({
+      title: 'Banir membro?',
+      message: `${target.displayName} será removido do grupo e não poderá entrar novamente até ser desbanido.`,
+      confirmLabel: 'Banir',
+      onConfirm: () =>
+        banMember.mutateAsync({ groupId, userId }).catch(() => {
+          Alert.alert(
+            'Erro',
+            'Não foi possível banir este membro. Tente novamente.',
+          );
+        }),
+    });
+  };
+
+  const handleUnban = (userId: string) => {
+    confirmDestructive({
+      title: 'Desbanir membro?',
+      message: 'Esta pessoa poderá entrar no grupo novamente.',
+      confirmLabel: 'Desbanir',
+      cancelLabel: 'Cancelar',
+      onConfirm: () =>
+        unbanMember.mutateAsync({ groupId, userId }).catch(() => {
+          Alert.alert(
+            'Erro',
+            'Não foi possível desbanir este membro. Tente novamente.',
+          );
+        }),
+    });
+  };
+
+  const handlePromote = (userId: string) => {
+    const target = membersQuery.data?.find((m) => m.userId === userId);
+    if (!target) return;
+    confirmDestructive({
+      title: 'Promover a admin?',
+      message: `${target.displayName} poderá moderar membros e aprovar solicitações.`,
+      confirmLabel: 'Promover',
+      cancelLabel: 'Cancelar',
+      onConfirm: () =>
+        promoteMember.mutateAsync({ groupId, userId }).catch(() => {
+          Alert.alert(
+            'Erro',
+            'Não foi possível promover este membro. Tente novamente.',
+          );
+        }),
+    });
+  };
+
+  const handleDemote = (userId: string) => {
+    const target = membersQuery.data?.find((m) => m.userId === userId);
+    if (!target) return;
+    confirmDestructive({
+      title: 'Rebaixar admin?',
+      message: `${target.displayName} voltará a ser um membro comum.`,
+      confirmLabel: 'Rebaixar',
+      cancelLabel: 'Cancelar',
+      onConfirm: () =>
+        demoteMember.mutateAsync({ groupId, userId }).catch(() => {
+          Alert.alert(
+            'Erro',
+            'Não foi possível rebaixar este admin. Tente novamente.',
+          );
+        }),
+    });
+  };
+
+  const handleApprove = (requestId: string) => {
+    resolveRequest.mutate({ groupId, requestId, action: 'approve' });
+  };
+
+  const handleReject = (requestId: string) => {
+    resolveRequest.mutate({ groupId, requestId, action: 'reject' });
   };
 
   return (
     <GroupMembersLayout
-      members={members}
-      loading={loading}
+      groupName={groupName}
+      myRole={myRole}
+      canManage={canManage}
+      activeMembers={membersQuery.data ?? []}
+      pendingRequests={requestsQuery.data ?? []}
+      bannedMembers={EMPTY_BANNED}
+      loadingActive={membersQuery.isLoading}
+      loadingPending={requestsQuery.isLoading}
+      loadingBanned={false}
       errorMessage={errorMessage}
-      banningUserId={banningUserId}
-      canBan={(target) => canBanTarget(myRole, target)}
+      query={query}
+      onQueryChange={setQuery}
+      filter={filter}
+      onFilterChange={setFilter}
+      banningUserId={
+        banMember.isPending ? (banMember.variables?.userId ?? null) : null
+      }
+      unbanningUserId={
+        unbanMember.isPending ? (unbanMember.variables?.userId ?? null) : null
+      }
+      resolvingRequestId={
+        resolveRequest.isPending
+          ? (resolveRequest.variables?.requestId ?? null)
+          : null
+      }
       onBan={handleBan}
+      onUnban={handleUnban}
+      onPromote={handlePromote}
+      onDemote={handleDemote}
+      onApprove={handleApprove}
+      onReject={handleReject}
       onBack={() => navigation.goBack()}
     />
   );
