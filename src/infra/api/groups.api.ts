@@ -192,6 +192,24 @@ export const groupsApi = {
   },
 
   /**
+   * List paginated banned members. Caller must be owner or moderator; 403
+   * FORBIDDEN bubbles up otherwise. Shares the response shape with
+   * `listMembers`.
+   */
+  listBannedMembers: async (
+    groupId: string,
+    cursor?: string,
+  ): Promise<ListMembersResponse> => {
+    const params: Record<string, string | number> = { limit: 50 };
+    if (cursor) params.before = cursor;
+    const { data } = await apiClient.get<ListMembersResponse>(
+      `/groups/${groupId}/members/banned`,
+      { params },
+    );
+    return data;
+  },
+
+  /**
    * Ban a member from a group. Caller must be owner or moderator.
    * Server returns 204; 403 FORBIDDEN (cannot ban owner / moderator banning
    * moderator) and 404 MEMBER_NOT_FOUND bubble up.

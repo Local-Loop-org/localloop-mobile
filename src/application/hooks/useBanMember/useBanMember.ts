@@ -60,6 +60,9 @@ export function useBanMember(): UseMutationResult<
       void queryClient.invalidateQueries({
         queryKey: ['groups', 'members', groupId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ['groups', 'banned', groupId],
+      });
       void queryClient.invalidateQueries({ queryKey: groupDetailKey(groupId) });
     },
   });
