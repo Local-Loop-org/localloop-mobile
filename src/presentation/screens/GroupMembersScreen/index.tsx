@@ -7,22 +7,17 @@ import { useBanMember } from '@/application/hooks/useBanMember/useBanMember';
 import { useUnbanMember } from '@/application/hooks/useUnbanMember/useUnbanMember';
 import { usePromoteMember } from '@/application/hooks/usePromoteMember/usePromoteMember';
 import { useDemoteMember } from '@/application/hooks/useDemoteMember/useDemoteMember';
+import { useBannedMembers } from '@/application/hooks/useBannedMembers/useBannedMembers';
 import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest/useResolveJoinRequest';
 import { useGroupDetail } from '@/application/hooks/useGroupDetail/useGroupDetail';
 import { confirmDestructive } from '@/shared/ui/confirmDestructive';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
 import GroupMembersLayout from './layout';
 import type { FilterChipKey } from './layout/types';
-import type { BannedMember } from './layout/components/BannedMemberRow';
 
 type Props = AuthenticatedStackScreenProps<'GroupMembers'>;
 
 const MEMBERS_PAGE_SIZE = 50;
-
-// Listing of banned members is not yet exposed by the API. The unban mutation is
-// wired so the screen is ready once `?status=banned` lands; until then the
-// Banidos chip renders its empty state.
-const EMPTY_BANNED: BannedMember[] = [];
 
 export default function GroupMembersScreen({ navigation, route }: Props) {
   const { groupId, myRole } = route.params;
@@ -35,6 +30,7 @@ export default function GroupMembersScreen({ navigation, route }: Props) {
 
   const membersQuery = useGroupMembers(groupId, { limit: MEMBERS_PAGE_SIZE });
   const requestsQuery = useGroupJoinRequests(groupId, { enabled: canManage });
+  const bannedQuery = useBannedMembers(groupId, { enabled: canManage });
 
   const banMember = useBanMember();
   const unbanMember = useUnbanMember();
@@ -134,10 +130,10 @@ export default function GroupMembersScreen({ navigation, route }: Props) {
       canManage={canManage}
       activeMembers={membersQuery.data ?? []}
       pendingRequests={requestsQuery.data ?? []}
-      bannedMembers={EMPTY_BANNED}
+      bannedMembers={bannedQuery.data ?? []}
       loadingActive={membersQuery.isLoading}
       loadingPending={requestsQuery.isLoading}
-      loadingBanned={false}
+      loadingBanned={canManage && bannedQuery.isLoading}
       errorMessage={errorMessage}
       query={query}
       onQueryChange={setQuery}

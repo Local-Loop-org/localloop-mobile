@@ -13,6 +13,7 @@ import { groupsApi } from '@/infra/api/groups.api';
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
     listMembers: jest.fn(),
+    listBannedMembers: jest.fn(),
     banMember: jest.fn(),
     unbanMember: jest.fn(),
     promoteMember: jest.fn(),
@@ -32,6 +33,10 @@ const mockedBanMember = groupsApi.banMember as jest.MockedFunction<
 const mockedUnbanMember = groupsApi.unbanMember as jest.MockedFunction<
   typeof groupsApi.unbanMember
 >;
+const mockedListBannedMembers =
+  groupsApi.listBannedMembers as jest.MockedFunction<
+    typeof groupsApi.listBannedMembers
+  >;
 const mockedPromoteMember = groupsApi.promoteMember as jest.MockedFunction<
   typeof groupsApi.promoteMember
 >;
@@ -109,6 +114,7 @@ describe('GroupMembersScreen', () => {
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockedGetGroupDetail.mockResolvedValue(groupFixture);
     mockedListJoinRequests.mockResolvedValue([]);
+    mockedListBannedMembers.mockResolvedValue({ data: [], next_cursor: null });
   });
 
   afterEach(() => {
@@ -368,7 +374,7 @@ describe('GroupMembersScreen', () => {
     );
   });
 
-  it('does NOT call listJoinRequests for a regular MEMBER', async () => {
+  it('does NOT call listJoinRequests or listBannedMembers for a regular MEMBER', async () => {
     mockedListMembers.mockResolvedValueOnce({
       data: [buildMember('u-1', 'Alice', MemberRole.OWNER)],
       next_cursor: null,
@@ -378,6 +384,51 @@ describe('GroupMembersScreen', () => {
     await findByText('Alice');
 
     expect(mockedListJoinRequests).not.toHaveBeenCalled();
+    expect(mockedListBannedMembers).not.toHaveBeenCalled();
+  });
+
+  it('loads banned members for owner and renders them under the Banidos filter', async () => {
+    mockedListMembers.mockResolvedValue({ data: [], next_cursor: null });
+    mockedListBannedMembers.mockResolvedValue({
+      data: [buildMember('u-7', 'Hugo Banido', MemberRole.MEMBER)],
+      next_cursor: null,
+    });
+
+    const { findByTestId, findByText } = renderScreen(MemberRole.OWNER);
+
+    fireEvent.press(await findByTestId('filter-chip-banned'));
+
+    expect(await findByText('Hugo Banido')).toBeTruthy();
+    expect(await findByTestId('banned-row-u-7')).toBeTruthy();
+    expect(mockedListBannedMembers).toHaveBeenCalledWith('g-1');
+  });
+
+  it('unban confirmed → calls unbanMember and optimistically removes the row', async () => {
+    mockedListMembers.mockResolvedValue({ data: [], next_cursor: null });
+    mockedListBannedMembers.mockResolvedValue({
+      data: [buildMember('u-7', 'Hugo Banido', MemberRole.MEMBER)],
+      next_cursor: null,
+    });
+    mockedUnbanMember.mockResolvedValueOnce(undefined);
+
+    const { findByTestId, findByText, queryByText } = renderScreen(
+      MemberRole.OWNER,
+    );
+
+    fireEvent.press(await findByTestId('filter-chip-banned'));
+    await findByText('Hugo Banido');
+
+    fireEvent.press(await findByTestId('banned-row-unban-u-7'));
+
+    const confirmBtn = alertSpy.mock.calls[0][2][1];
+    expect(confirmBtn.text).toBe('Desbanir');
+
+    await act(async () => {
+      await confirmBtn.onPress();
+    });
+
+    expect(mockedUnbanMember).toHaveBeenCalledWith('g-1', 'u-7');
+    await waitFor(() => expect(queryByText('Hugo Banido')).toBeNull());
   });
 
   it('search filters active members by name', async () => {
@@ -414,5 +465,3 @@ describe('GroupMembersScreen', () => {
   });
 });
 
-// Suppress unused-import lint while the unban listing UX waits on backend support.
-void mockedUnbanMember;
