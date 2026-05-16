@@ -201,6 +201,31 @@ export const groupsApi = {
   },
 
   /**
+   * Unban a previously banned member. Caller must be owner or moderator.
+   * Server returns 204; 400 TARGET_NOT_BANNED, 403 FORBIDDEN, and 404
+   * MEMBER_NOT_FOUND bubble up.
+   */
+  unbanMember: async (groupId: string, userId: string): Promise<void> => {
+    await apiClient.post(`/groups/${groupId}/members/${userId}/unban`);
+  },
+
+  /**
+   * Promote a regular member to moderator. Caller must be owner.
+   * Server returns 204; 403 FORBIDDEN and 404 MEMBER_NOT_FOUND bubble up.
+   */
+  promoteMember: async (groupId: string, userId: string): Promise<void> => {
+    await apiClient.post(`/groups/${groupId}/members/${userId}/promote`);
+  },
+
+  /**
+   * Demote a moderator back to regular member. Caller must be owner.
+   * Server returns 204; 403 FORBIDDEN and 404 MEMBER_NOT_FOUND bubble up.
+   */
+  demoteMember: async (groupId: string, userId: string): Promise<void> => {
+    await apiClient.post(`/groups/${groupId}/members/${userId}/demote`);
+  },
+
+  /**
    * Update group settings. Caller must be owner or moderator.
    */
   updateGroup: async (

@@ -1,11 +1,44 @@
-import type { GroupMember } from '@/infra/api/groups.api';
+import type { MemberRole } from '@localloop/shared-types';
+import type {
+  GroupMember,
+  JoinRequest,
+} from '@/infra/api/groups.api';
+import type { BannedMember } from './components/BannedMemberRow';
+
+export type FilterChipKey = 'all' | 'active' | 'pending' | 'banned';
 
 export interface GroupMembersLayoutProps {
-  members: GroupMember[];
-  loading: boolean;
+  /** Group name shown as subtitle under the header title. */
+  groupName?: string | null;
+  /** Caller's role; null when not a member (treated as read-only). */
+  myRole: MemberRole | null;
+  /** True when caller is OWNER or MODERATOR. */
+  canManage: boolean;
+
+  activeMembers: GroupMember[];
+  pendingRequests: JoinRequest[];
+  bannedMembers: BannedMember[];
+
+  loadingActive: boolean;
+  loadingPending: boolean;
+  loadingBanned: boolean;
   errorMessage: string | null;
+
+  query: string;
+  onQueryChange: (next: string) => void;
+  filter: FilterChipKey;
+  onFilterChange: (next: FilterChipKey) => void;
+
+  /** Currently-pending mutation user IDs (drives row spinners + disabled state). */
   banningUserId: string | null;
-  canBan: (target: GroupMember) => boolean;
-  onBan: (target: GroupMember) => void;
+  unbanningUserId: string | null;
+  resolvingRequestId: string | null;
+
+  onBan: (userId: string) => void;
+  onUnban: (userId: string) => void;
+  onPromote: (userId: string) => void;
+  onDemote: (userId: string) => void;
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
   onBack: () => void;
 }
