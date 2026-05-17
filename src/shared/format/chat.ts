@@ -20,15 +20,6 @@ export function formatTime(iso: string): string {
   return format(new Date(iso), 'HH:mm');
 }
 
-/**
- * Builds the inverted FlatList feed: each day's first message (in chronological
- * order) is followed by a separator, so when the array is reversed for an
- * inverted list the separator sits visually above that day's messages.
- *
- * `messages` arrives newest-first from the hook (matches the inverted list);
- * we keep that ordering and emit a separator whenever the next-older message
- * crosses a day boundary.
- */
 export function buildChatListItems(messages: ChatMessage[]): ChatListItem[] {
   if (messages.length === 0) return [];
 

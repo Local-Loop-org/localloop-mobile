@@ -6,7 +6,7 @@ import type { DmConversation } from '../types';
 
 interface DmRowProps {
   dm: DmConversation;
-  onPress: (id: string) => void;
+  onPress: (dm: DmConversation) => void;
 }
 
 function composePreview(dm: DmConversation): string {
@@ -32,7 +32,7 @@ export function DmRow({ dm, onPress }: DmRowProps) {
       lastAt={lastAt}
       unreadCount={dm.unreadCount}
       accessibilityLabel={`Abrir conversa com ${dm.peer.displayName}`}
-      onPress={() => onPress(dm.id)}
+      onPress={() => onPress(dm)}
       testID={`dm-row-${dm.id}`}
     />
   );

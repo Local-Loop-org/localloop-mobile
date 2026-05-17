@@ -3,9 +3,10 @@ import InboxLayout from './layout';
 import type { InboxChipSpec } from './layout/types';
 import { MOCK_DMS, MOCK_REQUESTS } from './data';
 import { filterInbox } from './filter';
-import type { InboxFilterId } from './types';
+import type { InboxFilterId, InboxScreenProps } from './types';
+import { StackRoutes } from '@/presentation/navigation/routes';
 
-export default function InboxScreen() {
+export default function InboxScreen({ navigation }: InboxScreenProps) {
   const [activeFilter, setActiveFilter] = useState<InboxFilterId>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -46,7 +47,14 @@ export default function InboxScreen() {
     [activeFilter, searchQuery],
   );
 
-  // TODO(phase-4): wire to DM chat screen + accept/ignore mutations once DM API ships.
+  const handleOpenDm = (dm: (typeof MOCK_DMS)[0]) => {
+    navigation.navigate(StackRoutes.DmChat, {
+      peerId: dm.peer.id,
+      peerName: dm.peer.displayName,
+      peerAvatarUrl: dm.peer.avatarUrl,
+    });
+  };
+
   const noop = () => {};
 
   return (
@@ -61,7 +69,7 @@ export default function InboxScreen() {
       emptyLabel={emptyLabel}
       onChangeSearch={setSearchQuery}
       onChangeFilter={setActiveFilter}
-      onOpenDm={noop}
+      onOpenDm={handleOpenDm}
       onAcceptRequest={noop}
       onIgnoreRequest={noop}
       onPressEdit={noop}

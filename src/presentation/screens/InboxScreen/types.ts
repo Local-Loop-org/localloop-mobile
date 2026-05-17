@@ -1,3 +1,6 @@
+import { HomeTabsScreenProps } from '@/presentation/navigation/types';
+export type InboxScreenProps = HomeTabsScreenProps<'Inbox'>;
+
 import type { UserSummary } from '@localloop/shared-types';
 
 export type InboxFilterId = 'all' | 'unread' | 'requests' | 'archived';
