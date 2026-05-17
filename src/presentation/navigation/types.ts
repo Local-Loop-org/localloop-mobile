@@ -23,6 +23,11 @@ export type AuthenticatedStackParamList = {
     anchorType: AnchorType;
     myRole: MemberRole | null;
   };
+  DmChat: {
+    peerId: string;
+    peerName: string;
+    peerAvatarUrl: string | null;
+  };
   MyGroups: undefined;
 };
 

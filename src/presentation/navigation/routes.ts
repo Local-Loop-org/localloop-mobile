@@ -14,6 +14,7 @@ export const StackRoutes = {
   GroupDetail: 'GroupDetail',
   GroupMembers: 'GroupMembers',
   GroupChat: 'GroupChat',
+  DmChat: 'DmChat',
   MyGroups: 'MyGroups',
 } as const;
 

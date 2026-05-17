@@ -18,15 +18,42 @@ import { colors } from '@/shared/theme';
 import { OwnBubble } from '@/shared/ui/chat/OwnBubble';
 import { PeerBubble } from '@/shared/ui/chat/PeerBubble';
 import { DaySeparatorItem } from '@/shared/ui/chat/DaySeparatorItem';
-import { buildChatListItems, type ChatListItem } from '@/shared/format/chat';
-import AnchorIcon from '../components/AnchorIcon';
+import {
+  buildChatListItems,
+  formatTime,
+  type ChatListItem,
+} from '@/shared/format/chat';
+import Avatar from '@/shared/ui/Avatar';
 import { layoutDimensions, styles } from './styles';
-import type { GroupChatLayoutProps } from './types';
+import type { DmChatLayoutProps, DmPeerStatus } from './types';
 
-export default function GroupChatLayout({
-  groupName,
-  anchorType,
-  onlineCount,
+function renderPeerStatusSubtitle(status: DmPeerStatus) {
+  if (!status) return null;
+
+  let text = '';
+  let style: any = styles.headerSubtitle;
+
+  if (status.kind === 'online') {
+    text = 'Online';
+    style = [styles.headerSubtitle, styles.headerSubtitleOnline];
+  } else if (status.kind === 'typing') {
+    text = 'Digitando...';
+    style = [styles.headerSubtitle, styles.headerSubtitleTyping];
+  } else if (status.kind === 'lastSeen') {
+    text = `Visto por último em ${formatTime(status.at)}`;
+  }
+
+  return (
+    <Text style={style} testID='header-subtitle'>
+      {text}
+    </Text>
+  );
+}
+
+export default function DmChatLayout({
+  peerName,
+  peerAvatarUrl,
+  peerStatus,
   messages,
   currentUserId,
   loading,
@@ -39,8 +66,7 @@ export default function GroupChatLayout({
   onLoadOlder,
   onBack,
   onPressHeader,
-  onPressMembers,
-}: GroupChatLayoutProps) {
+}: DmChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0;
   const items = useMemo(() => buildChatListItems(messages), [messages]);
 
@@ -52,7 +78,7 @@ export default function GroupChatLayout({
     return isOwn ? (
       <OwnBubble message={item.message} />
     ) : (
-      <PeerBubble message={item.message} />
+      <PeerBubble message={item.message} showSenderName={false} />
     );
   };
 
@@ -76,35 +102,19 @@ export default function GroupChatLayout({
             onPress={onPressHeader}
             testID='header-title'
           >
-            <AnchorIcon
-              type={anchorType}
-              size={layoutDimensions.headerAnchor}
+            <Avatar
+              name={peerName}
+              uri={peerAvatarUrl}
+              size={layoutDimensions.peerAvatar}
             />
             <View style={styles.headerCenterText}>
               <View style={styles.headerTitleRow}>
                 <Text style={styles.headerTitle} numberOfLines={1}>
-                  {groupName}
+                  {peerName}
                 </Text>
-                <Icon
-                  name='chevronRight'
-                  size={13}
-                  color={colors.faint}
-                  strokeWidth={2}
-                />
               </View>
-              {onlineCount > 0 ? (
-                <Text style={styles.headerSubtitle} testID='header-subtitle'>
-                  · {onlineCount} ONLINE ·
-                </Text>
-              ) : null}
+              {renderPeerStatusSubtitle(peerStatus)}
             </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onPressMembers}
-            testID='header-members'
-          >
-            <Icon name='users' size={17} color={colors.text} />
           </TouchableOpacity>
         </View>
 
