@@ -1,4 +1,4 @@
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { ChatMessage } from '@/infra/api/messages.api';
 
@@ -17,7 +17,9 @@ export function formatDayLabel(date: Date): string {
 }
 
 export function formatTime(iso: string): string {
-  return format(new Date(iso), 'HH:mm');
+  const d = new Date(iso);
+  if (!isValid(d)) return '';
+  return format(d, 'HH:mm');
 }
 
 export function buildChatListItems(messages: ChatMessage[]): ChatListItem[] {
@@ -29,27 +31,34 @@ export function buildChatListItems(messages: ChatMessage[]): ChatListItem[] {
   for (let i = 0; i < messages.length; i++) {
     const m = messages[i];
     const date = new Date(m.createdAt);
-    const key = dayKey(date);
 
-    if (lastDayKey !== null && key !== lastDayKey) {
-      const prevDate = new Date(messages[i - 1].createdAt);
-      items.push({
-        kind: 'separator',
-        key: `sep:${dayKey(prevDate)}`,
-        label: formatDayLabel(prevDate),
-      });
+    if (isValid(date)) {
+      const key = dayKey(date);
+      if (lastDayKey !== null && key !== lastDayKey) {
+        const prevDate = new Date(messages[i - 1].createdAt);
+        if (isValid(prevDate)) {
+          items.push({
+            kind: 'separator',
+            key: `sep:${dayKey(prevDate)}`,
+            label: formatDayLabel(prevDate),
+          });
+        }
+      }
+      lastDayKey = key;
     }
 
     items.push({ kind: 'message', message: m, key: m.id });
-    lastDayKey = key;
   }
 
   const oldest = messages[messages.length - 1];
-  items.push({
-    kind: 'separator',
-    key: `sep:${dayKey(new Date(oldest.createdAt))}`,
-    label: formatDayLabel(new Date(oldest.createdAt)),
-  });
+  const oldestDate = new Date(oldest.createdAt);
+  if (isValid(oldestDate)) {
+    items.push({
+      kind: 'separator',
+      key: `sep:${dayKey(oldestDate)}`,
+      label: formatDayLabel(oldestDate),
+    });
+  }
 
   return items;
 }
