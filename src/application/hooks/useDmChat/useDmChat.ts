@@ -89,6 +89,7 @@ export function useDmChat(peerId: string) {
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [socketError, setSocketError] = useState<DmChatErrorKind | null>(null);
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
 
   const historyQuery = useInfiniteQuery<
     MessageHistoryResponse,
@@ -128,10 +129,29 @@ export function useDmChat(peerId: string) {
       setConnected(false);
     };
 
-    const handleNewMessage = (message: ChatMessage) => {
+    const handleNewMessage = (
+      payload: ChatMessage & { type?: string },
+    ) => {
+      if (payload.type === 'request') {
+        queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+          dmHistoryKey(peerId),
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                data: page.data.filter((m) => !m.id.startsWith('temp-')),
+              })),
+            };
+          },
+        );
+        setAwaitingApproval(true);
+        return;
+      }
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         dmHistoryKey(peerId),
-        (old) => upsertIncomingMessage(old, message),
+        (old) => upsertIncomingMessage(old, payload),
       );
     };
 
@@ -192,6 +212,7 @@ export function useDmChat(peerId: string) {
     connected,
     hasMore: historyQuery.hasNextPage ?? false,
     currentUserId: currentUser?.id ?? null,
+    awaitingApproval,
     sendMessage,
     loadOlder,
   };

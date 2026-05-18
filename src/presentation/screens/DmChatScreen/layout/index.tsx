@@ -60,6 +60,7 @@ export default function DmChatLayout({
   loadingMore,
   hasMore,
   errorMessage,
+  awaitingApproval,
   draft,
   onChangeDraft,
   onSend,
@@ -67,7 +68,7 @@ export default function DmChatLayout({
   onBack,
   onPressHeader,
 }: DmChatLayoutProps) {
-  const sendDisabled = draft.trim().length === 0;
+  const sendDisabled = draft.trim().length === 0 || awaitingApproval;
   const items = useMemo(() => buildChatListItems(messages), [messages]);
 
   const renderItem = ({ item }: { item: ChatListItem }) => {
@@ -162,10 +163,15 @@ export default function DmChatLayout({
           </TouchableOpacity>
           <TextInput
             style={styles.inputPill}
-            placeholder='Escreva uma mensagem'
+            placeholder={
+              awaitingApproval
+                ? `Aguarde aprovação de ${peerName}`
+                : 'Escreva uma mensagem'
+            }
             placeholderTextColor={colors.faint}
             value={draft}
             onChangeText={onChangeDraft}
+            editable={!awaitingApproval}
             multiline
           />
           <TouchableOpacity

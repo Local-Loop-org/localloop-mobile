@@ -4,12 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/shared/theme';
 
 interface AvatarProps {
-  name: string;
+  name: string | null | undefined;
   uri: string | null;
   size: number;
 }
 
-function initial(name: string): string {
+function initial(name: string | null | undefined): string {
+  if (!name) return '?';
   const trimmed = name.trim();
   return trimmed.length > 0 ? trimmed[0].toUpperCase() : '?';
 }
