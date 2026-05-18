@@ -120,7 +120,7 @@ export function useDmChat(peerId: string) {
     socketRef.current = socket;
 
     const handleConnect = () => {
-      socket.emit(ChatSocketEvents.JOIN_DM, { peerId });
+      socket.emit(ChatSocketEvents.JOIN_DM, { userId: peerId });
       setConnected(true);
     };
 
@@ -147,7 +147,7 @@ export function useDmChat(peerId: string) {
     socket.on(ChatSocketEvents.ERROR, handleSocketError);
 
     return () => {
-      socket.emit(ChatSocketEvents.LEAVE_DM, { peerId });
+      socket.emit(ChatSocketEvents.LEAVE_DM, { userId: peerId });
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;

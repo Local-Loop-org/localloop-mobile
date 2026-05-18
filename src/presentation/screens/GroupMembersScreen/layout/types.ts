@@ -14,6 +14,8 @@ export interface GroupMembersLayoutProps {
   myRole: MemberRole | null;
   /** True when caller is OWNER or MODERATOR. */
   canManage: boolean;
+  /** Current signed-in user id, used to avoid opening a self-DM row. */
+  currentUserId: string | null;
 
   activeMembers: GroupMember[];
   pendingRequests: JoinRequest[];
@@ -34,6 +36,7 @@ export interface GroupMembersLayoutProps {
   unbanningUserId: string | null;
   resolvingRequestId: string | null;
 
+  onPressMember: (member: GroupMember) => void;
   onBan: (userId: string) => void;
   onUnban: (userId: string) => void;
   onPromote: (userId: string) => void;

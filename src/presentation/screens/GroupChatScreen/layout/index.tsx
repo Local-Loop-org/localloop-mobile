@@ -37,6 +37,7 @@ export default function GroupChatLayout({
   onChangeDraft,
   onSend,
   onLoadOlder,
+  onPressMessageAvatar,
   onBack,
   onPressHeader,
   onPressMembers,
@@ -52,7 +53,10 @@ export default function GroupChatLayout({
     return isOwn ? (
       <OwnBubble message={item.message} />
     ) : (
-      <PeerBubble message={item.message} />
+      <PeerBubble
+        message={item.message}
+        onPressAvatar={() => onPressMessageAvatar(item.message)}
+      />
     );
   };
 

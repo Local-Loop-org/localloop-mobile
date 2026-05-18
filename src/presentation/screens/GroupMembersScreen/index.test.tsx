@@ -9,6 +9,7 @@ import {
 } from '@localloop/shared-types';
 import GroupMembersScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
+import { useAuthStore } from '@/application/stores/auth.store';
 
 jest.mock('@/infra/api/groups.api', () => ({
   groupsApi: {
@@ -57,6 +58,7 @@ const mockedGetGroupDetail = groupsApi.getGroupDetail as jest.MockedFunction<
 
 const navigation = {
   goBack: jest.fn(),
+  navigate: jest.fn(),
 } as unknown as Parameters<typeof GroupMembersScreen>[0]['navigation'];
 
 const buildMember = (
@@ -111,6 +113,17 @@ describe('GroupMembersScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useAuthStore.setState({
+      user: {
+        id: 'u-1',
+        displayName: 'Alice Owner',
+        avatarUrl: null,
+      } as never,
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      isAuthenticated: true,
+      isNewUser: false,
+    });
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockedGetGroupDetail.mockResolvedValue(groupFixture);
     mockedListJoinRequests.mockResolvedValue([]);
@@ -195,6 +208,59 @@ describe('GroupMembersScreen', () => {
     expect(queryByTestId('members-section-action-u-1')).toBeNull();
     expect(queryByTestId('members-section-action-u-2')).toBeTruthy();
     expect(queryByTestId('members-section-action-u-3')).toBeTruthy();
+  });
+
+  it('pressing an active member row opens a DM chat for that member', async () => {
+    mockedListMembers.mockResolvedValueOnce({
+      data: [
+        buildMember('u-1', 'Alice Owner', MemberRole.OWNER),
+        {
+          ...buildMember('u-3', 'Carol Member', MemberRole.MEMBER),
+          avatarUrl: 'https://example.com/carol.png',
+        },
+      ],
+      next_cursor: null,
+    });
+
+    const { findByTestId } = renderScreen(MemberRole.OWNER);
+
+    fireEvent.press(await findByTestId('members-section-open-u-3'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DmChat', {
+      peerId: 'u-3',
+      peerName: 'Carol Member',
+      peerAvatarUrl: 'https://example.com/carol.png',
+    });
+  });
+
+  it('does not make the current user row open a self DM', async () => {
+    mockedListMembers.mockResolvedValueOnce({
+      data: [buildMember('u-1', 'Alice Owner', MemberRole.OWNER)],
+      next_cursor: null,
+    });
+
+    const { findByTestId, queryByTestId } = renderScreen(MemberRole.OWNER);
+    fireEvent.press(await findByTestId('members-section-row-u-1'));
+
+    expect(queryByTestId('members-section-open-u-1')).toBeNull();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('moderation action button still opens the row drawer', async () => {
+    mockedListMembers.mockResolvedValueOnce({
+      data: [
+        buildMember('u-1', 'Alice Owner', MemberRole.OWNER),
+        buildMember('u-3', 'Carol Member', MemberRole.MEMBER),
+      ],
+      next_cursor: null,
+    });
+
+    const { findByTestId, queryByTestId } = renderScreen(MemberRole.OWNER);
+
+    fireEvent.press(await findByTestId('members-section-action-u-3'));
+
+    expect(queryByTestId('members-section-promote-u-3')).toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it('promote confirmed → calls promoteMember', async () => {
@@ -405,10 +471,12 @@ describe('GroupMembersScreen', () => {
 
   it('unban confirmed → calls unbanMember and optimistically removes the row', async () => {
     mockedListMembers.mockResolvedValue({ data: [], next_cursor: null });
-    mockedListBannedMembers.mockResolvedValue({
-      data: [buildMember('u-7', 'Hugo Banido', MemberRole.MEMBER)],
-      next_cursor: null,
-    });
+    mockedListBannedMembers
+      .mockResolvedValueOnce({
+        data: [buildMember('u-7', 'Hugo Banido', MemberRole.MEMBER)],
+        next_cursor: null,
+      })
+      .mockResolvedValue({ data: [], next_cursor: null });
     mockedUnbanMember.mockResolvedValueOnce(undefined);
 
     const { findByTestId, findByText, queryByText } = renderScreen(
@@ -464,4 +532,3 @@ describe('GroupMembersScreen', () => {
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
   });
 });
-

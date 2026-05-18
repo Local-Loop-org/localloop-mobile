@@ -93,6 +93,28 @@ describe('GroupChatScreen', () => {
     expect(getByText('Alice')).toBeTruthy();
   });
 
+  it('peer avatar navigates to DmChat with sender identity', () => {
+    mockedUseGroupChat.mockReturnValue({
+      ...baseHookState,
+      messages: [
+        baseMessage({
+          senderId: 'u-alice',
+          senderName: 'Alice Lima',
+          senderAvatar: 'https://example.com/alice.png',
+        }),
+      ],
+    });
+    const { getByTestId } = renderScreen();
+
+    fireEvent.press(getByTestId('peer-avatar-u-alice'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DmChat', {
+      peerId: 'u-alice',
+      peerName: 'Alice Lima',
+      peerAvatarUrl: 'https://example.com/alice.png',
+    });
+  });
+
   it('send button is a no-op when the draft is empty or whitespace', () => {
     const sendMessage = jest.fn();
     mockedUseGroupChat.mockReturnValue({ ...baseHookState, sendMessage });

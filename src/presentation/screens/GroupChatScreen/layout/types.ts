@@ -15,6 +15,7 @@ export interface GroupChatLayoutProps {
   onChangeDraft: (value: string) => void;
   onSend: () => void;
   onLoadOlder: () => void;
+  onPressMessageAvatar: (message: ChatMessage) => void;
   onBack: () => void;
   onPressHeader: () => void;
   onPressMembers: () => void;

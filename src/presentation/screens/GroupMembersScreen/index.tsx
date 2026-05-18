@@ -10,8 +10,11 @@ import { useDemoteMember } from '@/application/hooks/useDemoteMember/useDemoteMe
 import { useBannedMembers } from '@/application/hooks/useBannedMembers/useBannedMembers';
 import { useResolveJoinRequest } from '@/application/hooks/useResolveJoinRequest/useResolveJoinRequest';
 import { useGroupDetail } from '@/application/hooks/useGroupDetail/useGroupDetail';
+import { useAuthStore } from '@/application/stores/auth.store';
 import { confirmDestructive } from '@/shared/ui/confirmDestructive';
 import type { AuthenticatedStackScreenProps } from '@/presentation/navigation/types';
+import { StackRoutes } from '@/presentation/navigation/routes';
+import type { GroupMember } from '@/infra/api/groups.api';
 import GroupMembersLayout from './layout';
 import type { FilterChipKey } from './layout/types';
 
@@ -21,6 +24,7 @@ const MEMBERS_PAGE_SIZE = 50;
 
 export default function GroupMembersScreen({ navigation, route }: Props) {
   const { groupId, myRole } = route.params;
+  const currentUserId = useAuthStore((s) => s.user?.id ?? null);
 
   const canManage =
     myRole === MemberRole.OWNER || myRole === MemberRole.MODERATOR;
@@ -123,11 +127,21 @@ export default function GroupMembersScreen({ navigation, route }: Props) {
     resolveRequest.mutate({ groupId, requestId, action: 'reject' });
   };
 
+  const handlePressMember = (member: GroupMember) => {
+    if (member.userId === currentUserId) return;
+    navigation.navigate(StackRoutes.DmChat, {
+      peerId: member.userId,
+      peerName: member.displayName,
+      peerAvatarUrl: member.avatarUrl,
+    });
+  };
+
   return (
     <GroupMembersLayout
       groupName={groupName}
       myRole={myRole}
       canManage={canManage}
+      currentUserId={currentUserId}
       activeMembers={membersQuery.data ?? []}
       pendingRequests={requestsQuery.data ?? []}
       bannedMembers={bannedQuery.data ?? []}
@@ -150,6 +164,7 @@ export default function GroupMembersScreen({ navigation, route }: Props) {
           ? (resolveRequest.variables?.requestId ?? null)
           : null
       }
+      onPressMember={handlePressMember}
       onBan={handleBan}
       onUnban={handleUnban}
       onPromote={handlePromote}
