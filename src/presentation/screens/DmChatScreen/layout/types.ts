@@ -16,6 +16,7 @@ export interface DmChatLayoutProps {
   loadingMore: boolean;
   hasMore: boolean;
   errorMessage: string | null;
+  awaitingApproval: boolean;
   draft: string;
   onChangeDraft: (value: string) => void;
   onSend: () => void;

@@ -19,6 +19,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     hasMore,
     error,
     currentUserId,
+    awaitingApproval,
     sendMessage,
     loadOlder,
   } = useDmChat(peerId);
@@ -40,6 +41,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       loadingMore={loadingMore}
       hasMore={hasMore}
       errorMessage={error ? ERROR_LABELS[error] : null}
+      awaitingApproval={awaitingApproval}
       draft={draft}
       onChangeDraft={setDraft}
       onSend={handleSend}
