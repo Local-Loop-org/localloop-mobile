@@ -9,9 +9,15 @@ interface RequestRowProps {
   request: DmRequest;
   onAccept: (id: string) => void;
   onIgnore: (id: string) => void;
+  actionsDisabled?: boolean;
 }
 
-export function RequestRow({ request, onAccept, onIgnore }: RequestRowProps) {
+export function RequestRow({
+  request,
+  onAccept,
+  onIgnore,
+  actionsDisabled = false,
+}: RequestRowProps) {
   const at = formatLastActivity(request.createdAt);
 
   return (
@@ -32,7 +38,12 @@ export function RequestRow({ request, onAccept, onIgnore }: RequestRowProps) {
             onPress={() => onAccept(request.id)}
             accessibilityRole="button"
             accessibilityLabel={`Aceitar solicitação de ${request.peer.displayName}`}
-            style={styles.requestAcceptBtn}
+            accessibilityState={{ disabled: actionsDisabled }}
+            disabled={actionsDisabled}
+            style={[
+              styles.requestAcceptBtn,
+              actionsDisabled && styles.requestActionDisabled,
+            ]}
             testID={`dm-request-accept-${request.id}`}
           >
             <Text style={styles.requestAcceptText}>Aceitar</Text>
@@ -41,7 +52,12 @@ export function RequestRow({ request, onAccept, onIgnore }: RequestRowProps) {
             onPress={() => onIgnore(request.id)}
             accessibilityRole="button"
             accessibilityLabel={`Ignorar solicitação de ${request.peer.displayName}`}
-            style={styles.requestIgnoreBtn}
+            accessibilityState={{ disabled: actionsDisabled }}
+            disabled={actionsDisabled}
+            style={[
+              styles.requestIgnoreBtn,
+              actionsDisabled && styles.requestActionDisabled,
+            ]}
             testID={`dm-request-ignore-${request.id}`}
           >
             <Text style={styles.requestIgnoreText}>Ignorar</Text>

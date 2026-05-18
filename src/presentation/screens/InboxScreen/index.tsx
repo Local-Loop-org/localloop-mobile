@@ -1,26 +1,81 @@
 import React, { useMemo, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { useDmConversations } from '@/application/hooks/useDmConversations/useDmConversations';
+import { useDmRequests } from '@/application/hooks/useDmRequests/useDmRequests';
+import type { DmConversationDto, DmRequestDto } from '@/infra/api/dm.api';
+import { StackRoutes } from '@/presentation/navigation/routes';
 import InboxLayout from './layout';
 import type { InboxChipSpec } from './layout/types';
-import { MOCK_DMS, MOCK_REQUESTS } from './data';
 import { filterInbox } from './filter';
-import type { InboxFilterId, InboxScreenProps } from './types';
-import { StackRoutes } from '@/presentation/navigation/routes';
+import type {
+  DmConversation,
+  DmRequest,
+  InboxFilterId,
+  InboxScreenProps,
+} from './types';
+
+function contentPreview(content: string | null): string {
+  return content ?? '[mídia]';
+}
+
+function mapConversation(row: DmConversationDto): DmConversation {
+  return {
+    id: row.peerId,
+    peer: {
+      id: row.peerId,
+      displayName: row.peerName,
+      avatarUrl: row.peerAvatarUrl,
+    },
+    lastMessage: {
+      content: contentPreview(row.lastMessage.content),
+      createdAt: row.lastMessage.createdAt,
+      fromMe: row.lastMessage.senderName !== row.peerName,
+    },
+    unreadCount: row.unreadCount,
+    isArchived: row.archived,
+  };
+}
+
+function mapRequest(row: DmRequestDto): DmRequest {
+  return {
+    id: row.id,
+    peer: {
+      id: row.senderId,
+      displayName: row.senderName,
+      avatarUrl: row.senderAvatarUrl,
+    },
+    message: contentPreview(row.content),
+    createdAt: row.createdAt,
+  };
+}
 
 export default function InboxScreen({ navigation }: InboxScreenProps) {
   const [activeFilter, setActiveFilter] = useState<InboxFilterId>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const isFocused = useIsFocused();
+  const conversationsQuery = useDmConversations({ enabled: isFocused });
+  const requestsQuery = useDmRequests({ enabled: isFocused });
+
+  const allDms = useMemo(
+    () => conversationsQuery.conversations.map(mapConversation),
+    [conversationsQuery.conversations],
+  );
+  const allRequests = useMemo(
+    () => requestsQuery.requests.map(mapRequest),
+    [requestsQuery.requests],
+  );
 
   const totals = useMemo(() => {
-    const active = MOCK_DMS.filter((d) => !d.isArchived);
+    const active = allDms.filter((d) => !d.isArchived);
     const unread = active.filter((d) => d.unreadCount > 0).length;
-    const archived = MOCK_DMS.length - active.length;
+    const archived = allDms.length - active.length;
     return {
       active: active.length,
       unread,
       archived,
-      requests: MOCK_REQUESTS.length,
+      requests: allRequests.length,
     };
-  }, []);
+  }, [allDms, allRequests.length]);
 
   const chips = useMemo<InboxChipSpec[]>(
     () => [
@@ -43,11 +98,31 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
   );
 
   const { conversations, requests, emptyLabel } = useMemo(
-    () => filterInbox(MOCK_DMS, MOCK_REQUESTS, activeFilter, searchQuery),
-    [activeFilter, searchQuery],
+    () => filterInbox(allDms, allRequests, activeFilter, searchQuery),
+    [activeFilter, allDms, allRequests, searchQuery],
   );
 
-  const handleOpenDm = (dm: (typeof MOCK_DMS)[0]) => {
+  const showingRequests = activeFilter === 'requests';
+  const isLoading = showingRequests
+    ? requestsQuery.isLoading
+    : conversationsQuery.isLoading;
+  const isLoadingMore = showingRequests
+    ? requestsQuery.isFetchingNextPage
+    : conversationsQuery.isFetchingNextPage;
+  const isError = showingRequests
+    ? requestsQuery.isError
+    : conversationsQuery.isError;
+  const hasRows = showingRequests
+    ? requests.length > 0
+    : conversations.length > 0;
+
+  const errorMessage = isError && !hasRows
+    ? showingRequests
+      ? 'Não foi possível carregar as solicitações.'
+      : 'Não foi possível carregar as conversas.'
+    : null;
+
+  const handleOpenDm = (dm: DmConversation) => {
     navigation.navigate(StackRoutes.DmChat, {
       peerId: dm.peer.id,
       peerName: dm.peer.displayName,
@@ -66,13 +141,18 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
       chips={chips}
       conversations={conversations}
       requests={requests}
-      emptyLabel={emptyLabel}
+      emptyLabel={!isLoading && !errorMessage ? emptyLabel : null}
+      loading={isLoading && !hasRows}
+      loadingMore={isLoadingMore}
+      errorMessage={errorMessage}
       onChangeSearch={setSearchQuery}
       onChangeFilter={setActiveFilter}
       onOpenDm={handleOpenDm}
       onAcceptRequest={noop}
       onIgnoreRequest={noop}
       onPressEdit={noop}
+      onLoadMore={showingRequests ? requestsQuery.loadMore : conversationsQuery.loadMore}
+      requestActionsDisabled
     />
   );
 }

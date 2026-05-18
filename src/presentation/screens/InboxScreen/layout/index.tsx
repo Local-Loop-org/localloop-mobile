@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   Text,
@@ -25,14 +26,24 @@ export default function InboxLayout({
   conversations,
   requests,
   emptyLabel,
+  loading,
+  loadingMore,
+  errorMessage,
   onChangeSearch,
   onChangeFilter,
   onOpenDm,
   onAcceptRequest,
   onIgnoreRequest,
   onPressEdit,
+  onLoadMore,
+  requestActionsDisabled,
 }: InboxLayoutProps) {
   const showingRequests = activeFilter === 'requests';
+  const footer = loadingMore ? (
+    <View style={styles.loadingMore}>
+      <ActivityIndicator color={colors.primary} />
+    </View>
+  ) : null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -85,32 +96,49 @@ export default function InboxLayout({
         ))}
       </ScrollView>
 
-      {emptyLabel ? (
+      {loading ? (
+        <View style={styles.emptyWrap} testID="inbox-loading">
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      ) : errorMessage ? (
+        <View style={styles.emptyWrap}>
+          <Text style={styles.emptyText}>{errorMessage}</Text>
+        </View>
+      ) : emptyLabel ? (
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyLabel}</Text>
         </View>
       ) : showingRequests ? (
         <FlatList
+          testID="dm-requests-list"
           style={styles.list}
           contentContainerStyle={styles.listContent}
           data={requests}
           keyExtractor={(r) => r.id}
           keyboardShouldPersistTaps="handled"
+          onEndReached={onLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={footer}
           renderItem={({ item }) => (
             <RequestRow
               request={item}
               onAccept={onAcceptRequest}
               onIgnore={onIgnoreRequest}
+              actionsDisabled={requestActionsDisabled}
             />
           )}
         />
       ) : (
         <FlatList
+          testID="dm-conversations-list"
           style={styles.list}
           contentContainerStyle={styles.listContent}
           data={conversations}
           keyExtractor={(d) => d.id}
           keyboardShouldPersistTaps="handled"
+          onEndReached={onLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={footer}
           renderItem={({ item }) => <DmRow dm={item} onPress={onOpenDm} />}
         />
       )}
