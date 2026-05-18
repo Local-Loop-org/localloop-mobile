@@ -35,6 +35,14 @@ export default function GroupChatScreen({
     setDraft('');
   };
 
+  const handlePressMessageAvatar = (message: (typeof messages)[number]) => {
+    navigation.navigate(StackRoutes.DmChat, {
+      peerId: message.senderId,
+      peerName: message.senderName,
+      peerAvatarUrl: message.senderAvatar,
+    });
+  };
+
   return (
     <GroupChatLayout
       groupName={groupName}
@@ -50,6 +58,7 @@ export default function GroupChatScreen({
       onChangeDraft={setDraft}
       onSend={handleSend}
       onLoadOlder={loadOlder}
+      onPressMessageAvatar={handlePressMessageAvatar}
       onBack={() => navigation.goBack()}
       onPressHeader={() => navigation.navigate(StackRoutes.GroupDetail, { groupId })}
       onPressMembers={() =>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { colors } from '@/shared/theme';
 import Avatar from '@/shared/ui/Avatar';
 import { formatTime } from '@/shared/format/chat';
@@ -9,16 +9,37 @@ import { styles, layoutDimensions } from './styles';
 interface PeerBubbleProps {
   message: ChatMessage;
   showSenderName?: boolean;
+  onPressAvatar?: () => void;
 }
 
-export function PeerBubble({ message, showSenderName = true }: PeerBubbleProps) {
+export function PeerBubble({
+  message,
+  showSenderName = true,
+  onPressAvatar,
+}: PeerBubbleProps) {
+  const avatar = (
+    <Avatar
+      name={message.senderName}
+      uri={message.senderAvatar}
+      size={layoutDimensions.peerAvatar}
+    />
+  );
+
   return (
     <View style={styles.peerRow}>
-      <Avatar
-        name={message.senderName}
-        uri={message.senderAvatar}
-        size={layoutDimensions.peerAvatar}
-      />
+      {onPressAvatar ? (
+        <Pressable
+          onPress={onPressAvatar}
+          accessibilityRole='button'
+          accessibilityLabel={`Abrir conversa com ${message.senderName}`}
+          hitSlop={8}
+          testID={`peer-avatar-${message.senderId}`}
+        >
+          {avatar}
+        </Pressable>
+      ) : (
+        avatar
+      )}
       <View style={styles.peerColumn}>
         {showSenderName && (
           <View style={styles.peerNameRow}>

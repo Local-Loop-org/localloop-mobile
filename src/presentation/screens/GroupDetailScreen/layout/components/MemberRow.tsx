@@ -13,6 +13,7 @@ export interface MemberRowProps {
   canManage: boolean;
   /** Caller's role — controls which actions appear in the drawer. */
   viewerRole?: MemberRole | null;
+  onPress?: (member: GroupMember) => void;
   onBan?: (userId: string) => void;
   onPromote?: (userId: string) => void;
   onDemote?: (userId: string) => void;
@@ -23,6 +24,7 @@ export function MemberRow({
   isLast,
   canManage,
   viewerRole,
+  onPress,
   onBan,
   onPromote,
   onDemote,
@@ -33,24 +35,43 @@ export function MemberRow({
   const canDemoteThisMember =
     viewerRole === MemberRole.OWNER && member.role === MemberRole.MODERATOR;
 
+  const mainContent = (
+    <>
+      <MemberAvatar
+        displayName={member.displayName}
+        avatarUrl={member.avatarUrl}
+        size={36}
+      />
+      <View style={styles.rowBody}>
+        <View style={styles.nameRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            {member.displayName}
+          </Text>
+          {member.role !== MemberRole.MEMBER ? (
+            <RolePill role={member.role as RolePillRole} />
+          ) : null}
+        </View>
+      </View>
+    </>
+  );
+
   return (
     <View testID={`members-section-row-${member.userId}`}>
       <View style={styles.row}>
-        <MemberAvatar
-          displayName={member.displayName}
-          avatarUrl={member.avatarUrl}
-          size={36}
-        />
-        <View style={styles.rowBody}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>
-              {member.displayName}
-            </Text>
-            {member.role !== MemberRole.MEMBER ? (
-              <RolePill role={member.role as RolePillRole} />
-            ) : null}
-          </View>
-        </View>
+        {onPress ? (
+          <Pressable
+            style={styles.rowMain}
+            onPress={() => onPress(member)}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir conversa com ${member.displayName}`}
+            testID={`members-section-open-${member.userId}`}
+            hitSlop={4}
+          >
+            {mainContent}
+          </Pressable>
+        ) : (
+          <View style={styles.rowMain}>{mainContent}</View>
+        )}
         {showActions ? (
           <Pressable
             onPress={() => setExpanded((o) => !o)}
@@ -133,6 +154,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 11,
+    gap: 8,
+  },
+  rowMain: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   rowBody: {

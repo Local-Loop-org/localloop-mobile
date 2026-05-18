@@ -33,6 +33,7 @@ export default function GroupMembersLayout({
   groupName,
   myRole,
   canManage,
+  currentUserId,
   activeMembers,
   pendingRequests,
   bannedMembers,
@@ -47,6 +48,7 @@ export default function GroupMembersLayout({
   banningUserId,
   unbanningUserId,
   resolvingRequestId,
+  onPressMember,
   onBan,
   onUnban,
   onPromote,
@@ -178,6 +180,9 @@ export default function GroupMembersLayout({
                     isLast={i === filteredActive.length - 1}
                     canManage={canManage}
                     viewerRole={myRole}
+                    onPress={
+                      m.userId === currentUserId ? undefined : onPressMember
+                    }
                     onBan={
                       canManage && banningUserId !== m.userId ? onBan : undefined
                     }
