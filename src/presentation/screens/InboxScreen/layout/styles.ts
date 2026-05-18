@@ -87,6 +87,10 @@ export const styles = StyleSheet.create({
     color: colors.dim,
     textAlign: 'center',
   },
+  loadingMore: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
 
   // Request row
   requestRow: {
@@ -148,6 +152,9 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: 'transparent',
+  },
+  requestActionDisabled: {
+    opacity: 0.45,
   },
   requestIgnoreText: {
     fontSize: 11.5,

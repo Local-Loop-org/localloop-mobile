@@ -16,10 +16,15 @@ export interface InboxLayoutProps {
   conversations: DmConversation[];
   requests: DmRequest[];
   emptyLabel: string | null;
+  loading: boolean;
+  loadingMore: boolean;
+  errorMessage: string | null;
   onChangeSearch: (next: string) => void;
   onChangeFilter: (next: InboxFilterId) => void;
   onOpenDm: (dm: DmConversation) => void;
   onAcceptRequest: (id: string) => void;
   onIgnoreRequest: (id: string) => void;
   onPressEdit: () => void;
+  onLoadMore: () => void;
+  requestActionsDisabled: boolean;
 }
