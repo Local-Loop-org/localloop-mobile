@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { DmPermission } from '@localloop/shared-types';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import type { DmException } from '../types';
@@ -11,9 +10,13 @@ interface Props {
   value: DmPermission;
   onChange: (next: DmPermission) => void;
   exceptions: DmException[];
-  candidates: DmException[];
-  onAddException: (id: string) => void;
+  exceptionsVisible: boolean;
+  exceptionsLoading: boolean;
+  exceptionsLoadingMore: boolean;
+  exceptionsError: boolean;
+  exceptionsHasMore: boolean;
   onRemoveException: (id: string) => void;
+  onLoadMoreExceptions: () => void;
 }
 
 interface OptionSpec {
@@ -48,15 +51,20 @@ export default function DMPicker({
   value,
   onChange,
   exceptions,
-  candidates,
-  onAddException,
+  exceptionsVisible,
+  exceptionsLoading,
+  exceptionsLoadingMore,
+  exceptionsError,
+  exceptionsHasMore,
   onRemoveException,
+  onLoadMoreExceptions,
 }: Props) {
   return (
     <View style={styles.dmList}>
       {OPTIONS.map((opt) => {
         const active = value === opt.id;
-        const showExceptions = active && opt.id === DmPermission.NOBODY;
+        const showExceptions =
+          active && exceptionsVisible && opt.id !== DmPermission.EVERYONE;
         return (
           <View key={opt.id}>
             <Pressable
@@ -100,9 +108,12 @@ export default function DMPicker({
             {showExceptions ? (
               <ExceptionsBlock
                 exceptions={exceptions}
-                candidates={candidates}
-                onAdd={onAddException}
+                loading={exceptionsLoading}
+                loadingMore={exceptionsLoadingMore}
+                error={exceptionsError}
+                hasMore={exceptionsHasMore}
                 onRemove={onRemoveException}
+                onLoadMore={onLoadMoreExceptions}
               />
             ) : null}
           </View>
@@ -114,19 +125,23 @@ export default function DMPicker({
 
 interface ExceptionsBlockProps {
   exceptions: DmException[];
-  candidates: DmException[];
-  onAdd: (id: string) => void;
+  loading: boolean;
+  loadingMore: boolean;
+  error: boolean;
+  hasMore: boolean;
   onRemove: (id: string) => void;
+  onLoadMore: () => void;
 }
 
 function ExceptionsBlock({
   exceptions,
-  candidates,
-  onAdd,
+  loading,
+  loadingMore,
+  error,
+  hasMore,
   onRemove,
+  onLoadMore,
 }: ExceptionsBlockProps) {
-  const [picking, setPicking] = useState(false);
-
   return (
     <View style={styles.dmExceptionsBlock}>
       <View style={styles.dmExceptionsHeader}>
@@ -136,92 +151,56 @@ function ExceptionsBlock({
         <Text style={styles.dmExceptionsHeaderCount}>{exceptions.length}</Text>
       </View>
 
-      <View style={styles.dmChipsRow}>
-        {exceptions.map((c) => (
-          <View key={c.id} style={styles.dmChip}>
-            <Text style={styles.dmChipText}>{c.name}</Text>
-            <Pressable
-              onPress={() => onRemove(c.id)}
-              accessibilityRole='button'
-              accessibilityLabel={`Remover ${c.name}`}
-              style={styles.dmChipRemoveBtn}
-            >
-              <Icon
-                name='x'
-                size={9}
-                color={colors.textSecondary}
-                strokeWidth={2.5}
-              />
-            </Pressable>
-          </View>
-        ))}
-
-        <Pressable
-          onPress={() => setPicking((s) => !s)}
-          style={styles.dmAddBtn}
-          accessibilityRole='button'
-          accessibilityLabel={picking ? 'Fechar' : 'Adicionar exceção'}
-        >
-          <Icon
-            name='plus'
-            size={11}
-            color={colors.primary}
-            strokeWidth={2.5}
-          />
-          <Text style={styles.dmAddBtnText}>
-            {picking ? 'Fechar' : 'Adicionar'}
-          </Text>
-        </Pressable>
-      </View>
-
-      {picking ? (
-        <View style={styles.dmPickerDrawer}>
-          {candidates.length === 0 ? (
-            <Text style={styles.dmPickerEmpty}>Sem mais sugestões.</Text>
-          ) : (
-            candidates.map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => {
-                  onAdd(c.id);
-                  setPicking(false);
-                }}
-                style={styles.dmPickerRow}
-                accessibilityRole='button'
-                accessibilityLabel={`Adicionar ${c.name}`}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.accent2]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.dmPickerAvatar}
-                >
-                  <Text style={styles.dmPickerAvatarLetter}>
-                    {c.name
-                      .split(' ')
-                      .slice(0, 2)
-                      .map((s) => s[0] ?? '')
-                      .join('')
-                      .toUpperCase()}
-                  </Text>
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.dmPickerName}>{c.name}</Text>
-                  <Text style={styles.dmPickerHint}>
-                    {c.hint.toUpperCase()}
-                  </Text>
-                </View>
-                <Icon
-                  name='plus'
-                  size={13}
-                  color={colors.primary}
-                  strokeWidth={2.5}
-                />
-              </Pressable>
-            ))
-          )}
+      {loading ? (
+        <View style={styles.dmExceptionState} testID='dm-exceptions-loading'>
+          <ActivityIndicator color={colors.primary} />
         </View>
-      ) : null}
+      ) : error ? (
+        <Text style={styles.dmPickerEmpty}>
+          Não foi possível carregar exceções.
+        </Text>
+      ) : exceptions.length === 0 ? (
+        <Text style={styles.dmPickerEmpty}>Nenhuma exceção ativa.</Text>
+      ) : (
+        <>
+          <View style={styles.dmChipsRow}>
+            {exceptions.map((c) => (
+              <View key={c.id} style={styles.dmChip}>
+                <Text style={styles.dmChipText}>{c.name}</Text>
+                <Pressable
+                  onPress={() => onRemove(c.id)}
+                  accessibilityRole='button'
+                  accessibilityLabel={`Remover ${c.name}`}
+                  style={styles.dmChipRemoveBtn}
+                >
+                  <Icon
+                    name='x'
+                    size={9}
+                    color={colors.textSecondary}
+                    strokeWidth={2.5}
+                  />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+
+          {hasMore ? (
+            <Pressable
+              onPress={onLoadMore}
+              disabled={loadingMore}
+              style={styles.dmLoadMoreBtn}
+              accessibilityRole='button'
+              accessibilityLabel='Carregar mais exceções'
+            >
+              {loadingMore ? (
+                <ActivityIndicator color={colors.primary} size='small' />
+              ) : (
+                <Text style={styles.dmAddBtnText}>Carregar mais</Text>
+              )}
+            </Pressable>
+          ) : null}
+        </>
+      )}
     </View>
   );
 }

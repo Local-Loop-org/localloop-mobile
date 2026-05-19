@@ -8,19 +8,13 @@ import {
   PushPermissionDeniedError,
   usePushNotifications,
 } from '@/application/hooks/usePushNotifications/usePushNotifications';
+import { useDmExceptions } from '@/application/hooks/useDmExceptions/useDmExceptions';
+import { useRemoveDmException } from '@/application/hooks/useRemoveDmException/useRemoveDmException';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile/useUpdateUserProfile';
 import ProfileLayout from './layout';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import type { DmException, LanguageCode, ThemeMode } from './types';
-
-const SUGGESTED_EXCEPTIONS: DmException[] = [
-  { id: 'marina',  name: 'Marina Souza',    hint: 'Café da Esquina' },
-  { id: 'lucas',   name: 'Lucas Hideki',    hint: 'Pet Vila Madalena' },
-  { id: 'beatriz', name: 'Beatriz Lima',    hint: 'Corrida Ibirapuera' },
-  { id: 'rafael',  name: 'Rafael Cordeiro', hint: 'Edifício Aurora' },
-  { id: 'julia',   name: 'Júlia Tanaka',    hint: 'Café da Esquina' },
-];
 
 const COMING_SOON = 'Em breve';
 const COMING_SOON_BODY = 'Esta funcionalidade ainda não está disponível.';
@@ -44,19 +38,23 @@ export default function ProfileScreen() {
 
   const radiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
   const setDiscoveryRadiusKm = usePreferencesStore((s) => s.setDiscoveryRadiusKm);
+  const dmExceptionsVisible = dmPermission !== DmPermission.EVERYONE;
+  const exceptionsQuery = useDmExceptions({ enabled: dmExceptionsVisible });
+  const removeDmExceptionMutation = useRemoveDmException();
 
-  // Local-only state: backend support deferred (theming/i18n, DM exception list).
+  // Local-only state: backend support deferred for theming and i18n.
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [language, setLanguage] = useState<LanguageCode>('pt');
-  const [exceptionIds, setExceptionIds] = useState<string[]>([]);
 
   const dmExceptions = useMemo(
-    () => SUGGESTED_EXCEPTIONS.filter((e) => exceptionIds.includes(e.id)),
-    [exceptionIds],
-  );
-  const candidateExceptions = useMemo(
-    () => SUGGESTED_EXCEPTIONS.filter((e) => !exceptionIds.includes(e.id)),
-    [exceptionIds],
+    () =>
+      exceptionsQuery.exceptions.map<DmException>((exception) => ({
+        id: exception.peerId,
+        name: exception.displayName,
+        avatarUrl: exception.avatarUrl,
+        createdAt: exception.createdAt,
+      })),
+    [exceptionsQuery.exceptions],
   );
 
   const handleChangeName = (next: string) => {
@@ -67,6 +65,14 @@ export default function ProfileScreen() {
   const handleChangeDm = (next: DmPermission) => {
     if (next === dmPermission) return;
     updateMutation.mutate({ dmPermission: next });
+  };
+
+  const handleRemoveDmException = (id: string) => {
+    removeDmExceptionMutation.mutate(id, {
+      onError: () => {
+        Alert.alert('Erro', 'Não foi possível revogar a exceção de DM.');
+      },
+    });
   };
 
   const handleComingSoon = () => Alert.alert(COMING_SOON, COMING_SOON_BODY);
@@ -104,7 +110,11 @@ export default function ProfileScreen() {
       createdAt={createdAt}
       dmPermission={dmPermission}
       dmExceptions={dmExceptions}
-      candidateExceptions={candidateExceptions}
+      dmExceptionsVisible={dmExceptionsVisible}
+      dmExceptionsLoading={exceptionsQuery.isLoading}
+      dmExceptionsLoadingMore={exceptionsQuery.isFetchingNextPage}
+      dmExceptionsError={exceptionsQuery.isError}
+      dmExceptionsHasMore={exceptionsQuery.hasNextPage}
       radiusKm={radiusKm}
       notificationsEnabled={
         pushPermissionStatus === PushPermissionStatus.GRANTED
@@ -116,10 +126,8 @@ export default function ProfileScreen() {
       onChangeName={handleChangeName}
       onChangeAvatar={handleComingSoon}
       onChangeDmPermission={handleChangeDm}
-      onAddDmException={(id) => setExceptionIds((prev) => [...prev, id])}
-      onRemoveDmException={(id) =>
-        setExceptionIds((prev) => prev.filter((x) => x !== id))
-      }
+      onRemoveDmException={handleRemoveDmException}
+      onLoadMoreDmExceptions={exceptionsQuery.loadMore}
       onChangeRadius={setDiscoveryRadiusKm}
       onToggleNotifications={handleToggleNotifications}
       onChangeTheme={setTheme}

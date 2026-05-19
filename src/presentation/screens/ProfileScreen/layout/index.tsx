@@ -25,7 +25,11 @@ export default function ProfileLayout({
   createdAt,
   dmPermission,
   dmExceptions,
-  candidateExceptions,
+  dmExceptionsVisible,
+  dmExceptionsLoading,
+  dmExceptionsLoadingMore,
+  dmExceptionsError,
+  dmExceptionsHasMore,
   radiusKm,
   notificationsEnabled,
   theme,
@@ -33,8 +37,8 @@ export default function ProfileLayout({
   onChangeName,
   onChangeAvatar,
   onChangeDmPermission,
-  onAddDmException,
   onRemoveDmException,
+  onLoadMoreDmExceptions,
   onChangeRadius,
   onToggleNotifications,
   onChangeTheme,
@@ -88,9 +92,13 @@ export default function ProfileLayout({
           value={dmPermission}
           onChange={onChangeDmPermission}
           exceptions={dmExceptions}
-          candidates={candidateExceptions}
-          onAddException={onAddDmException}
+          exceptionsVisible={dmExceptionsVisible}
+          exceptionsLoading={dmExceptionsLoading}
+          exceptionsLoadingMore={dmExceptionsLoadingMore}
+          exceptionsError={dmExceptionsError}
+          exceptionsHasMore={dmExceptionsHasMore}
           onRemoveException={onRemoveDmException}
+          onLoadMoreExceptions={onLoadMoreDmExceptions}
         />
 
         <SectionLabel>NOTIFICAÇÕES</SectionLabel>

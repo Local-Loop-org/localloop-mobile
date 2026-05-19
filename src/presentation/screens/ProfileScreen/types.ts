@@ -3,7 +3,8 @@ import type { DmPermission } from '@localloop/shared-types';
 export interface DmException {
   id: string;
   name: string;
-  hint: string;
+  avatarUrl: string | null;
+  createdAt: string;
 }
 
 export type ThemeMode = 'dark' | 'light';
