@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { useAcceptDmRequest } from '@/application/hooks/useAcceptDmRequest/useAcceptDmRequest';
+import { useDeclineDmRequest } from '@/application/hooks/useDeclineDmRequest/useDeclineDmRequest';
 import { useDmConversations } from '@/application/hooks/useDmConversations/useDmConversations';
 import { useDmRequests } from '@/application/hooks/useDmRequests/useDmRequests';
 import type { DmConversationDto, DmRequestDto } from '@/infra/api/dm.api';
@@ -55,6 +58,8 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
   const isFocused = useIsFocused();
   const conversationsQuery = useDmConversations({ enabled: isFocused });
   const requestsQuery = useDmRequests({ enabled: isFocused });
+  const acceptDmRequest = useAcceptDmRequest();
+  const declineDmRequest = useDeclineDmRequest();
 
   const allDms = useMemo(
     () => conversationsQuery.conversations.map(mapConversation),
@@ -130,6 +135,30 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
     });
   };
 
+  const handleAcceptRequest = (id: string) => {
+    const request = allRequests.find((r) => r.id === id);
+    acceptDmRequest.mutate(id, {
+      onSuccess: (message) => {
+        navigation.navigate(StackRoutes.DmChat, {
+          peerId: request?.peer.id ?? message.senderId,
+          peerName: request?.peer.displayName ?? message.senderName,
+          peerAvatarUrl: request?.peer.avatarUrl ?? message.senderAvatar,
+        });
+      },
+      onError: () => {
+        Alert.alert('Erro', 'Não foi possível aceitar a solicitação.');
+      },
+    });
+  };
+
+  const handleIgnoreRequest = (id: string) => {
+    declineDmRequest.mutate(id, {
+      onError: () => {
+        Alert.alert('Erro', 'Não foi possível ignorar a solicitação.');
+      },
+    });
+  };
+
   const noop = () => {};
 
   return (
@@ -148,11 +177,13 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
       onChangeSearch={setSearchQuery}
       onChangeFilter={setActiveFilter}
       onOpenDm={handleOpenDm}
-      onAcceptRequest={noop}
-      onIgnoreRequest={noop}
+      onAcceptRequest={handleAcceptRequest}
+      onIgnoreRequest={handleIgnoreRequest}
       onPressEdit={noop}
       onLoadMore={showingRequests ? requestsQuery.loadMore : conversationsQuery.loadMore}
-      requestActionsDisabled
+      requestActionsDisabled={
+        acceptDmRequest.isPending || declineDmRequest.isPending
+      }
     />
   );
 }

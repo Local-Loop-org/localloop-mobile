@@ -37,6 +37,18 @@ export interface ListDmRequestsResponse {
   next_cursor: string | null;
 }
 
+export interface DmExceptionDto {
+  peerId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  createdAt: string;
+}
+
+export interface ListDmExceptionsResponse {
+  data: DmExceptionDto[];
+  next_cursor: string | null;
+}
+
 export interface ListDmParams {
   limit?: number;
   cursor?: string;
@@ -68,6 +80,31 @@ export const dmApi = {
       { params: listParams(params) },
     );
     return data;
+  },
+
+  acceptDmRequest: async (requestId: string): Promise<ChatMessage> => {
+    const { data } = await apiClient.post<ChatMessage>(
+      `/dm/requests/${requestId}/accept`,
+    );
+    return data;
+  },
+
+  declineDmRequest: async (requestId: string): Promise<void> => {
+    await apiClient.post(`/dm/requests/${requestId}/decline`);
+  },
+
+  listDmExceptions: async (
+    params: ListDmParams = {},
+  ): Promise<ListDmExceptionsResponse> => {
+    const { data } = await apiClient.get<ListDmExceptionsResponse>(
+      '/users/me/dm-exceptions',
+      { params: listParams(params) },
+    );
+    return data;
+  },
+
+  removeDmException: async (peerId: string): Promise<void> => {
+    await apiClient.delete(`/users/me/dm-exceptions/${peerId}`);
   },
 
   getDmHistory: async (

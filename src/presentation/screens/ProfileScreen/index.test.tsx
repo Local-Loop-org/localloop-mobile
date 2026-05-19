@@ -10,6 +10,8 @@ import {
 import ProfileScreen from './index';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { useDmExceptions } from '@/application/hooks/useDmExceptions/useDmExceptions';
+import { useRemoveDmException } from '@/application/hooks/useRemoveDmException/useRemoveDmException';
 import { usePushNotifications } from '@/application/hooks/usePushNotifications/usePushNotifications';
 
 const mockGoBack = jest.fn();
@@ -34,11 +36,24 @@ jest.mock('@/application/hooks/usePushNotifications/usePushNotifications', () =>
   usePushNotifications: jest.fn(),
 }));
 
+jest.mock('@/application/hooks/useDmExceptions/useDmExceptions', () => ({
+  useDmExceptions: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useRemoveDmException/useRemoveDmException', () => ({
+  useRemoveDmException: jest.fn(),
+}));
+
 const mockedGetMe = userApi.getMe as jest.MockedFunction<typeof userApi.getMe>;
 const mockedUpdateProfile = userApi.updateProfile as jest.MockedFunction<
   typeof userApi.updateProfile
 >;
 const mockedUseAuthStore = useAuthStore as unknown as jest.Mock;
+const mockedUseDmExceptions = useDmExceptions as jest.MockedFunction<
+  typeof useDmExceptions
+>;
+const mockedUseRemoveDmException =
+  useRemoveDmException as jest.MockedFunction<typeof useRemoveDmException>;
 const mockedUsePushNotifications = usePushNotifications as jest.MockedFunction<
   typeof usePushNotifications
 >;
@@ -47,6 +62,7 @@ const logoutMock = jest.fn().mockResolvedValue(undefined);
 const updateUserMock = jest.fn().mockResolvedValue(undefined);
 const enableFromProfileMock = jest.fn().mockResolvedValue(undefined);
 const disableFromProfileMock = jest.fn().mockResolvedValue(undefined);
+const removeExceptionMutateMock = jest.fn();
 
 const profile: UserProfileResponse = {
   id: 'user-1',
@@ -94,6 +110,27 @@ beforeEach(() => {
     isRegistering: false,
     isUpdatingPermission: false,
   });
+  mockedUseDmExceptions.mockReturnValue({
+    exceptions: [
+      {
+        peerId: 'u-ana',
+        displayName: 'Ana Permitida',
+        avatarUrl: null,
+        createdAt: '2026-05-18T10:00:00.000Z',
+      },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    loadMore: jest.fn(),
+    query: {} as never,
+  });
+  mockedUseRemoveDmException.mockReturnValue({
+    mutate: removeExceptionMutateMock,
+    isPending: false,
+  } as never);
 });
 
 describe('ProfileScreen', () => {
@@ -127,6 +164,48 @@ describe('ProfileScreen', () => {
         dmPermission: DmPermission.NOBODY,
       }),
     );
+  });
+
+  it('lists real DM exceptions under restricted DM permissions', async () => {
+    mockedGetMe.mockResolvedValue(profile);
+
+    const { findByText } = render(<ProfileScreen />, {
+      wrapper: makeWrapper(),
+    });
+
+    expect(await findByText('Ana Permitida')).toBeTruthy();
+    expect(mockedUseDmExceptions).toHaveBeenCalledWith({ enabled: true });
+  });
+
+  it('revokes a DM exception through the remove mutation', async () => {
+    mockedGetMe.mockResolvedValue(profile);
+
+    const { findByText, getByLabelText } = render(<ProfileScreen />, {
+      wrapper: makeWrapper(),
+    });
+
+    await findByText('Ana Permitida');
+    fireEvent.press(getByLabelText('Remover Ana Permitida'));
+
+    expect(removeExceptionMutateMock).toHaveBeenCalledWith(
+      'u-ana',
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it('hides DM exceptions when default permission is Todos', async () => {
+    mockedGetMe.mockResolvedValue({
+      ...profile,
+      dmPermission: DmPermission.EVERYONE,
+    });
+
+    const { queryByText } = render(<ProfileScreen />, {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(mockedGetMe).toHaveBeenCalled());
+    await waitFor(() => expect(queryByText('Ana Permitida')).toBeNull());
+    expect(mockedUseDmExceptions).toHaveBeenCalledWith({ enabled: false });
   });
 
   it('logout button calls auth-store logout', async () => {

@@ -82,6 +82,66 @@ describe('dmApi', () => {
     ).resolves.toEqual({ data: [], next_cursor: null });
   });
 
+  it('acceptDmRequest POSTs /dm/requests/:id/accept', async () => {
+    const response = {
+      id: 'dm-1',
+      senderId: 'u-2',
+      senderName: 'Bia',
+      senderAvatar: null,
+      recipientId: 'me',
+      content: 'oi',
+      mediaUrl: null,
+      mediaType: null,
+      createdAt: '2026-05-18T10:00:00.000Z',
+    };
+
+    mock.onPost('/dm/requests/req-1/accept').replyOnce(200, response);
+
+    await expect(dmApi.acceptDmRequest('req-1')).resolves.toEqual(response);
+  });
+
+  it('declineDmRequest POSTs /dm/requests/:id/decline', async () => {
+    mock.onPost('/dm/requests/req-1/decline').replyOnce(204);
+
+    await expect(dmApi.declineDmRequest('req-1')).resolves.toBeUndefined();
+  });
+
+  it('listDmExceptions GETs /users/me/dm-exceptions with pagination', async () => {
+    const response = {
+      data: [
+        {
+          peerId: 'u-3',
+          displayName: 'Caio',
+          avatarUrl: null,
+          createdAt: '2026-05-18T10:00:00.000Z',
+        },
+      ],
+      next_cursor: 'cursor-3',
+    };
+
+    mock.onGet('/users/me/dm-exceptions').replyOnce((config) => {
+      expect(config.params).toEqual({ limit: 20 });
+      return [200, response];
+    });
+
+    await expect(dmApi.listDmExceptions()).resolves.toEqual(response);
+
+    mock.onGet('/users/me/dm-exceptions').replyOnce((config) => {
+      expect(config.params).toEqual({ limit: 8, cursor: 'cursor-3' });
+      return [200, { data: [], next_cursor: null }];
+    });
+
+    await expect(
+      dmApi.listDmExceptions({ limit: 8, cursor: 'cursor-3' }),
+    ).resolves.toEqual({ data: [], next_cursor: null });
+  });
+
+  it('removeDmException DELETEs /users/me/dm-exceptions/:peerId', async () => {
+    mock.onDelete('/users/me/dm-exceptions/u-3').replyOnce(204);
+
+    await expect(dmApi.removeDmException('u-3')).resolves.toBeUndefined();
+  });
+
   it('getDmHistory keeps using before pagination for conversation history', async () => {
     const response = { data: [], next_cursor: null };
     mock.onGet('/dm/u-1').reply((config) => {

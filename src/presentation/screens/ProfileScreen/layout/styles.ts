@@ -367,6 +367,23 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
   },
+  dmLoadMoreBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    minHeight: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dmExceptionState: {
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dmPickerDrawer: {
     marginTop: 10,
     paddingTop: 10,

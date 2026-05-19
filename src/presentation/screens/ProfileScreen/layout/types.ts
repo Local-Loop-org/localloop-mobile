@@ -11,7 +11,11 @@ export interface ProfileLayoutProps {
   createdAt: string | null;
   dmPermission: DmPermission;
   dmExceptions: DmException[];
-  candidateExceptions: DmException[];
+  dmExceptionsVisible: boolean;
+  dmExceptionsLoading: boolean;
+  dmExceptionsLoadingMore: boolean;
+  dmExceptionsError: boolean;
+  dmExceptionsHasMore: boolean;
   radiusKm: number;
   notificationsEnabled: boolean;
   theme: ThemeMode;
@@ -22,8 +26,8 @@ export interface ProfileLayoutProps {
   onChangeName: (next: string) => void;
   onChangeAvatar: () => void;
   onChangeDmPermission: (next: DmPermission) => void;
-  onAddDmException: (id: string) => void;
   onRemoveDmException: (id: string) => void;
+  onLoadMoreDmExceptions: () => void;
   onChangeRadius: (km: number) => void;
   onToggleNotifications: (next: boolean) => void;
   onChangeTheme: (next: ThemeMode) => void;

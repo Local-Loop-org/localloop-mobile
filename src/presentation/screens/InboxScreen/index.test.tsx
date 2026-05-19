@@ -1,5 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { useAcceptDmRequest } from '@/application/hooks/useAcceptDmRequest/useAcceptDmRequest';
+import { useDeclineDmRequest } from '@/application/hooks/useDeclineDmRequest/useDeclineDmRequest';
 import { useDmConversations } from '@/application/hooks/useDmConversations/useDmConversations';
 import type { UseDmConversationsResult } from '@/application/hooks/useDmConversations/useDmConversations';
 import { useDmRequests } from '@/application/hooks/useDmRequests/useDmRequests';
@@ -10,6 +12,14 @@ import type { InboxScreenProps } from './types';
 
 jest.mock('@/application/hooks/useDmConversations/useDmConversations', () => ({
   useDmConversations: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useAcceptDmRequest/useAcceptDmRequest', () => ({
+  useAcceptDmRequest: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useDeclineDmRequest/useDeclineDmRequest', () => ({
+  useDeclineDmRequest: jest.fn(),
 }));
 
 jest.mock('@/application/hooks/useDmRequests/useDmRequests', () => ({
@@ -27,9 +37,18 @@ jest.mock('@react-navigation/native', () => {
 const mockedUseDmConversations = useDmConversations as jest.MockedFunction<
   typeof useDmConversations
 >;
+const mockedUseAcceptDmRequest = useAcceptDmRequest as jest.MockedFunction<
+  typeof useAcceptDmRequest
+>;
+const mockedUseDeclineDmRequest = useDeclineDmRequest as jest.MockedFunction<
+  typeof useDeclineDmRequest
+>;
 const mockedUseDmRequests = useDmRequests as jest.MockedFunction<
   typeof useDmRequests
 >;
+
+const acceptMutate = jest.fn();
+const declineMutate = jest.fn();
 
 const navigation = {
   navigate: jest.fn(),
@@ -146,6 +165,14 @@ describe('InboxScreen', () => {
     jest.clearAllMocks();
     mockConversations();
     mockRequests();
+    mockedUseAcceptDmRequest.mockReturnValue({
+      mutate: acceptMutate,
+      isPending: false,
+    } as never);
+    mockedUseDeclineDmRequest.mockReturnValue({
+      mutate: declineMutate,
+      isPending: false,
+    } as never);
   });
 
   it('renders the header with loaded conversation totals', () => {
@@ -178,7 +205,7 @@ describe('InboxScreen', () => {
     expect(queryByText('Arquivo')).toBeNull();
   });
 
-  it('shows request rows with disabled actions when Solicitações is tapped', () => {
+  it('shows request rows with enabled actions when Solicitações is tapped', () => {
     const { getByTestId, getByText, queryByText } = renderScreen();
 
     fireEvent.press(getByText('Solicitações'));
@@ -188,10 +215,56 @@ describe('InboxScreen', () => {
     expect(queryByText('Ana Beatriz')).toBeNull();
     expect(
       getByTestId('dm-request-accept-req-1').props.accessibilityState.disabled,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       getByTestId('dm-request-ignore-req-1').props.accessibilityState.disabled,
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('accepts a request and opens the materialized DM chat', () => {
+    const { getByText, getByTestId } = renderScreen();
+
+    fireEvent.press(getByText('Solicitações'));
+    fireEvent.press(getByTestId('dm-request-accept-req-1'));
+
+    expect(acceptMutate).toHaveBeenCalledWith(
+      'req-1',
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function),
+      }),
+    );
+
+    const options = acceptMutate.mock.calls[0][1];
+    options.onSuccess({
+      id: 'dm-1',
+      senderId: 'u-helena',
+      senderName: 'Helena S.',
+      senderAvatar: null,
+      content: 'oi vizinha',
+      mediaUrl: null,
+      mediaType: null,
+      createdAt: '2026-05-18T10:00:00.000Z',
+    });
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DmChat', {
+      peerId: 'u-helena',
+      peerName: 'Helena S.',
+      peerAvatarUrl: null,
+    });
+  });
+
+  it('ignores a request without leaving the requests list', () => {
+    const { getByText, getByTestId } = renderScreen();
+
+    fireEvent.press(getByText('Solicitações'));
+    fireEvent.press(getByTestId('dm-request-ignore-req-1'));
+
+    expect(declineMutate).toHaveBeenCalledWith(
+      'req-1',
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it('filters conversations by display name as the user types', () => {
