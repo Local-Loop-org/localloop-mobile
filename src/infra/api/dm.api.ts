@@ -1,9 +1,18 @@
 import type {
+  DmExceptionCandidate,
+  ListDmExceptionCandidatesResponse,
+} from '@localloop/shared-types';
+import type {
   ChatMessage,
   GetHistoryParams,
   MessageHistoryResponse,
 } from './messages.api';
 import { apiClient } from './api-client';
+
+export type {
+  DmExceptionCandidate,
+  ListDmExceptionCandidatesResponse,
+} from '@localloop/shared-types';
 
 export interface DmConversationDto {
   peerId: string;
@@ -104,8 +113,27 @@ export const dmApi = {
     return data;
   },
 
+  addDmException: async (peerId: string): Promise<void> => {
+    await apiClient.put(`/users/me/dm-exceptions/${peerId}`);
+  },
+
   removeDmException: async (peerId: string): Promise<void> => {
     await apiClient.delete(`/users/me/dm-exceptions/${peerId}`);
+  },
+
+  listDmExceptionCandidates: async (
+    params: { limit?: number; cursor?: string; q?: string } = {},
+  ): Promise<ListDmExceptionCandidatesResponse> => {
+    const query: Record<string, string | number> = {
+      limit: params.limit ?? 20,
+    };
+    if (params.cursor) query.cursor = params.cursor;
+    if (params.q && params.q.trim().length > 0) query.q = params.q.trim();
+    const { data } = await apiClient.get<ListDmExceptionCandidatesResponse>(
+      '/users/me/dm-exception-candidates',
+      { params: query },
+    );
+    return data;
   },
 
   archiveDmConversation: async (peerId: string): Promise<void> => {

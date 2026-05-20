@@ -21,7 +21,7 @@ describe('messagesApi', () => {
           id: 'm-1',
           senderId: 'u-1',
           senderName: 'Alice',
-          senderAvatar: null,
+          senderAvatarUrl: null,
           content: 'hi',
           mediaUrl: null,
           mediaType: null,

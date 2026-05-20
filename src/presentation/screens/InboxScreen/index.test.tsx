@@ -249,7 +249,7 @@ describe('InboxScreen', () => {
       id: 'dm-1',
       senderId: 'u-helena',
       senderName: 'Helena S.',
-      senderAvatar: null,
+      senderAvatarUrl: null,
       content: 'oi vizinha',
       mediaUrl: null,
       mediaType: null,

@@ -164,7 +164,7 @@ describe('useDmInboxRealtime', () => {
         id: 'dm-1',
         senderId: 'me',
         senderName: 'Me',
-        senderAvatar: null,
+        senderAvatarUrl: null,
         recipientId: 'u-2',
         content: 'oi',
         mediaUrl: null,

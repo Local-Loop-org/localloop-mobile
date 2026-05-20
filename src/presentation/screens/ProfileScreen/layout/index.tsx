@@ -30,6 +30,13 @@ export default function ProfileLayout({
   dmExceptionsLoadingMore,
   dmExceptionsError,
   dmExceptionsHasMore,
+  dmExceptionCandidates,
+  dmExceptionCandidatesLoading,
+  dmExceptionCandidatesLoadingMore,
+  dmExceptionCandidatesError,
+  dmExceptionCandidatesErrorLabel,
+  dmExceptionCandidatesHasMore,
+  dmExceptionAddPendingId,
   radiusKm,
   notificationsEnabled,
   theme,
@@ -39,6 +46,8 @@ export default function ProfileLayout({
   onChangeDmPermission,
   onRemoveDmException,
   onLoadMoreDmExceptions,
+  onAddDmException,
+  onLoadMoreDmExceptionCandidates,
   onCommitRadius,
   onToggleNotifications,
   onChangeTheme,
@@ -102,6 +111,15 @@ export default function ProfileLayout({
           exceptionsHasMore={dmExceptionsHasMore}
           onRemoveException={onRemoveDmException}
           onLoadMoreExceptions={onLoadMoreDmExceptions}
+          candidates={dmExceptionCandidates}
+          candidatesLoading={dmExceptionCandidatesLoading}
+          candidatesLoadingMore={dmExceptionCandidatesLoadingMore}
+          candidatesError={dmExceptionCandidatesError}
+          candidatesErrorLabel={dmExceptionCandidatesErrorLabel}
+          candidatesHasMore={dmExceptionCandidatesHasMore}
+          candidatesPendingId={dmExceptionAddPendingId}
+          onAddException={onAddDmException}
+          onLoadMoreCandidates={onLoadMoreDmExceptionCandidates}
         />
 
         <SectionLabel>NOTIFICAÇÕES</SectionLabel>

@@ -1,6 +1,7 @@
 import type { DmPermission } from '@localloop/shared-types';
 import type {
   DmException,
+  DmExceptionPickCandidate,
   LanguageCode,
   ThemeMode,
 } from '../types';
@@ -16,6 +17,13 @@ export interface ProfileLayoutProps {
   dmExceptionsLoadingMore: boolean;
   dmExceptionsError: boolean;
   dmExceptionsHasMore: boolean;
+  dmExceptionCandidates: DmExceptionPickCandidate[];
+  dmExceptionCandidatesLoading: boolean;
+  dmExceptionCandidatesLoadingMore: boolean;
+  dmExceptionCandidatesError: boolean;
+  dmExceptionCandidatesErrorLabel: string | null;
+  dmExceptionCandidatesHasMore: boolean;
+  dmExceptionAddPendingId: string | null;
   radiusKm: number;
   notificationsEnabled: boolean;
   theme: ThemeMode;
@@ -28,6 +36,8 @@ export interface ProfileLayoutProps {
   onChangeDmPermission: (next: DmPermission) => void;
   onRemoveDmException: (id: string) => void;
   onLoadMoreDmExceptions: () => void;
+  onAddDmException: (candidate: DmExceptionPickCandidate) => void;
+  onLoadMoreDmExceptionCandidates: () => void;
   onCommitRadius: (km: number) => void;
   onToggleNotifications: (next: boolean) => void;
   onChangeTheme: (next: ThemeMode) => void;

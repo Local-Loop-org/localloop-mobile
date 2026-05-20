@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
+import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { DmPermission, PushPermissionStatus } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
@@ -8,13 +9,20 @@ import {
   PushPermissionDeniedError,
   usePushNotifications,
 } from '@/application/hooks/usePushNotifications/usePushNotifications';
+import { useAddDmException } from '@/application/hooks/useAddDmException/useAddDmException';
+import { useDmExceptionCandidates } from '@/application/hooks/useDmExceptionCandidates/useDmExceptionCandidates';
 import { useDmExceptions } from '@/application/hooks/useDmExceptions/useDmExceptions';
 import { useRemoveDmException } from '@/application/hooks/useRemoveDmException/useRemoveDmException';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile/useUpdateUserProfile';
 import ProfileLayout from './layout';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
-import type { DmException, LanguageCode, ThemeMode } from './types';
+import type {
+  DmException,
+  DmExceptionPickCandidate,
+  LanguageCode,
+  ThemeMode,
+} from './types';
 
 const COMING_SOON = 'Em breve';
 const COMING_SOON_BODY = 'Esta funcionalidade ainda não está disponível.';
@@ -40,7 +48,11 @@ export default function ProfileScreen() {
   const setDiscoveryRadiusKm = usePreferencesStore((s) => s.setDiscoveryRadiusKm);
   const dmExceptionsVisible = dmPermission !== DmPermission.EVERYONE;
   const exceptionsQuery = useDmExceptions({ enabled: dmExceptionsVisible });
+  const candidatesQuery = useDmExceptionCandidates({
+    enabled: dmExceptionsVisible,
+  });
   const removeDmExceptionMutation = useRemoveDmException();
+  const addDmExceptionMutation = useAddDmException();
 
   // Local-only state: backend support deferred for theming and i18n.
   const [theme, setTheme] = useState<ThemeMode>('dark');
@@ -56,6 +68,26 @@ export default function ProfileScreen() {
       })),
     [exceptionsQuery.exceptions],
   );
+
+  const dmExceptionCandidates = useMemo<DmExceptionPickCandidate[]>(
+    () =>
+      candidatesQuery.candidates.map((c) => ({
+        userId: c.userId,
+        displayName: c.displayName,
+        avatarUrl: c.avatarUrl,
+      })),
+    [candidatesQuery.candidates],
+  );
+
+  const dmExceptionCandidatesErrorLabel = useMemo(() => {
+    if (!candidatesQuery.isError) return null;
+    const status =
+      axios.isAxiosError(candidatesQuery.error) &&
+      candidatesQuery.error.response?.status;
+    return status === 404
+      ? 'Indisponível no momento.'
+      : 'Não foi possível carregar pessoas.';
+  }, [candidatesQuery.error, candidatesQuery.isError]);
 
   const handleChangeName = (next: string) => {
     if (!next || next === displayName) return;
@@ -79,6 +111,27 @@ export default function ProfileScreen() {
       },
     });
   };
+
+  const handleAddDmException = (candidate: DmExceptionPickCandidate) => {
+    if (addDmExceptionMutation.isPending) return;
+    addDmExceptionMutation.mutate(
+      {
+        peerId: candidate.userId,
+        displayName: candidate.displayName,
+        avatarUrl: candidate.avatarUrl,
+      },
+      {
+        onError: () => {
+          Alert.alert('Erro', 'Não foi possível adicionar a exceção.');
+        },
+      },
+    );
+  };
+
+  const dmExceptionAddPendingId =
+    addDmExceptionMutation.isPending && addDmExceptionMutation.variables
+      ? addDmExceptionMutation.variables.peerId
+      : null;
 
   const handleComingSoon = () => Alert.alert(COMING_SOON, COMING_SOON_BODY);
 
@@ -120,6 +173,13 @@ export default function ProfileScreen() {
       dmExceptionsLoadingMore={exceptionsQuery.isFetchingNextPage}
       dmExceptionsError={exceptionsQuery.isError}
       dmExceptionsHasMore={exceptionsQuery.hasNextPage}
+      dmExceptionCandidates={dmExceptionCandidates}
+      dmExceptionCandidatesLoading={candidatesQuery.isLoading}
+      dmExceptionCandidatesLoadingMore={candidatesQuery.isFetchingNextPage}
+      dmExceptionCandidatesError={candidatesQuery.isError}
+      dmExceptionCandidatesErrorLabel={dmExceptionCandidatesErrorLabel}
+      dmExceptionCandidatesHasMore={candidatesQuery.hasNextPage}
+      dmExceptionAddPendingId={dmExceptionAddPendingId}
       radiusKm={radiusKm}
       notificationsEnabled={
         pushPermissionStatus === PushPermissionStatus.GRANTED
@@ -133,6 +193,8 @@ export default function ProfileScreen() {
       onChangeDmPermission={handleChangeDm}
       onRemoveDmException={handleRemoveDmException}
       onLoadMoreDmExceptions={exceptionsQuery.loadMore}
+      onAddDmException={handleAddDmException}
+      onLoadMoreDmExceptionCandidates={candidatesQuery.loadMore}
       onCommitRadius={handleCommitRadius}
       onToggleNotifications={handleToggleNotifications}
       onChangeTheme={setTheme}
