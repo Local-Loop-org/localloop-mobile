@@ -23,6 +23,19 @@ import AnchorIcon from '../components/AnchorIcon';
 import { layoutDimensions, styles } from './styles';
 import type { GroupChatLayoutProps } from './types';
 
+function shouldShowPeerSenderName(
+  items: ChatListItem[],
+  index: number,
+): boolean {
+  const current = items[index];
+  if (!current || current.kind !== 'message') return false;
+
+  const olderAdjacent = items[index + 1];
+  if (!olderAdjacent || olderAdjacent.kind === 'separator') return true;
+
+  return olderAdjacent.message.senderId !== current.message.senderId;
+}
+
 export default function GroupChatLayout({
   groupName,
   anchorType,
@@ -45,7 +58,13 @@ export default function GroupChatLayout({
   const sendDisabled = draft.trim().length === 0;
   const items = useMemo(() => buildChatListItems(messages), [messages]);
 
-  const renderItem = ({ item }: { item: ChatListItem }) => {
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: ChatListItem;
+    index: number;
+  }) => {
     if (item.kind === 'separator') {
       return <DaySeparatorItem label={item.label} />;
     }
@@ -55,6 +74,7 @@ export default function GroupChatLayout({
     ) : (
       <PeerBubble
         message={item.message}
+        showSenderName={shouldShowPeerSenderName(items, index)}
         onPressAvatar={() => onPressMessageAvatar(item.message)}
       />
     );
