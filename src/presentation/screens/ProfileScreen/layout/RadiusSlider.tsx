@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LayoutChangeEvent,
   PanResponder,
@@ -13,7 +13,7 @@ import { styles } from './styles';
 
 interface Props {
   value: number;
-  onChange: (km: number) => void;
+  onCommit: (km: number) => void;
 }
 
 const MIN = 0.5;
@@ -29,58 +29,52 @@ function formatKm(km: number): string {
 const clampKm = (v: number) => Math.max(MIN, Math.min(MAX, v));
 const snap = (km: number) => Math.round(km * 2) / 2;
 
-export default function RadiusSlider({ value, onChange }: Props) {
+export default function RadiusSlider({
+  value,
+  onCommit,
+}: Props) {
   const [trackWidth, setTrackWidth] = useState(0);
-  const trackRef = useRef<View>(null);
-  const trackPageX = useRef(0);
-  const trackWidthRef = useRef(0);
-  const lastEmitted = useRef(value);
-  const onChangeRef = useRef(onChange);
+  const [draftKm, setDraftKm] = useState(value);
 
-  // Keep refs fresh so the PanResponder factory (memoized once) reads current
-  // values without rebuilding the responder on every render.
   useEffect(() => {
-    trackWidthRef.current = trackWidth;
-  }, [trackWidth]);
-  useEffect(() => {
-    lastEmitted.current = value;
+    setDraftKm(value);
   }, [value]);
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
-    trackRef.current?.measureInWindow((x) => {
-      trackPageX.current = x;
-    });
   };
 
-  const panResponder = useMemo(
-    () => {
-      const setFromPageX = (pageX: number) => {
-        const w = trackWidthRef.current;
-        if (w <= 0) return;
-        const local = pageX - trackPageX.current;
-        const ratio = Math.max(0, Math.min(1, local / w));
-        const next = snap(clampKm(MIN + ratio * (MAX - MIN)));
-        if (next !== lastEmitted.current) {
-          lastEmitted.current = next;
-          onChangeRef.current(next);
-        }
-      };
-      return PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (_e, gs) => setFromPageX(gs.x0),
-        onPanResponderMove: (_e, gs) => setFromPageX(gs.moveX),
-      });
-    },
-    [],
-  );
+  const valueFromLocalX = (localX: number) => {
+    if (trackWidth <= 0) return draftKm;
+    const ratio = Math.max(0, Math.min(1, localX / trackWidth));
+    return snap(clampKm(MIN + ratio * (MAX - MIN)));
+  };
 
-  const pct = ((clampKm(value) - MIN) / (MAX - MIN)) * 100;
+  const setDraftFromLocalX = (localX: number) => {
+    setDraftKm(valueFromLocalX(localX));
+  };
+
+  const commitFromLocalX = (localX: number) => {
+    const next = valueFromLocalX(localX);
+    setDraftKm(next);
+    onCommit(next);
+  };
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (event) =>
+      setDraftFromLocalX(event.nativeEvent.locationX),
+    onPanResponderMove: (event) =>
+      setDraftFromLocalX(event.nativeEvent.locationX),
+    onPanResponderRelease: (event) =>
+      commitFromLocalX(event.nativeEvent.locationX),
+    onPanResponderTerminate: (event) =>
+      commitFromLocalX(event.nativeEvent.locationX),
+  });
+
+  const pct = ((clampKm(draftKm) - MIN) / (MAX - MIN)) * 100;
   const thumbLeft = trackWidth > 0 ? (pct / 100) * trackWidth - 9 : 0;
 
   return (
@@ -96,18 +90,17 @@ export default function RadiusSlider({ value, onChange }: Props) {
           </Text>
         </View>
         <View style={styles.radiusBadge}>
-          <Text style={styles.radiusBadgeLabel}>{formatKm(value)}</Text>
+          <Text style={styles.radiusBadgeLabel}>{formatKm(draftKm)}</Text>
         </View>
       </View>
 
       <View style={styles.radiusTrackWrap}>
         <View
-          ref={trackRef}
           onLayout={handleLayout}
           style={{ paddingVertical: 10 }}
           accessibilityRole='adjustable'
           accessibilityLabel='Raio de descoberta'
-          accessibilityValue={{ text: formatKm(value) }}
+          accessibilityValue={{ text: formatKm(draftKm) }}
           {...panResponder.panHandlers}
         >
           <View style={styles.radiusTrack}>
@@ -129,12 +122,15 @@ export default function RadiusSlider({ value, onChange }: Props) {
 
       <View style={styles.radiusTicks}>
         {TICKS.map((t) => {
-          const active = Math.abs(value - t) < 0.01;
+          const active = Math.abs(draftKm - t) < 0.01;
           return (
             <Pressable
               key={t}
               style={styles.radiusTickBtn}
-              onPress={() => onChange(t)}
+              onPress={() => {
+                setDraftKm(t);
+                onCommit(t);
+              }}
               accessibilityRole='button'
               accessibilityLabel={`Definir raio para ${formatKm(t)}`}
             >
