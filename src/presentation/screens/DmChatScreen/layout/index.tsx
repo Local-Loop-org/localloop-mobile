@@ -67,6 +67,8 @@ export default function DmChatLayout({
   onLoadOlder,
   onBack,
   onPressHeader,
+  onPressMore,
+  moreDisabled,
 }: DmChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0 || awaitingApproval;
   const items = useMemo(() => buildChatListItems(messages), [messages]);
@@ -116,6 +118,17 @@ export default function DmChatLayout({
               </View>
               {renderPeerStatusSubtitle(peerStatus)}
             </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconBtn, moreDisabled && styles.iconBtnDisabled]}
+            onPress={onPressMore}
+            disabled={moreDisabled}
+            accessibilityRole='button'
+            accessibilityLabel='Mais ações da conversa'
+            accessibilityState={{ disabled: !!moreDisabled }}
+            testID='header-more'
+          >
+            <Icon name='more' size={17} color={colors.text} />
           </TouchableOpacity>
         </View>
 

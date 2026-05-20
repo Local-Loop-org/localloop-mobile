@@ -45,6 +45,7 @@ function conversationFromMessage(message: ChatMessage): DmConversationDto {
       senderName: message.senderName,
       createdAt: message.createdAt,
     },
+    lastReadAt: null,
     unreadCount: 0,
     archived: false,
   };
