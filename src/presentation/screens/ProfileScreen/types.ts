@@ -7,6 +7,12 @@ export interface DmException {
   createdAt: string;
 }
 
+export interface DmExceptionPickCandidate {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export type ThemeMode = 'dark' | 'light';
 export type LanguageCode = 'pt' | 'en';
 

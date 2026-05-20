@@ -9,7 +9,7 @@ const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
   senderId: 'u-other',
   senderName: 'Alice',
-  senderAvatar: null,
+  senderAvatarUrl: null,
   content: 'Oi pessoal',
   mediaUrl: null,
   mediaType: null,

@@ -39,7 +39,7 @@ function conversationFromMessage(message: ChatMessage): DmConversationDto {
   return {
     peerId: message.senderId,
     peerName: message.senderName,
-    peerAvatarUrl: message.senderAvatar,
+    peerAvatarUrl: message.senderAvatarUrl,
     lastMessage: {
       content: message.content,
       senderName: message.senderName,

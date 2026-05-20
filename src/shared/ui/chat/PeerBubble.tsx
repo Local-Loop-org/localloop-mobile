@@ -22,7 +22,7 @@ export function PeerBubble({
   const avatar = (
     <Avatar
       name={message.senderName}
-      uri={message.senderAvatar}
+      uri={message.senderAvatarUrl}
       size={layoutDimensions.peerAvatar}
     />
   );
