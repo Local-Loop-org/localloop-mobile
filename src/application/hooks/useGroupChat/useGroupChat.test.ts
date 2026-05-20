@@ -77,7 +77,7 @@ const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
   senderId: 'u-1',
   senderName: 'Alice',
-  senderAvatar: null,
+  senderAvatarUrl: null,
   content: 'hello',
   mediaUrl: null,
   mediaType: null,

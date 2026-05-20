@@ -145,7 +145,7 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
         navigation.navigate(StackRoutes.DmChat, {
           peerId: request?.peer.id ?? message.senderId,
           peerName: request?.peer.displayName ?? message.senderName,
-          peerAvatarUrl: request?.peer.avatarUrl ?? message.senderAvatar,
+          peerAvatarUrl: request?.peer.avatarUrl ?? message.senderAvatarUrl,
           initialArchived: false,
         });
       },

@@ -53,7 +53,7 @@ const acceptedMessage: ChatMessage = {
   id: 'dm-1',
   senderId: 'u-1',
   senderName: 'Alice',
-  senderAvatar: null,
+  senderAvatarUrl: null,
   content: 'oi',
   mediaUrl: null,
   mediaType: null,
