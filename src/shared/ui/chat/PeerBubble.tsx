@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { colors } from '@/shared/theme';
 import Avatar from '@/shared/ui/Avatar';
@@ -17,6 +17,8 @@ export function PeerBubble({
   showSenderName = true,
   onPressAvatar,
 }: PeerBubbleProps) {
+  const [timestampVisible, setTimestampVisible] = useState(false);
+  const timestamp = formatTime(message.createdAt);
   const avatar = (
     <Avatar
       name={message.senderName}
@@ -46,12 +48,28 @@ export function PeerBubble({
             <Text style={styles.peerName}>{message.senderName}</Text>
           </View>
         )}
-        <View style={styles.peerBubble}>
-          <Text style={styles.peerBubbleText}>{message.content}</Text>
-        </View>
-        <Text style={styles.peerTimestamp}>
-          {formatTime(message.createdAt)}
-        </Text>
+        <Pressable
+          onPress={() => setTimestampVisible((visible) => !visible)}
+          accessibilityRole='button'
+          accessibilityLabel={
+            timestampVisible
+              ? 'Ocultar horario da mensagem'
+              : 'Mostrar horario da mensagem'
+          }
+          testID={`peer-bubble-${message.id}`}
+        >
+          <View style={styles.peerBubble}>
+            <Text style={styles.peerBubbleText}>{message.content}</Text>
+          </View>
+        </Pressable>
+        {timestampVisible ? (
+          <Text
+            style={styles.peerTimestamp}
+            testID={`peer-timestamp-${message.id}`}
+          >
+            {timestamp}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
