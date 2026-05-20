@@ -93,6 +93,82 @@ describe('GroupChatScreen', () => {
     expect(getByText('Alice')).toBeTruthy();
   });
 
+  it('shows the peer sender name only once for consecutive messages from that sender', () => {
+    mockedUseGroupChat.mockReturnValue({
+      ...baseHookState,
+      messages: [
+        baseMessage({
+          id: 'm-4',
+          content: 'quarta',
+          createdAt: '2026-04-24T10:03:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-3',
+          content: 'terceira',
+          createdAt: '2026-04-24T10:02:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-2',
+          content: 'segunda',
+          createdAt: '2026-04-24T10:01:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-1',
+          content: 'primeira',
+          createdAt: '2026-04-24T10:00:00.000Z',
+        }),
+      ],
+    });
+
+    const { getAllByText, getByText } = renderScreen();
+
+    expect(getByText('primeira')).toBeTruthy();
+    expect(getByText('quarta')).toBeTruthy();
+    expect(getAllByText('Alice')).toHaveLength(1);
+  });
+
+  it('shows the peer sender name again after a different sender interrupts the sequence', () => {
+    mockedUseGroupChat.mockReturnValue({
+      ...baseHookState,
+      messages: [
+        baseMessage({
+          id: 'm-5',
+          content: 'alice volta',
+          createdAt: '2026-04-24T10:04:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-4',
+          senderId: 'u-bob',
+          senderName: 'Bob',
+          content: 'bob dois',
+          createdAt: '2026-04-24T10:03:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-3',
+          senderId: 'u-bob',
+          senderName: 'Bob',
+          content: 'bob um',
+          createdAt: '2026-04-24T10:02:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-2',
+          content: 'alice dois',
+          createdAt: '2026-04-24T10:01:00.000Z',
+        }),
+        baseMessage({
+          id: 'm-1',
+          content: 'alice um',
+          createdAt: '2026-04-24T10:00:00.000Z',
+        }),
+      ],
+    });
+
+    const { getAllByText } = renderScreen();
+
+    expect(getAllByText('Alice')).toHaveLength(2);
+    expect(getAllByText('Bob')).toHaveLength(1);
+  });
+
   it('peer avatar navigates to DmChat with sender identity', () => {
     mockedUseGroupChat.mockReturnValue({
       ...baseHookState,
