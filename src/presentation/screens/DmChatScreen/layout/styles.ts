@@ -43,6 +43,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconBtnDisabled: {
+    opacity: 0.45,
+  },
   headerCenter: {
     flex: 1,
     flexDirection: 'row',

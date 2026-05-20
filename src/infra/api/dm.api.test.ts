@@ -142,6 +142,18 @@ describe('dmApi', () => {
     await expect(dmApi.removeDmException('u-3')).resolves.toBeUndefined();
   });
 
+  it('archiveDmConversation PUTs /dm/:peerId/archive', async () => {
+    mock.onPut('/dm/u-1/archive').replyOnce(204);
+
+    await expect(dmApi.archiveDmConversation('u-1')).resolves.toBeUndefined();
+  });
+
+  it('unarchiveDmConversation DELETEs /dm/:peerId/archive', async () => {
+    mock.onDelete('/dm/u-1/archive').replyOnce(204);
+
+    await expect(dmApi.unarchiveDmConversation('u-1')).resolves.toBeUndefined();
+  });
+
   it('getDmHistory keeps using before pagination for conversation history', async () => {
     const response = { data: [], next_cursor: null };
     mock.onGet('/dm/u-1').reply((config) => {

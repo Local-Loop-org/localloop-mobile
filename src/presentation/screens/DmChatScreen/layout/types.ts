@@ -23,4 +23,6 @@ export interface DmChatLayoutProps {
   onLoadOlder: () => void;
   onBack: () => void;
   onPressHeader: () => void;
+  onPressMore: () => void;
+  moreDisabled?: boolean;
 }
