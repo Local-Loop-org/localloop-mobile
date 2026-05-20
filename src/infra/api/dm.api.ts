@@ -14,6 +14,7 @@ export interface DmConversationDto {
     senderName: string;
     createdAt: string;
   };
+  lastReadAt?: string | null;
   unreadCount: number;
   archived: boolean;
 }
@@ -105,6 +106,14 @@ export const dmApi = {
 
   removeDmException: async (peerId: string): Promise<void> => {
     await apiClient.delete(`/users/me/dm-exceptions/${peerId}`);
+  },
+
+  archiveDmConversation: async (peerId: string): Promise<void> => {
+    await apiClient.put(`/dm/${peerId}/archive`);
+  },
+
+  unarchiveDmConversation: async (peerId: string): Promise<void> => {
+    await apiClient.delete(`/dm/${peerId}/archive`);
   },
 
   getDmHistory: async (

@@ -2,8 +2,11 @@ import { useCallback, useMemo } from 'react';
 import {
   InfiniteData,
   useInfiniteQuery,
+  type QueryClient,
+  type QueryKey,
   type UseInfiniteQueryResult,
 } from '@tanstack/react-query';
+import type { DmSummaryUpdate } from '@localloop/shared-types';
 import {
   dmApi,
   type DmConversationDto,
@@ -14,6 +17,120 @@ export const DM_CONVERSATIONS_KEY = ['dm', 'conversations'] as const;
 
 export const dmConversationsKey = (limit: number) =>
   [...DM_CONVERSATIONS_KEY, limit] as const;
+
+export type DmConversationsSnapshot = Array<
+  [QueryKey, InfiniteData<ListDmConversationsResponse> | undefined]
+>;
+
+function sortByActivity(
+  conversations: DmConversationDto[],
+): DmConversationDto[] {
+  return [...conversations].sort((a, b) => {
+    const diff =
+      new Date(b.lastMessage.createdAt).getTime() -
+      new Date(a.lastMessage.createdAt).getTime();
+    return diff === 0 ? b.peerId.localeCompare(a.peerId) : diff;
+  });
+}
+
+function updateConversationPages(
+  old: InfiniteData<ListDmConversationsResponse> | undefined,
+  updater: (rows: DmConversationDto[]) => DmConversationDto[],
+): InfiniteData<ListDmConversationsResponse> | undefined {
+  if (!old) return old;
+
+  const nextRows = updater(old.pages.flatMap((page) => page.data));
+  let offset = 0;
+
+  return {
+    ...old,
+    pages: old.pages.map((page) => {
+      const nextPageRows = nextRows.slice(offset, offset + page.data.length);
+      offset += page.data.length;
+      return { ...page, data: nextPageRows };
+    }),
+  };
+}
+
+export function snapshotDmConversationCaches(
+  queryClient: QueryClient,
+): DmConversationsSnapshot {
+  return queryClient.getQueriesData<InfiniteData<ListDmConversationsResponse>>({
+    queryKey: DM_CONVERSATIONS_KEY,
+  });
+}
+
+export function restoreDmConversationCaches(
+  queryClient: QueryClient,
+  snapshot: DmConversationsSnapshot | undefined,
+): void {
+  for (const [queryKey, data] of snapshot ?? []) {
+    queryClient.setQueryData(queryKey, data);
+  }
+}
+
+export function updateDmConversationCaches(
+  queryClient: QueryClient,
+  updater: (rows: DmConversationDto[]) => DmConversationDto[],
+): void {
+  queryClient.setQueriesData<InfiniteData<ListDmConversationsResponse>>(
+    { queryKey: DM_CONVERSATIONS_KEY },
+    (old) => updateConversationPages(old, updater),
+  );
+}
+
+export function setDmArchivedInCaches(
+  queryClient: QueryClient,
+  peerId: string,
+  archived: boolean,
+): void {
+  updateDmConversationCaches(queryClient, (rows) =>
+    rows.map((row) => (row.peerId === peerId ? { ...row, archived } : row)),
+  );
+}
+
+export function markDmReadInCaches(
+  queryClient: QueryClient,
+  peerId: string,
+): void {
+  updateDmConversationCaches(queryClient, (rows) =>
+    rows.map((row) =>
+      row.peerId === peerId ? { ...row, unreadCount: 0 } : row,
+    ),
+  );
+}
+
+export function applyDmSummaryUpdate(
+  queryClient: QueryClient,
+  update: DmSummaryUpdate,
+): boolean {
+  let touched = false;
+
+  updateDmConversationCaches(queryClient, (rows) => {
+    let found = false;
+    const next = rows.map((row) => {
+      if (row.peerId !== update.peerId) return row;
+      found = true;
+      return {
+        ...row,
+        lastMessage: update.lastMessage ?? row.lastMessage,
+        lastReadAt: update.lastReadAt,
+        unreadCount: update.unreadCount,
+        archived: update.archived,
+      };
+    });
+
+    if (!found) return rows;
+    touched = true;
+    return sortByActivity(next);
+  });
+
+  if (!touched) {
+    void queryClient.invalidateQueries({ queryKey: DM_CONVERSATIONS_KEY });
+  }
+
+  return touched;
+}
 
 export interface UseDmConversationsResult {
   conversations: DmConversationDto[];

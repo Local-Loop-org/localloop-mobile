@@ -4,6 +4,7 @@ import { useAcceptDmRequest } from '@/application/hooks/useAcceptDmRequest/useAc
 import { useDeclineDmRequest } from '@/application/hooks/useDeclineDmRequest/useDeclineDmRequest';
 import { useDmConversations } from '@/application/hooks/useDmConversations/useDmConversations';
 import type { UseDmConversationsResult } from '@/application/hooks/useDmConversations/useDmConversations';
+import { useDmInboxRealtime } from '@/application/hooks/useDmInboxRealtime/useDmInboxRealtime';
 import { useDmRequests } from '@/application/hooks/useDmRequests/useDmRequests';
 import type { UseDmRequestsResult } from '@/application/hooks/useDmRequests/useDmRequests';
 import type { DmConversationDto, DmRequestDto } from '@/infra/api/dm.api';
@@ -26,6 +27,10 @@ jest.mock('@/application/hooks/useDmRequests/useDmRequests', () => ({
   useDmRequests: jest.fn(),
 }));
 
+jest.mock('@/application/hooks/useDmInboxRealtime/useDmInboxRealtime', () => ({
+  useDmInboxRealtime: jest.fn(),
+}));
+
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
   return {
@@ -45,6 +50,9 @@ const mockedUseDeclineDmRequest = useDeclineDmRequest as jest.MockedFunction<
 >;
 const mockedUseDmRequests = useDmRequests as jest.MockedFunction<
   typeof useDmRequests
+>;
+const mockedUseDmInboxRealtime = useDmInboxRealtime as jest.MockedFunction<
+  typeof useDmInboxRealtime
 >;
 
 const acceptMutate = jest.fn();
@@ -180,6 +188,7 @@ describe('InboxScreen', () => {
 
     expect(mockedUseDmConversations).toHaveBeenCalledWith({ enabled: true });
     expect(mockedUseDmRequests).toHaveBeenCalledWith({ enabled: true });
+    expect(mockedUseDmInboxRealtime).toHaveBeenCalledWith({ enabled: true });
     expect(getByText('Inbox')).toBeTruthy();
     expect(getByText(/3 CONVERSAS/)).toBeTruthy();
     expect(getByText(/2 NÃO LIDAS/)).toBeTruthy();
@@ -251,6 +260,7 @@ describe('InboxScreen', () => {
       peerId: 'u-helena',
       peerName: 'Helena S.',
       peerAvatarUrl: null,
+      initialArchived: false,
     });
   });
 
@@ -288,6 +298,20 @@ describe('InboxScreen', () => {
     expect(queryByText('Ana Beatriz')).toBeNull();
   });
 
+  it('passes archived state when opening an archived conversation', () => {
+    const { getByText, getByTestId } = renderScreen();
+
+    fireEvent.press(getByText('Arquivadas'));
+    fireEvent.press(getByTestId('dm-row-u-arch'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DmChat', {
+      peerId: 'u-arch',
+      peerName: 'Arquivo',
+      peerAvatarUrl: null,
+      initialArchived: true,
+    });
+  });
+
   it('navigates a conversation row to DmChat', () => {
     const { getByTestId } = renderScreen();
 
@@ -297,6 +321,7 @@ describe('InboxScreen', () => {
       peerId: 'u-rafa',
       peerName: 'Rafael Souza',
       peerAvatarUrl: null,
+      initialArchived: false,
     });
   });
 

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import DmChatLayout from './layout';
+import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
+import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
 
 const ERROR_LABELS: Record<string, string> = {
@@ -9,8 +12,16 @@ const ERROR_LABELS: Record<string, string> = {
 };
 
 export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
-  const { peerId, peerName, peerAvatarUrl } = route.params;
+  const {
+    peerId,
+    peerName,
+    peerAvatarUrl,
+    initialArchived = false,
+  } = route.params;
   const [draft, setDraft] = useState('');
+  const [archived, setArchived] = useState(initialArchived);
+  const archiveDm = useArchiveDmConversation();
+  const unarchiveDm = useUnarchiveDmConversation();
 
   const {
     messages,
@@ -28,6 +39,34 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     if (draft.trim().length === 0) return;
     sendMessage(draft);
     setDraft('');
+  };
+
+  const toggleArchived = () => {
+    const nextArchived = !archived;
+    setArchived(nextArchived);
+    const mutation = nextArchived ? archiveDm : unarchiveDm;
+    mutation.mutate(peerId, {
+      onError: () => {
+        setArchived(!nextArchived);
+        Alert.alert(
+          'Erro',
+          nextArchived
+            ? 'Não foi possível arquivar a conversa.'
+            : 'Não foi possível desarquivar a conversa.',
+        );
+      },
+    });
+  };
+
+  const handlePressMore = () => {
+    if (archiveDm.isPending || unarchiveDm.isPending) return;
+    Alert.alert(peerName, undefined, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: archived ? 'Desarquivar' : 'Arquivar',
+        onPress: toggleArchived,
+      },
+    ]);
   };
 
   return (
@@ -50,6 +89,8 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       onPressHeader={() => {
         // TODO(dm-m2): navigate to peer profile
       }}
+      onPressMore={handlePressMore}
+      moreDisabled={archiveDm.isPending || unarchiveDm.isPending}
     />
   );
 }
