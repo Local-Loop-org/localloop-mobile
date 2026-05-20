@@ -5,7 +5,10 @@ import {
   useInfiniteQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ChatSocketEvents } from '@localloop/shared-types';
+import {
+  ChatSocketEvents,
+  type DmSummaryUpdate,
+} from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { createChatSocket } from '@/infra/socket/chat-socket';
@@ -14,6 +17,11 @@ import type {
   ChatMessage,
   MessageHistoryResponse,
 } from '@/infra/api/messages.api';
+import {
+  applyDmSummaryUpdate,
+  DM_CONVERSATIONS_KEY,
+  markDmReadInCaches,
+} from '../useDmConversations/useDmConversations';
 
 export type DmChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -21,6 +29,14 @@ interface SocketErrorPayload {
   code?: string;
   message?: string;
 }
+
+interface DmRequestSentPayload {
+  requestId: string;
+}
+
+type DmRequestAcceptedPayload = ChatMessage & {
+  recipientId: string;
+};
 
 const dmHistoryKey = (peerId: string) => ['dm', 'history', peerId] as const;
 
@@ -68,6 +84,19 @@ function prependTempMessage(
   };
 }
 
+function removeTempMessages(
+  old: InfiniteData<MessageHistoryResponse> | undefined,
+): InfiniteData<MessageHistoryResponse> | undefined {
+  if (!old) return old;
+  return {
+    ...old,
+    pages: old.pages.map((page) => ({
+      ...page,
+      data: page.data.filter((m) => !m.id.startsWith('temp-')),
+    })),
+  };
+}
+
 function createOptimisticMessage(user: User, content: string): ChatMessage {
   return {
     id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -79,6 +108,17 @@ function createOptimisticMessage(user: User, content: string): ChatMessage {
     mediaType: null,
     createdAt: new Date().toISOString(),
   };
+}
+
+function messageBelongsToPeer(
+  message: ChatMessage,
+  peerId: string,
+  currentUserId: string | null,
+): boolean {
+  if (message.senderId === peerId) return true;
+  if (message.recipientId === peerId) return true;
+  if (message.recipientId) return false;
+  return !!currentUserId && message.senderId === currentUserId;
 }
 
 export function useDmChat(peerId: string) {
@@ -113,6 +153,14 @@ export function useDmChat(peerId: string) {
 
   const historyReady = !historyQuery.isLoading && !historyQuery.isError;
 
+  const markDmRead = useCallback(
+    (socket: Socket) => {
+      markDmReadInCaches(queryClient, peerId);
+      socket.emit(ChatSocketEvents.MARK_DM_READ, { peerId });
+    },
+    [peerId, queryClient],
+  );
+
   useEffect(() => {
     if (!accessToken) return;
     if (!historyReady) return;
@@ -122,6 +170,8 @@ export function useDmChat(peerId: string) {
 
     const handleConnect = () => {
       socket.emit(ChatSocketEvents.JOIN_DM, { userId: peerId });
+      socket.emit(ChatSocketEvents.WATCH_DM_INBOX, {});
+      markDmRead(socket);
       setConnected(true);
     };
 
@@ -135,16 +185,7 @@ export function useDmChat(peerId: string) {
       if (payload.type === 'request') {
         queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
           dmHistoryKey(peerId),
-          (old) => {
-            if (!old) return old;
-            return {
-              ...old,
-              pages: old.pages.map((page) => ({
-                ...page,
-                data: page.data.filter((m) => !m.id.startsWith('temp-')),
-              })),
-            };
-          },
+          removeTempMessages,
         );
         setAwaitingApproval(true);
         return;
@@ -153,6 +194,33 @@ export function useDmChat(peerId: string) {
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),
       );
+      if (payload.senderId !== currentUser?.id) {
+        markDmRead(socket);
+      }
+    };
+
+    const handleRequestSent = (_payload: DmRequestSentPayload) => {
+      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+        dmHistoryKey(peerId),
+        removeTempMessages,
+      );
+      setAwaitingApproval(true);
+    };
+
+    const handleRequestAccepted = (payload: DmRequestAcceptedPayload) => {
+      if (!messageBelongsToPeer(payload, peerId, currentUser?.id ?? null)) {
+        return;
+      }
+      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+        dmHistoryKey(peerId),
+        (old) => upsertIncomingMessage(old, payload),
+      );
+      setAwaitingApproval(false);
+      void queryClient.invalidateQueries({ queryKey: DM_CONVERSATIONS_KEY });
+    };
+
+    const handleSummaryUpdate = (payload: DmSummaryUpdate) => {
+      applyDmSummaryUpdate(queryClient, payload);
     };
 
     const handleSocketError = (payload: SocketErrorPayload) => {
@@ -164,16 +232,27 @@ export function useDmChat(peerId: string) {
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on(ChatSocketEvents.NEW_DIRECT_MESSAGE, handleNewMessage);
+    socket.on(ChatSocketEvents.DM_REQUEST_SENT, handleRequestSent);
+    socket.on(ChatSocketEvents.DM_REQUEST_ACCEPTED, handleRequestAccepted);
+    socket.on(ChatSocketEvents.DM_SUMMARY_UPDATE, handleSummaryUpdate);
     socket.on(ChatSocketEvents.ERROR, handleSocketError);
 
     return () => {
       socket.emit(ChatSocketEvents.LEAVE_DM, { userId: peerId });
+      socket.emit(ChatSocketEvents.UNWATCH_DM_INBOX, {});
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);
     };
-  }, [peerId, accessToken, queryClient, historyReady]);
+  }, [
+    peerId,
+    accessToken,
+    queryClient,
+    historyReady,
+    currentUser?.id,
+    markDmRead,
+  ]);
 
   const sendMessage = useCallback(
     (content: string) => {

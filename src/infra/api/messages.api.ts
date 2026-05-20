@@ -8,6 +8,7 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar: string | null;
+  recipientId?: string;
   content: string | null;
   mediaUrl: string | null;
   mediaType: MediaType | null;

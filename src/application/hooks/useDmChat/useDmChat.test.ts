@@ -107,6 +107,13 @@ describe('useDmChat', () => {
     expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.JOIN_DM, {
       userId: 'peer-1',
     });
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.WATCH_DM_INBOX,
+      {},
+    );
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.MARK_DM_READ, {
+      peerId: 'peer-1',
+    });
     expect(result.current.connected).toBe(true);
   });
 
@@ -155,6 +162,98 @@ describe('useDmChat', () => {
     expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.LEAVE_DM, {
       userId: 'peer-1',
     });
+    expect(mock.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.UNWATCH_DM_INBOX,
+      {},
+    );
     expect(mock.disconnect).toHaveBeenCalled();
+  });
+
+  it('marks the DM read after incoming peer messages', async () => {
+    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useDmChat('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      fire(ChatSocketEvents.NEW_DIRECT_MESSAGE, baseMessage({ id: 'dm-2' }));
+    });
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.MARK_DM_READ, {
+      peerId: 'peer-1',
+    });
+  });
+
+  it('handles dm_request_sent by removing temp messages and waiting for approval', async () => {
+    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useDmChat('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      result.current.sendMessage('oi');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+
+    act(() => {
+      fire(ChatSocketEvents.DM_REQUEST_SENT, { requestId: 'req-1' });
+    });
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(0));
+    expect(result.current.awaitingApproval).toBe(true);
+  });
+
+  it('handles dm_request_accepted by materializing the message and clearing approval', async () => {
+    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    const { mock, fire } = makeSocketMock();
+    mockedCreateChatSocket.mockReturnValueOnce(mock);
+
+    const { result } = renderHook(() => useDmChat('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+    act(() => {
+      result.current.sendMessage('oi');
+    });
+    act(() => {
+      fire(ChatSocketEvents.DM_REQUEST_SENT, { requestId: 'req-1' });
+    });
+    await waitFor(() => expect(result.current.awaitingApproval).toBe(true));
+
+    act(() => {
+      fire(ChatSocketEvents.DM_REQUEST_ACCEPTED, {
+        id: 'dm-accepted',
+        senderId: 'me',
+        senderName: 'Me',
+        senderAvatar: null,
+        recipientId: 'peer-1',
+        content: 'oi',
+        mediaUrl: null,
+        mediaType: null,
+        createdAt: '2026-05-17T10:00:00.000Z',
+      });
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages[0]).toMatchObject({
+        id: 'dm-accepted',
+        senderId: 'me',
+        content: 'oi',
+      }),
+    );
+    expect(result.current.awaitingApproval).toBe(false);
   });
 });

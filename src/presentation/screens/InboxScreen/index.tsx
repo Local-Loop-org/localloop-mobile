@@ -4,6 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useAcceptDmRequest } from '@/application/hooks/useAcceptDmRequest/useAcceptDmRequest';
 import { useDeclineDmRequest } from '@/application/hooks/useDeclineDmRequest/useDeclineDmRequest';
 import { useDmConversations } from '@/application/hooks/useDmConversations/useDmConversations';
+import { useDmInboxRealtime } from '@/application/hooks/useDmInboxRealtime/useDmInboxRealtime';
 import { useDmRequests } from '@/application/hooks/useDmRequests/useDmRequests';
 import type { DmConversationDto, DmRequestDto } from '@/infra/api/dm.api';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -58,6 +59,7 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
   const isFocused = useIsFocused();
   const conversationsQuery = useDmConversations({ enabled: isFocused });
   const requestsQuery = useDmRequests({ enabled: isFocused });
+  useDmInboxRealtime({ enabled: isFocused });
   const acceptDmRequest = useAcceptDmRequest();
   const declineDmRequest = useDeclineDmRequest();
 
@@ -132,6 +134,7 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
       peerId: dm.peer.id,
       peerName: dm.peer.displayName,
       peerAvatarUrl: dm.peer.avatarUrl,
+      initialArchived: dm.isArchived,
     });
   };
 
@@ -143,6 +146,7 @@ export default function InboxScreen({ navigation }: InboxScreenProps) {
           peerId: request?.peer.id ?? message.senderId,
           peerName: request?.peer.displayName ?? message.senderName,
           peerAvatarUrl: request?.peer.avatarUrl ?? message.senderAvatar,
+          initialArchived: false,
         });
       },
       onError: () => {

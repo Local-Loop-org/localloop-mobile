@@ -27,6 +27,7 @@ export type AuthenticatedStackParamList = {
     peerId: string;
     peerName: string;
     peerAvatarUrl: string | null;
+    initialArchived?: boolean;
   };
   MyGroups: undefined;
 };
