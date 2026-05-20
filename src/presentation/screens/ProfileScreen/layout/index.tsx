@@ -39,7 +39,6 @@ export default function ProfileLayout({
   onChangeDmPermission,
   onRemoveDmException,
   onLoadMoreDmExceptions,
-  onChangeRadiusDraft,
   onCommitRadius,
   onToggleNotifications,
   onChangeTheme,
@@ -87,7 +86,6 @@ export default function ProfileLayout({
         <Card>
           <RadiusSlider
             value={radiusKm}
-            onChangeDraft={onChangeRadiusDraft}
             onCommit={onCommitRadius}
           />
         </Card>

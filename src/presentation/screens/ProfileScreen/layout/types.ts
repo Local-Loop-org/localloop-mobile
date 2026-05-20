@@ -28,7 +28,6 @@ export interface ProfileLayoutProps {
   onChangeDmPermission: (next: DmPermission) => void;
   onRemoveDmException: (id: string) => void;
   onLoadMoreDmExceptions: () => void;
-  onChangeRadiusDraft: (km: number) => void;
   onCommitRadius: (km: number) => void;
   onToggleNotifications: (next: boolean) => void;
   onChangeTheme: (next: ThemeMode) => void;

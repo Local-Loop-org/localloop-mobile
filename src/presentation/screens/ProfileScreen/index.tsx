@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DmPermission, PushPermissionStatus } from '@localloop/shared-types';
@@ -38,7 +38,6 @@ export default function ProfileScreen() {
 
   const radiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
   const setDiscoveryRadiusKm = usePreferencesStore((s) => s.setDiscoveryRadiusKm);
-  const [draftRadiusKm, setDraftRadiusKm] = useState(radiusKm);
   const dmExceptionsVisible = dmPermission !== DmPermission.EVERYONE;
   const exceptionsQuery = useDmExceptions({ enabled: dmExceptionsVisible });
   const removeDmExceptionMutation = useRemoveDmException();
@@ -46,10 +45,6 @@ export default function ProfileScreen() {
   // Local-only state: backend support deferred for theming and i18n.
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [language, setLanguage] = useState<LanguageCode>('pt');
-
-  useEffect(() => {
-    setDraftRadiusKm(radiusKm);
-  }, [radiusKm]);
 
   const dmExceptions = useMemo(
     () =>
@@ -73,7 +68,7 @@ export default function ProfileScreen() {
   };
 
   const handleCommitRadius = (next: number) => {
-    setDraftRadiusKm(next);
+    if (next === radiusKm) return;
     void setDiscoveryRadiusKm(next);
   };
 
@@ -125,7 +120,7 @@ export default function ProfileScreen() {
       dmExceptionsLoadingMore={exceptionsQuery.isFetchingNextPage}
       dmExceptionsError={exceptionsQuery.isError}
       dmExceptionsHasMore={exceptionsQuery.hasNextPage}
-      radiusKm={draftRadiusKm}
+      radiusKm={radiusKm}
       notificationsEnabled={
         pushPermissionStatus === PushPermissionStatus.GRANTED
       }
@@ -138,7 +133,6 @@ export default function ProfileScreen() {
       onChangeDmPermission={handleChangeDm}
       onRemoveDmException={handleRemoveDmException}
       onLoadMoreDmExceptions={exceptionsQuery.loadMore}
-      onChangeRadiusDraft={setDraftRadiusKm}
       onCommitRadius={handleCommitRadius}
       onToggleNotifications={handleToggleNotifications}
       onChangeTheme={setTheme}
