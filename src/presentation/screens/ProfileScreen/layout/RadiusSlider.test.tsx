@@ -1,23 +1,24 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import RadiusSlider from './RadiusSlider';
 
-type GestureStateMock = {
-  x0: number;
-  moveX: number;
+type ResponderEventMock = {
+  nativeEvent: {
+    locationX: number;
+  };
 };
 
 type PanResponderConfigMock = {
   onPanResponderGrant?: (
-    event: unknown,
-    gestureState: GestureStateMock,
+    event: ResponderEventMock,
+    gestureState: unknown,
   ) => void;
   onPanResponderMove?: (
-    event: unknown,
-    gestureState: GestureStateMock,
+    event: ResponderEventMock,
+    gestureState: unknown,
   ) => void;
-  onPanResponderRelease?: () => void;
-  onPanResponderTerminate?: () => void;
+  onPanResponderRelease?: (event: ResponderEventMock) => void;
+  onPanResponderTerminate?: (event: ResponderEventMock) => void;
 };
 
 let mockPanResponderConfig: PanResponderConfigMock | null = null;
@@ -56,13 +57,11 @@ describe('Profile RadiusSlider', () => {
   });
 
   it('updates the draft while dragging and commits only on release', () => {
-    const onChangeDraft = jest.fn();
     const onCommit = jest.fn();
 
-    const { getByLabelText } = render(
+    const { getByLabelText, getByText } = render(
       <RadiusSlider
         value={25}
-        onChangeDraft={onChangeDraft}
         onCommit={onCommit}
       />,
     );
@@ -72,35 +71,40 @@ describe('Profile RadiusSlider', () => {
     });
 
     const config = getPanResponderConfig();
-    config.onPanResponderGrant?.({}, { x0: 10, moveX: 10 });
-    config.onPanResponderMove?.({}, { x0: 10, moveX: 50 });
+    act(() => {
+      config.onPanResponderGrant?.(
+        { nativeEvent: { locationX: 10 } },
+        {},
+      );
+      config.onPanResponderMove?.(
+        { nativeEvent: { locationX: 50 } },
+        {},
+      );
+    });
 
-    expect(onChangeDraft).toHaveBeenCalledWith(3);
-    expect(onChangeDraft).toHaveBeenCalledWith(13);
+    expect(getByText('13 km')).toBeTruthy();
     expect(onCommit).not.toHaveBeenCalled();
 
-    config.onPanResponderRelease?.();
+    act(() => {
+      config.onPanResponderRelease?.({ nativeEvent: { locationX: 50 } });
+    });
 
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith(13);
   });
 
   it('commits a preset tick immediately', () => {
-    const onChangeDraft = jest.fn();
     const onCommit = jest.fn();
 
     const { getByLabelText } = render(
       <RadiusSlider
         value={25}
-        onChangeDraft={onChangeDraft}
         onCommit={onCommit}
       />,
     );
 
     fireEvent.press(getByLabelText('Definir raio para 5 km'));
 
-    expect(onChangeDraft).toHaveBeenCalledTimes(1);
-    expect(onChangeDraft).toHaveBeenCalledWith(5);
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith(5);
   });
