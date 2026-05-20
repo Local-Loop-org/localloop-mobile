@@ -13,7 +13,8 @@ import { styles } from './styles';
 
 interface Props {
   value: number;
-  onChange: (km: number) => void;
+  onChangeDraft: (km: number) => void;
+  onCommit: (km: number) => void;
 }
 
 const MIN = 0.5;
@@ -29,13 +30,21 @@ function formatKm(km: number): string {
 const clampKm = (v: number) => Math.max(MIN, Math.min(MAX, v));
 const snap = (km: number) => Math.round(km * 2) / 2;
 
-export default function RadiusSlider({ value, onChange }: Props) {
+export default function RadiusSlider({
+  value,
+  onChangeDraft,
+  onCommit,
+}: Props) {
   const [trackWidth, setTrackWidth] = useState(0);
   const trackRef = useRef<View>(null);
   const trackPageX = useRef(0);
   const trackWidthRef = useRef(0);
-  const lastEmitted = useRef(value);
-  const onChangeRef = useRef(onChange);
+  const latestValue = useRef(value);
+  const draftValue = useRef(value);
+  const dragStartValue = useRef(value);
+  const isDragging = useRef(false);
+  const onChangeDraftRef = useRef(onChangeDraft);
+  const onCommitRef = useRef(onCommit);
 
   // Keep refs fresh so the PanResponder factory (memoized once) reads current
   // values without rebuilding the responder on every render.
@@ -43,15 +52,19 @@ export default function RadiusSlider({ value, onChange }: Props) {
     trackWidthRef.current = trackWidth;
   }, [trackWidth]);
   useEffect(() => {
-    lastEmitted.current = value;
+    latestValue.current = value;
+    draftValue.current = value;
   }, [value]);
   useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
+    onChangeDraftRef.current = onChangeDraft;
+  }, [onChangeDraft]);
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+  }, [onCommit]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
-    trackRef.current?.measureInWindow((x) => {
+    trackRef.current?.measureInWindow?.((x) => {
       trackPageX.current = x;
     });
   };
@@ -64,17 +77,31 @@ export default function RadiusSlider({ value, onChange }: Props) {
         const local = pageX - trackPageX.current;
         const ratio = Math.max(0, Math.min(1, local / w));
         const next = snap(clampKm(MIN + ratio * (MAX - MIN)));
-        if (next !== lastEmitted.current) {
-          lastEmitted.current = next;
-          onChangeRef.current(next);
+        if (next !== draftValue.current) {
+          draftValue.current = next;
+          onChangeDraftRef.current(next);
+        }
+      };
+      const commitDraft = () => {
+        if (!isDragging.current) return;
+        isDragging.current = false;
+        const next = draftValue.current;
+        if (next !== dragStartValue.current) {
+          onCommitRef.current(next);
         }
       };
       return PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (_e, gs) => setFromPageX(gs.x0),
+        onPanResponderGrant: (_e, gs) => {
+          isDragging.current = true;
+          dragStartValue.current = latestValue.current;
+          setFromPageX(gs.x0);
+        },
         onPanResponderMove: (_e, gs) => setFromPageX(gs.moveX),
+        onPanResponderRelease: commitDraft,
+        onPanResponderTerminate: commitDraft,
       });
     },
     [],
@@ -134,7 +161,10 @@ export default function RadiusSlider({ value, onChange }: Props) {
             <Pressable
               key={t}
               style={styles.radiusTickBtn}
-              onPress={() => onChange(t)}
+              onPress={() => {
+                onChangeDraft(t);
+                onCommit(t);
+              }}
               accessibilityRole='button'
               accessibilityLabel={`Definir raio para ${formatKm(t)}`}
             >

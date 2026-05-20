@@ -39,7 +39,8 @@ export default function ProfileLayout({
   onChangeDmPermission,
   onRemoveDmException,
   onLoadMoreDmExceptions,
-  onChangeRadius,
+  onChangeRadiusDraft,
+  onCommitRadius,
   onToggleNotifications,
   onChangeTheme,
   onChangeLanguage,
@@ -84,7 +85,11 @@ export default function ProfileLayout({
 
         <SectionLabel>DESCOBERTA</SectionLabel>
         <Card>
-          <RadiusSlider value={radiusKm} onChange={onChangeRadius} />
+          <RadiusSlider
+            value={radiusKm}
+            onChangeDraft={onChangeRadiusDraft}
+            onCommit={onCommitRadius}
+          />
         </Card>
 
         <SectionLabel>QUEM PODE TE ENVIAR DM</SectionLabel>
