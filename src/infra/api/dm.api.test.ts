@@ -87,7 +87,7 @@ describe('dmApi', () => {
       id: 'dm-1',
       senderId: 'u-2',
       senderName: 'Bia',
-      senderAvatar: null,
+      senderAvatarUrl: null,
       recipientId: 'me',
       content: 'oi',
       mediaUrl: null,
@@ -140,6 +140,66 @@ describe('dmApi', () => {
     mock.onDelete('/users/me/dm-exceptions/u-3').replyOnce(204);
 
     await expect(dmApi.removeDmException('u-3')).resolves.toBeUndefined();
+  });
+
+  it('addDmException PUTs /users/me/dm-exceptions/:peerId', async () => {
+    mock.onPut('/users/me/dm-exceptions/u-9').replyOnce(204);
+
+    await expect(dmApi.addDmException('u-9')).resolves.toBeUndefined();
+  });
+
+  it('listDmExceptionCandidates GETs /users/me/dm-exception-candidates with defaults', async () => {
+    const response = {
+      data: [
+        { userId: 'u-7', displayName: 'Diana', avatarUrl: null },
+      ],
+      next_cursor: 'cursor-c1',
+    };
+
+    mock.onGet('/users/me/dm-exception-candidates').replyOnce((config) => {
+      expect(config.params).toEqual({ limit: 20 });
+      return [200, response];
+    });
+
+    await expect(dmApi.listDmExceptionCandidates()).resolves.toEqual(response);
+  });
+
+  it('listDmExceptionCandidates forwards limit, cursor, and trimmed q', async () => {
+    mock.onGet('/users/me/dm-exception-candidates').replyOnce((config) => {
+      expect(config.params).toEqual({
+        limit: 10,
+        cursor: 'cursor-c1',
+        q: 'dia',
+      });
+      return [200, { data: [], next_cursor: null }];
+    });
+
+    await expect(
+      dmApi.listDmExceptionCandidates({
+        limit: 10,
+        cursor: 'cursor-c1',
+        q: '  dia  ',
+      }),
+    ).resolves.toEqual({ data: [], next_cursor: null });
+  });
+
+  it('listDmExceptionCandidates omits q when blank or whitespace-only', async () => {
+    mock.onGet('/users/me/dm-exception-candidates').replyOnce((config) => {
+      expect(config.params).toEqual({ limit: 20 });
+      return [200, { data: [], next_cursor: null }];
+    });
+
+    await expect(
+      dmApi.listDmExceptionCandidates({ q: '   ' }),
+    ).resolves.toEqual({ data: [], next_cursor: null });
+  });
+
+  it('listDmExceptionCandidates surfaces 404 errors so callers can render an empty state', async () => {
+    mock.onGet('/users/me/dm-exception-candidates').replyOnce(404);
+
+    await expect(dmApi.listDmExceptionCandidates()).rejects.toMatchObject({
+      response: { status: 404 },
+    });
   });
 
   it('archiveDmConversation PUTs /dm/:peerId/archive', async () => {

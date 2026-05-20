@@ -85,7 +85,7 @@ function createOptimisticMessage(user: User, content: string): ChatMessage {
     id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     senderId: user.id,
     senderName: user.displayName,
-    senderAvatar: user.avatarUrl,
+    senderAvatarUrl: user.avatarUrl,
     content,
     mediaUrl: null,
     mediaType: null,

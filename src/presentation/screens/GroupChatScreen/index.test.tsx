@@ -56,7 +56,7 @@ const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
   senderId: 'u-other',
   senderName: 'Alice',
-  senderAvatar: null,
+  senderAvatarUrl: null,
   content: 'hello',
   mediaUrl: null,
   mediaType: null,
@@ -176,7 +176,7 @@ describe('GroupChatScreen', () => {
         baseMessage({
           senderId: 'u-alice',
           senderName: 'Alice Lima',
-          senderAvatar: 'https://example.com/alice.png',
+          senderAvatarUrl: 'https://example.com/alice.png',
         }),
       ],
     });

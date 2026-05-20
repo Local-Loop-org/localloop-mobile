@@ -39,7 +39,7 @@ export default function GroupChatScreen({
     navigation.navigate(StackRoutes.DmChat, {
       peerId: message.senderId,
       peerName: message.senderName,
-      peerAvatarUrl: message.senderAvatar,
+      peerAvatarUrl: message.senderAvatarUrl,
     });
   };
 

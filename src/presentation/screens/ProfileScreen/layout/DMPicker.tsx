@@ -3,7 +3,8 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { DmPermission } from '@localloop/shared-types';
 import { Icon, type IconName } from '@/shared/icons';
 import { colors } from '@/shared/theme';
-import type { DmException } from '../types';
+import Avatar from '@/shared/ui/Avatar';
+import type { DmException, DmExceptionPickCandidate } from '../types';
 import { styles } from './styles';
 
 interface Props {
@@ -17,6 +18,15 @@ interface Props {
   exceptionsHasMore: boolean;
   onRemoveException: (id: string) => void;
   onLoadMoreExceptions: () => void;
+  candidates: DmExceptionPickCandidate[];
+  candidatesLoading: boolean;
+  candidatesLoadingMore: boolean;
+  candidatesError: boolean;
+  candidatesErrorLabel: string | null;
+  candidatesHasMore: boolean;
+  candidatesPendingId: string | null;
+  onAddException: (candidate: DmExceptionPickCandidate) => void;
+  onLoadMoreCandidates: () => void;
 }
 
 interface OptionSpec {
@@ -58,6 +68,15 @@ export default function DMPicker({
   exceptionsHasMore,
   onRemoveException,
   onLoadMoreExceptions,
+  candidates,
+  candidatesLoading,
+  candidatesLoadingMore,
+  candidatesError,
+  candidatesErrorLabel,
+  candidatesHasMore,
+  candidatesPendingId,
+  onAddException,
+  onLoadMoreCandidates,
 }: Props) {
   return (
     <View style={styles.dmList}>
@@ -114,6 +133,15 @@ export default function DMPicker({
                 hasMore={exceptionsHasMore}
                 onRemove={onRemoveException}
                 onLoadMore={onLoadMoreExceptions}
+                candidates={candidates}
+                candidatesLoading={candidatesLoading}
+                candidatesLoadingMore={candidatesLoadingMore}
+                candidatesError={candidatesError}
+                candidatesErrorLabel={candidatesErrorLabel}
+                candidatesHasMore={candidatesHasMore}
+                candidatesPendingId={candidatesPendingId}
+                onAdd={onAddException}
+                onLoadMoreCandidates={onLoadMoreCandidates}
               />
             ) : null}
           </View>
@@ -131,6 +159,15 @@ interface ExceptionsBlockProps {
   hasMore: boolean;
   onRemove: (id: string) => void;
   onLoadMore: () => void;
+  candidates: DmExceptionPickCandidate[];
+  candidatesLoading: boolean;
+  candidatesLoadingMore: boolean;
+  candidatesError: boolean;
+  candidatesErrorLabel: string | null;
+  candidatesHasMore: boolean;
+  candidatesPendingId: string | null;
+  onAdd: (candidate: DmExceptionPickCandidate) => void;
+  onLoadMoreCandidates: () => void;
 }
 
 function ExceptionsBlock({
@@ -141,6 +178,15 @@ function ExceptionsBlock({
   hasMore,
   onRemove,
   onLoadMore,
+  candidates,
+  candidatesLoading,
+  candidatesLoadingMore,
+  candidatesError,
+  candidatesErrorLabel,
+  candidatesHasMore,
+  candidatesPendingId,
+  onAdd,
+  onLoadMoreCandidates,
 }: ExceptionsBlockProps) {
   return (
     <View style={styles.dmExceptionsBlock}>
@@ -191,6 +237,120 @@ function ExceptionsBlock({
               style={styles.dmLoadMoreBtn}
               accessibilityRole='button'
               accessibilityLabel='Carregar mais exceções'
+            >
+              {loadingMore ? (
+                <ActivityIndicator color={colors.primary} size='small' />
+              ) : (
+                <Text style={styles.dmAddBtnText}>Carregar mais</Text>
+              )}
+            </Pressable>
+          ) : null}
+        </>
+      )}
+
+      <CandidatesDrawer
+        candidates={candidates}
+        loading={candidatesLoading}
+        loadingMore={candidatesLoadingMore}
+        error={candidatesError}
+        errorLabel={candidatesErrorLabel}
+        hasMore={candidatesHasMore}
+        pendingId={candidatesPendingId}
+        onAdd={onAdd}
+        onLoadMore={onLoadMoreCandidates}
+      />
+    </View>
+  );
+}
+
+interface CandidatesDrawerProps {
+  candidates: DmExceptionPickCandidate[];
+  loading: boolean;
+  loadingMore: boolean;
+  error: boolean;
+  errorLabel: string | null;
+  hasMore: boolean;
+  pendingId: string | null;
+  onAdd: (candidate: DmExceptionPickCandidate) => void;
+  onLoadMore: () => void;
+}
+
+function CandidatesDrawer({
+  candidates,
+  loading,
+  loadingMore,
+  error,
+  errorLabel,
+  hasMore,
+  pendingId,
+  onAdd,
+  onLoadMore,
+}: CandidatesDrawerProps) {
+  return (
+    <View style={styles.dmPickerDrawer}>
+      <View style={styles.dmExceptionsHeader}>
+        <Text style={styles.dmExceptionsHeaderLabel}>
+          ADICIONAR — TOQUE PARA INCLUIR
+        </Text>
+      </View>
+
+      {loading ? (
+        <View style={styles.dmExceptionState} testID='dm-candidates-loading'>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <Text style={styles.dmPickerEmpty}>
+          {errorLabel ?? 'Não foi possível carregar pessoas.'}
+        </Text>
+      ) : candidates.length === 0 ? (
+        <Text style={styles.dmPickerEmpty}>
+          Ninguém disponível para adicionar.
+        </Text>
+      ) : (
+        <>
+          {candidates.map((c) => {
+            const isPending = pendingId === c.userId;
+            return (
+              <Pressable
+                key={c.userId}
+                onPress={() => onAdd(c)}
+                disabled={pendingId !== null}
+                style={styles.dmPickerRow}
+                accessibilityRole='button'
+                accessibilityLabel={`Adicionar ${c.displayName}`}
+              >
+                <Avatar
+                  name={c.displayName}
+                  uri={c.avatarUrl}
+                  size={28}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.dmPickerName}>{c.displayName}</Text>
+                  {isPending ? (
+                    <Text style={styles.dmPickerHint}>ADICIONANDO…</Text>
+                  ) : null}
+                </View>
+                {isPending ? (
+                  <ActivityIndicator color={colors.primary} size='small' />
+                ) : (
+                  <Icon
+                    name='plus'
+                    size={14}
+                    color={colors.primary}
+                    strokeWidth={2.5}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+
+          {hasMore ? (
+            <Pressable
+              onPress={onLoadMore}
+              disabled={loadingMore}
+              style={styles.dmLoadMoreBtn}
+              accessibilityRole='button'
+              accessibilityLabel='Carregar mais candidatos'
             >
               {loadingMore ? (
                 <ActivityIndicator color={colors.primary} size='small' />

@@ -7,7 +7,7 @@ export interface ChatMessage {
   id: string;
   senderId: string;
   senderName: string;
-  senderAvatar: string | null;
+  senderAvatarUrl: string | null;
   recipientId?: string;
   content: string | null;
   mediaUrl: string | null;
