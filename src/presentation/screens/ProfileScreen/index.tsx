@@ -67,6 +67,11 @@ export default function ProfileScreen() {
     updateMutation.mutate({ dmPermission: next });
   };
 
+  const handleCommitRadius = (next: number) => {
+    if (next === radiusKm) return;
+    void setDiscoveryRadiusKm(next);
+  };
+
   const handleRemoveDmException = (id: string) => {
     removeDmExceptionMutation.mutate(id, {
       onError: () => {
@@ -128,7 +133,7 @@ export default function ProfileScreen() {
       onChangeDmPermission={handleChangeDm}
       onRemoveDmException={handleRemoveDmException}
       onLoadMoreDmExceptions={exceptionsQuery.loadMore}
-      onChangeRadius={setDiscoveryRadiusKm}
+      onCommitRadius={handleCommitRadius}
       onToggleNotifications={handleToggleNotifications}
       onChangeTheme={setTheme}
       onChangeLanguage={setLanguage}

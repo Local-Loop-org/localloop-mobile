@@ -10,6 +10,7 @@ import {
 import ProfileScreen from './index';
 import { userApi, type UserProfileResponse } from '@/infra/api/user.api';
 import { useAuthStore } from '@/application/stores/auth.store';
+import { usePreferencesStore } from '@/application/stores/preferences.store';
 import { useDmExceptions } from '@/application/hooks/useDmExceptions/useDmExceptions';
 import { useRemoveDmException } from '@/application/hooks/useRemoveDmException/useRemoveDmException';
 import { usePushNotifications } from '@/application/hooks/usePushNotifications/usePushNotifications';
@@ -63,6 +64,7 @@ const updateUserMock = jest.fn().mockResolvedValue(undefined);
 const enableFromProfileMock = jest.fn().mockResolvedValue(undefined);
 const disableFromProfileMock = jest.fn().mockResolvedValue(undefined);
 const removeExceptionMutateMock = jest.fn();
+const setDiscoveryRadiusKmMock = jest.fn().mockResolvedValue(undefined);
 
 const profile: UserProfileResponse = {
   id: 'user-1',
@@ -88,6 +90,10 @@ function makeWrapper() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  usePreferencesStore.setState({
+    discoveryRadiusKm: 25,
+    setDiscoveryRadiusKm: setDiscoveryRadiusKmMock,
+  });
   mockedUseAuthStore.mockImplementation((selector?: (s: unknown) => unknown) => {
     const state = {
       user: {
@@ -234,6 +240,20 @@ describe('ProfileScreen', () => {
     fireEvent(getByLabelText('Receber notificações'), 'valueChange', false);
 
     await waitFor(() => expect(disableFromProfileMock).toHaveBeenCalled());
+  });
+
+  it('commits the discovery radius preference once when a preset is selected', async () => {
+    mockedGetMe.mockResolvedValue(profile);
+
+    const { getByLabelText } = render(<ProfileScreen />, {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(mockedGetMe).toHaveBeenCalled());
+    fireEvent.press(getByLabelText('Definir raio para 5 km'));
+
+    expect(setDiscoveryRadiusKmMock).toHaveBeenCalledTimes(1);
+    expect(setDiscoveryRadiusKmMock).toHaveBeenCalledWith(5);
   });
 
   it('Excluir conta opens the "em breve" alert', async () => {
