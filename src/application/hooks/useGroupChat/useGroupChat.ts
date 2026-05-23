@@ -17,6 +17,7 @@ import {
   MessageHistoryResponse,
   messagesApi,
 } from '@/infra/api/messages.api';
+import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
   applyGroupSummaryUpdate,
@@ -210,6 +211,7 @@ export function useGroupChat(groupId: string) {
     };
 
     const handleNewMessage = (message: ChatMessage) => {
+      markPushMessageSeen(message.id);
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         chatHistoryKey(groupId),
         (old) => upsertIncomingMessage(old, message),

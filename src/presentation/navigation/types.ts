@@ -41,3 +41,9 @@ export type HomeTabsScreenProps<T extends keyof HomeTabsParamList> =
     BottomTabScreenProps<HomeTabsParamList, T>,
     NativeStackScreenProps<AuthenticatedStackParamList>
   >;
+
+export type RootStackParamList = {
+  AuthStack: undefined;
+  Onboarding: undefined;
+  Home: NavigatorScreenParams<AuthenticatedStackParamList>;
+};

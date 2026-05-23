@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import DmChatLayout from './layout';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
+import { dmPushConversationKey } from '@/infra/notifications/chat-push-data';
+import {
+  dismissPresentedNotificationsForConversation,
+  setActivePushConversation,
+} from '@/infra/notifications/push-notifications';
 
 const ERROR_LABELS: Record<string, string> = {
   load_failed: 'Falha ao carregar mensagens',
@@ -22,6 +27,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const [archived, setArchived] = useState(initialArchived);
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
+  const conversationKey = dmPushConversationKey(peerId);
 
   const {
     messages,
@@ -34,6 +40,17 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     sendMessage,
     loadOlder,
   } = useDmChat(peerId);
+
+  useEffect(() => {
+    const clearActiveConversation = setActivePushConversation(conversationKey);
+    void dismissPresentedNotificationsForConversation(conversationKey).catch(
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[push] failed to dismiss DM notifications', err);
+      },
+    );
+    return clearActiveConversation;
+  }, [conversationKey]);
 
   const handleSend = () => {
     if (draft.trim().length === 0) return;

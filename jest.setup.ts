@@ -39,6 +39,7 @@ jest.mock('expo-constants', () => ({
 }));
 
 jest.mock('expo-notifications', () => ({
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
   AndroidImportance: { DEFAULT: 3 },
   PermissionStatus: {
     GRANTED: 'granted',
@@ -53,6 +54,12 @@ jest.mock('expo-notifications', () => ({
     data: 'ExponentPushToken[test]',
   })),
   addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({
+    remove: jest.fn(),
+  })),
+  getLastNotificationResponse: jest.fn(() => null),
+  getPresentedNotificationsAsync: jest.fn(async () => []),
+  dismissNotificationAsync: jest.fn(async () => undefined),
 }));
 
 jest.mock('@supabase/supabase-js', () => ({

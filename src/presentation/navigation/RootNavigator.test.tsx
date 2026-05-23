@@ -8,6 +8,10 @@ import { PushPermissionStatus } from '@localloop/shared-types';
 jest.mock('@react-navigation/native', () => {
   const ReactLib = require('react');
   return {
+    createNavigationContainerRef: () => ({
+      isReady: jest.fn(() => true),
+      navigate: jest.fn(),
+    }),
     NavigationContainer: ({ children }: { children: React.ReactNode }) =>
       ReactLib.createElement(ReactLib.Fragment, null, children),
   };
