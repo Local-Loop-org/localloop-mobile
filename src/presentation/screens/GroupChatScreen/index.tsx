@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';
+import { groupPushConversationKey } from '@/infra/notifications/chat-push-data';
+import {
+  dismissPresentedNotificationsForConversation,
+  setActivePushConversation,
+} from '@/infra/notifications/push-notifications';
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -27,6 +32,18 @@ export default function GroupChatScreen({
   } = useGroupChat(groupId);
 
   const [draft, setDraft] = useState('');
+  const conversationKey = groupPushConversationKey(groupId);
+
+  useEffect(() => {
+    const clearActiveConversation = setActivePushConversation(conversationKey);
+    void dismissPresentedNotificationsForConversation(conversationKey).catch(
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[push] failed to dismiss group notifications', err);
+      },
+    );
+    return clearActiveConversation;
+  }, [conversationKey]);
 
   const handleSend = () => {
     const trimmed = draft.trim();

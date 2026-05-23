@@ -11,6 +11,12 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import { RootRoutes } from './routes';
 import { ActivityIndicator, View } from 'react-native';
 import { colors } from '@/shared/theme';
+import { rootNavigationRef } from './navigationRef';
+import {
+  flushPendingPushNotificationRoute,
+  registerPushNotificationRouting,
+  setPushNotificationRoutingEnabled,
+} from './pushNotificationRouting';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +35,18 @@ export default function RootNavigator() {
     init();
   }, [initialize]);
 
+  useEffect(() => {
+    const subscription = registerPushNotificationRouting();
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    setPushNotificationRoutingEnabled(
+      !loading && isAuthenticated && !isNewUser,
+    );
+    return () => setPushNotificationRoutingEnabled(false);
+  }, [isAuthenticated, isNewUser, loading]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
@@ -38,7 +56,10 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={rootNavigationRef}
+      onReady={flushPendingPushNotificationRoute}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <Stack.Screen name={RootRoutes.AuthStack} component={AuthStack} />

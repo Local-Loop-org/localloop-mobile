@@ -13,6 +13,7 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { createChatSocket } from '@/infra/socket/chat-socket';
 import { dmApi } from '@/infra/api/dm.api';
+import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import type {
   ChatMessage,
   MessageHistoryResponse,
@@ -190,6 +191,7 @@ export function useDmChat(peerId: string) {
         setAwaitingApproval(true);
         return;
       }
+      markPushMessageSeen(payload.id);
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),
@@ -211,6 +213,7 @@ export function useDmChat(peerId: string) {
       if (!messageBelongsToPeer(payload, peerId, currentUser?.id ?? null)) {
         return;
       }
+      markPushMessageSeen(payload.id);
       queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),

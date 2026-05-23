@@ -7,6 +7,7 @@ import {
   PushProvider,
 } from '@localloop/shared-types';
 import { STORAGE_KEYS } from '@/shared/constants';
+import { parseChatPushNotificationData } from './chat-push-data';
 
 export interface PushRegistration {
   installationId: string;
@@ -22,13 +23,45 @@ export class PushPermissionDeniedError extends Error {
   }
 }
 
+const SEEN_MESSAGE_TTL_MS = 5 * 60 * 1000;
+const MAX_SEEN_MESSAGES = 200;
+let activeConversationKey: string | null = null;
+const seenPushMessageIds = new Map<string, number>();
+
+function pruneSeenPushMessages(now = Date.now()): void {
+  for (const [messageId, seenAt] of seenPushMessageIds.entries()) {
+    if (now - seenAt > SEEN_MESSAGE_TTL_MS) {
+      seenPushMessageIds.delete(messageId);
+    }
+  }
+
+  while (seenPushMessageIds.size > MAX_SEEN_MESSAGES) {
+    const oldest = seenPushMessageIds.keys().next().value as string | undefined;
+    if (!oldest) return;
+    seenPushMessageIds.delete(oldest);
+  }
+}
+
+export function shouldShowPushNotificationForData(data: unknown): boolean {
+  const parsed = parseChatPushNotificationData(data);
+  if (!parsed) return true;
+  pruneSeenPushMessages();
+  if (parsed.conversationKey === activeConversationKey) return false;
+  return !seenPushMessageIds.has(parsed.messageId);
+}
+
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    const shouldShow = shouldShowPushNotificationForData(
+      notification.request.content.data,
+    );
+    return {
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+      shouldShowBanner: shouldShow,
+      shouldShowList: shouldShow,
+    };
+  },
 });
 
 function projectId(): string | null {
@@ -101,6 +134,41 @@ export async function buildPushRegistration(
 
 export function addPushTokenListener(
   onToken: (token: string) => void,
-): Notifications.Subscription {
+): Notifications.EventSubscription {
   return Notifications.addPushTokenListener(({ data }) => onToken(data));
+}
+
+export function setActivePushConversation(
+  conversationKey: string,
+): () => void {
+  activeConversationKey = conversationKey;
+  return () => {
+    if (activeConversationKey === conversationKey) {
+      activeConversationKey = null;
+    }
+  };
+}
+
+export function markPushMessageSeen(messageId: string): void {
+  if (!messageId) return;
+  pruneSeenPushMessages();
+  seenPushMessageIds.set(messageId, Date.now());
+}
+
+export async function dismissPresentedNotificationsForConversation(
+  conversationKey: string,
+): Promise<void> {
+  const notifications = await Notifications.getPresentedNotificationsAsync();
+  await Promise.all(
+    notifications
+      .filter((notification) => {
+        const parsed = parseChatPushNotificationData(
+          notification.request.content.data,
+        );
+        return parsed?.conversationKey === conversationKey;
+      })
+      .map((notification) =>
+        Notifications.dismissNotificationAsync(notification.request.identifier),
+      ),
+  );
 }
