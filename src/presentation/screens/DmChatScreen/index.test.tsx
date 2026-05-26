@@ -3,12 +3,17 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
+import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import DmChatScreen from './index';
 import type { DmChatScreenProps } from './types';
 
 jest.mock('@/application/hooks/useDmChat/useDmChat', () => ({
   useDmChat: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useDmPresence/useDmPresence', () => ({
+  useDmPresence: jest.fn(),
 }));
 
 jest.mock(
@@ -32,10 +37,12 @@ jest.mock('./layout', () => {
   return function MockDmChatLayout(props: {
     moreDisabled?: boolean;
     onPressMore: () => void;
+    peerStatus: unknown;
   }) {
     return (
       <View>
         <Text testID="more-disabled">{String(!!props.moreDisabled)}</Text>
+        <Text testID="peer-status">{JSON.stringify(props.peerStatus)}</Text>
         <TouchableOpacity testID="header-more" onPress={props.onPressMore}>
           <Text>more</Text>
         </TouchableOpacity>
@@ -45,6 +52,9 @@ jest.mock('./layout', () => {
 });
 
 const mockedUseDmChat = useDmChat as jest.MockedFunction<typeof useDmChat>;
+const mockedUseDmPresence = useDmPresence as jest.MockedFunction<
+  typeof useDmPresence
+>;
 const mockedUseArchiveDmConversation =
   useArchiveDmConversation as jest.MockedFunction<
     typeof useArchiveDmConversation
@@ -101,6 +111,7 @@ describe('DmChatScreen', () => {
       loadOlder: jest.fn(),
       connected: true,
     } as never);
+    mockedUseDmPresence.mockReturnValue(null);
     mockedUseArchiveDmConversation.mockReturnValue({
       mutate: archiveMutate,
       isPending: false,
@@ -176,5 +187,16 @@ describe('DmChatScreen', () => {
     const { getByTestId } = renderScreen(false);
 
     expect(getByTestId('more-disabled').props.children).toBe('true');
+  });
+
+  it('passes DM presence status into the layout', () => {
+    mockedUseDmPresence.mockReturnValue({ kind: 'online' });
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(mockedUseDmPresence).toHaveBeenCalledWith('peer-1');
+    expect(getByTestId('peer-status').props.children).toBe(
+      JSON.stringify({ kind: 'online' }),
+    );
   });
 });
