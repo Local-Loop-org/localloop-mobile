@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import DmChatLayout from './layout';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
+import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
 import { dmPushConversationKey } from '@/infra/notifications/chat-push-data';
@@ -27,6 +28,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const [archived, setArchived] = useState(initialArchived);
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
+  const peerStatus = useDmPresence(peerId);
   const conversationKey = dmPushConversationKey(peerId);
 
   const {
@@ -90,7 +92,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     <DmChatLayout
       peerName={peerName}
       peerAvatarUrl={peerAvatarUrl}
-      peerStatus={null}
+      peerStatus={peerStatus}
       messages={messages}
       currentUserId={currentUserId}
       loading={loading}

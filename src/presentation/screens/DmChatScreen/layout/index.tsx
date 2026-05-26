@@ -105,11 +105,19 @@ export default function DmChatLayout({
             onPress={onPressHeader}
             testID='header-title'
           >
-            <Avatar
-              name={peerName}
-              uri={peerAvatarUrl}
-              size={layoutDimensions.peerAvatar}
-            />
+            <View style={styles.peerAvatarWrap}>
+              <Avatar
+                name={peerName}
+                uri={peerAvatarUrl}
+                size={layoutDimensions.peerAvatar}
+              />
+              {peerStatus?.kind === 'online' ? (
+                <View
+                  style={styles.peerOnlineDot}
+                  testID='header-peer-online-dot'
+                />
+              ) : null}
+            </View>
             <View style={styles.headerCenterText}>
               <View style={styles.headerTitleRow}>
                 <Text style={styles.headerTitle} numberOfLines={1}>

@@ -58,6 +58,22 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
   },
+  peerAvatarWrap: {
+    width: PEER_AVATAR,
+    height: PEER_AVATAR,
+    position: 'relative',
+  },
+  peerOnlineDot: {
+    position: 'absolute',
+    right: -1,
+    bottom: -1,
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
