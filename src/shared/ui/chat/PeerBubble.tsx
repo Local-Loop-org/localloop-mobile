@@ -4,6 +4,7 @@ import Avatar from '@/shared/ui/Avatar';
 import { formatTime } from '@/shared/format/chat';
 import type { ChatMessage } from '@localloop/shared-types';
 import { QuotedReply } from './QuotedReply';
+import { SwipeableBubble } from './SwipeableBubble';
 import { styles, layoutDimensions } from './styles';
 
 interface PeerBubbleProps {
@@ -16,6 +17,9 @@ interface PeerBubbleProps {
   nextMessage?: ChatMessage | null;
   replyTo?: { author: string; text: string };
   onPressReply?: () => void;
+  /** Same as `OwnBubble.onSwipeReply` — opt-in swipe-to-reply gesture
+   * (peer bubbles swipe right). */
+  onSwipeReply?: () => void;
 }
 
 export function PeerBubble({
@@ -26,6 +30,7 @@ export function PeerBubble({
   nextMessage,
   replyTo,
   onPressReply,
+  onSwipeReply,
 }: PeerBubbleProps) {
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
@@ -100,7 +105,7 @@ export function PeerBubble({
 
   const showName = enhanced ? showSenderName && firstOfRun : showSenderName;
 
-  return (
+  const row = (
     <View
       style={[
         styles.peerRow,
@@ -153,4 +158,13 @@ export function PeerBubble({
       </View>
     </View>
   );
+
+  if (onSwipeReply) {
+    return (
+      <SwipeableBubble me={false} onSwipeReply={onSwipeReply}>
+        {row}
+      </SwipeableBubble>
+    );
+  }
+  return row;
 }

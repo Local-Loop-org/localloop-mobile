@@ -9,6 +9,7 @@ import { QuotedReply } from './QuotedReply';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { FailedMessageRow } from './FailedMessageRow';
 import { FailedMessageWarning } from './FailedMessageWarning';
+import { SwipeableBubble } from './SwipeableBubble';
 
 export type OwnBubbleStatus = DirectMessageStatus | 'pending';
 
@@ -24,6 +25,10 @@ interface OwnBubbleProps {
   replyTo?: { author: string; text: string };
   onRetry?: () => void;
   onPressReply?: () => void;
+  /** When provided, the bubble is wrapped in a swipe-to-reply gesture
+   * (swipes left, reveals a reply icon, fires this callback past the
+   * 56px threshold). Opt-in — pass nothing to disable. */
+  onSwipeReply?: () => void;
 }
 
 export function OwnBubble({
@@ -34,6 +39,7 @@ export function OwnBubble({
   replyTo,
   onRetry,
   onPressReply,
+  onSwipeReply,
 }: OwnBubbleProps) {
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
@@ -93,7 +99,7 @@ export function OwnBubble({
     ) : null;
   };
 
-  return (
+  const row = (
     <View
       style={[
         styles.ownRow,
@@ -136,4 +142,13 @@ export function OwnBubble({
       </View>
     </View>
   );
+
+  if (onSwipeReply) {
+    return (
+      <SwipeableBubble me onSwipeReply={onSwipeReply}>
+        {row}
+      </SwipeableBubble>
+    );
+  }
+  return row;
 }

@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
-  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,23 +9,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import type { ChatMessage } from '@localloop/shared-types';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import Avatar from '@/shared/ui/Avatar';
-import { OwnBubble } from '@/shared/ui/chat/OwnBubble';
-import { PeerBubble } from '@/shared/ui/chat/PeerBubble';
-import { DaySeparatorItem } from '@/shared/ui/chat/DaySeparatorItem';
-import { TypingBubble } from '@/shared/ui/chat/TypingBubble';
+import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ReplyPreviewChip } from '@/shared/ui/chat/ReplyPreviewChip';
-import { SwipeableBubble } from '@/shared/ui/chat/SwipeableBubble';
 import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
 import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
 import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
-import {
-  buildChatListItems,
-  type ChatListItem,
-} from '@/shared/format/chat';
 import { layoutDimensions, styles } from './styles';
 import type { DmChatMockupLayoutProps } from './types';
 import { ME, VARIANT_LABELS } from '../mockData';
@@ -77,87 +67,9 @@ export default function DmChatMockupLayout({
   onCancelRequest,
   onSwipeReply,
 }: DmChatMockupLayoutProps) {
-  const items = useMemo(
-    () => buildChatListItems(state.messages),
-    [state.messages],
-  );
-
-  // Resolve reply original message for both the inline quote and the chip.
-  const messageById = useMemo(() => {
-    const map = new Map<string, ChatMessage>();
-    state.messages.forEach((m) => map.set(m.id, m));
-    return map;
-  }, [state.messages]);
-
   const composingOriginal = state.composingReplyTo
-    ? messageById.get(state.composingReplyTo)
+    ? state.messages.find((m) => m.id === state.composingReplyTo)
     : null;
-
-  const renderItem = ({
-    item,
-    index,
-  }: {
-    item: ChatListItem;
-    index: number;
-  }) => {
-    if (item.kind === 'separator') {
-      return <DaySeparatorItem label={item.label} />;
-    }
-    // Items array is newest-first (FlatList is inverted, so items[0] renders at the bottom).
-    // Chronological neighbours:
-    //   previousMessage (chronologically older, rendered above on screen) = items[index + 1]
-    //   nextMessage (chronologically newer, rendered below on screen)     = items[index - 1]
-    const olderItem = items[index + 1];
-    const newerItem = items[index - 1];
-    const previousMessage =
-      olderItem && olderItem.kind === 'message' ? olderItem.message : null;
-    const nextMessage =
-      newerItem && newerItem.kind === 'message' ? newerItem.message : null;
-
-    const isOwn = item.message.senderId === ME.id;
-    const replyOriginalId = state.messageReplyTo[item.message.id];
-    const replyOriginal = replyOriginalId
-      ? messageById.get(replyOriginalId)
-      : null;
-    const replyTo = replyOriginal
-      ? {
-          author:
-            replyOriginal.senderId === ME.id
-              ? ME.name
-              : replyOriginal.senderName.split(' ')[0],
-          text: replyOriginal.content ?? '',
-        }
-      : undefined;
-
-    const handleSwipe = () => onSwipeReply(item.message.id);
-
-    if (isOwn) {
-      const status = state.messageStatuses[item.message.id];
-      return (
-        <SwipeableBubble me onSwipeReply={handleSwipe}>
-          <OwnBubble
-            message={item.message}
-            status={status}
-            previousMessage={previousMessage}
-            nextMessage={nextMessage}
-            replyTo={replyTo}
-            onRetry={() => onPressRetry(item.message.id)}
-          />
-        </SwipeableBubble>
-      );
-    }
-    return (
-      <SwipeableBubble me={false} onSwipeReply={handleSwipe}>
-        <PeerBubble
-          message={item.message}
-          showSenderName={false}
-          previousMessage={previousMessage}
-          nextMessage={nextMessage}
-          replyTo={replyTo}
-        />
-      </SwipeableBubble>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -238,15 +150,15 @@ export default function DmChatMockupLayout({
           <DmRequestBanner peerFirstName={state.peer.name.split(' ')[0]} />
         )}
 
-        <FlatList
-          inverted
-          data={items}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.listContent}
-          renderItem={renderItem}
-          ListHeaderComponent={
-            state.showTypingBubble ? <TypingBubble /> : null
-          }
+        <ChatThread
+          messages={state.messages}
+          currentUserId={ME.id}
+          messageStatuses={state.messageStatuses}
+          messageReplyTo={state.messageReplyTo}
+          showPeerSenderName={false}
+          showTypingBubble={state.showTypingBubble}
+          onSwipeReply={onSwipeReply}
+          onPressRetry={onPressRetry}
         />
 
         {state.composingReplyTo && composingOriginal && (
