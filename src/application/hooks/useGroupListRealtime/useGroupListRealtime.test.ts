@@ -8,33 +8,19 @@ import {
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { MyGroup } from '@/infra/api/groups.api';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import {
+  makeManagerMock,
+  type ManagerMockHandle,
+} from '@/infra/socket/test-utils';
 import { myGroupsKey } from '../useMyGroups/useMyGroups';
 import { useGroupListRealtime } from './useGroupListRealtime';
 
-jest.mock('@/infra/socket/chat-socket', () => ({
-  createChatSocket: jest.fn(),
+jest.mock('@/infra/socket/ChatSocketProvider', () => ({
+  useChatSocketManager: jest.fn(),
 }));
 
-type SocketHandler = (...args: unknown[]) => void;
-
-function makeSocketMock() {
-  const handlers = new Map<string, SocketHandler>();
-  const emit = jest.fn();
-  const on = jest.fn((event: string, handler: SocketHandler) => {
-    handlers.set(event, handler);
-  });
-  const removeAllListeners = jest.fn();
-  const disconnect = jest.fn();
-  return {
-    mock: { emit, on, removeAllListeners, disconnect },
-    fire: (event: string, payload?: unknown) => {
-      handlers.get(event)?.(payload);
-    },
-  };
-}
-
-const mockedCreateChatSocket = createChatSocket as jest.Mock;
+const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
 
 function makeClient() {
   return new QueryClient({
@@ -61,25 +47,23 @@ const sampleGroup: MyGroup = {
 };
 
 describe('useGroupListRealtime', () => {
+  let handle: ManagerMockHandle;
+
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({
-      user: {
-        id: 'me',
-        displayName: 'Me',
-        avatarUrl: null,
-      } as never,
+      user: { id: 'me', displayName: 'Me', avatarUrl: null } as never,
       accessToken: 'tok',
       refreshToken: 'ref',
       isAuthenticated: true,
       isNewUser: false,
     });
+    handle = makeManagerMock();
+    handle.setConnected(true);
+    mockedUseChatSocketManager.mockReturnValue(handle.manager);
   });
 
-  it('watches normalized presence and summary ids on socket connect', async () => {
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
+  it('watches normalized presence and summary ids when connected', () => {
     renderHook(
       () =>
         useGroupListRealtime({
@@ -89,28 +73,17 @@ describe('useGroupListRealtime', () => {
       { wrapper: makeWrapper() },
     );
 
-    await waitFor(() =>
-      expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok'),
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.WATCH_PRESENCE,
+      { groupIds: ['p-1', 'p-2'] },
     );
-    act(() => {
-      fire('connect');
-    });
-
-    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.WATCH_PRESENCE, {
-      groupIds: ['p-1', 'p-2'],
-    });
-    expect(mock.emit).toHaveBeenCalledWith(
+    expect(handle.manager.emit).toHaveBeenCalledWith(
       ChatSocketEvents.WATCH_GROUP_SUMMARIES,
-      {
-        groupIds: ['s-1', 's-2'],
-      },
+      { groupIds: ['s-1', 's-2'] },
     );
   });
 
   it('updates counts from presence_update events and ignores unwatched groups', async () => {
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
     const { result } = renderHook(
       () =>
         useGroupListRealtime({
@@ -119,15 +92,20 @@ describe('useGroupListRealtime', () => {
         }),
       { wrapper: makeWrapper() },
     );
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
-      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-other', count: 99 });
+      handle.fire(ChatSocketEvents.PRESENCE_UPDATE, {
+        groupId: 'g-other',
+        count: 99,
+      });
     });
     expect(result.current).toEqual({});
 
     act(() => {
-      fire(ChatSocketEvents.PRESENCE_UPDATE, { groupId: 'g-1', count: 3 });
+      handle.fire(ChatSocketEvents.PRESENCE_UPDATE, {
+        groupId: 'g-1',
+        count: 3,
+      });
     });
     await waitFor(() => expect(result.current['g-1']).toBe(3));
   });
@@ -135,8 +113,6 @@ describe('useGroupListRealtime', () => {
   it('writes summary updates only for watched summary ids', async () => {
     const client = makeClient();
     client.setQueryData(myGroupsKey(5), [sampleGroup]);
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
 
     renderHook(
       () =>
@@ -146,10 +122,9 @@ describe('useGroupListRealtime', () => {
         }),
       { wrapper: makeWrapper(client) },
     );
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     act(() => {
-      fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
+      handle.fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
         groupId: 'g-other',
         lastActivityAt: '2026-04-24T12:00:00.000Z',
         lastReadAt: '2026-04-24T11:00:00.000Z',
@@ -162,7 +137,7 @@ describe('useGroupListRealtime', () => {
     ).toBe(1);
 
     act(() => {
-      fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
+      handle.fire(ChatSocketEvents.GROUP_SUMMARY_UPDATE, {
         groupId: 'g-1',
         lastActivityAt: '2026-04-24T11:00:00.000Z',
         lastReadAt: '2026-04-24T10:45:00.000Z',
@@ -176,21 +151,18 @@ describe('useGroupListRealtime', () => {
     });
 
     await waitFor(() =>
-      expect(client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0]).toMatchObject(
-        {
-          lastActivityAt: '2026-04-24T11:00:00.000Z',
-          lastReadAt: '2026-04-24T10:45:00.000Z',
-          unreadCount: 2,
-          lastMessage: { content: 'Cheguei' },
-        },
-      ),
+      expect(
+        client.getQueryData<MyGroup[]>(myGroupsKey(5))?.[0],
+      ).toMatchObject({
+        lastActivityAt: '2026-04-24T11:00:00.000Z',
+        lastReadAt: '2026-04-24T10:45:00.000Z',
+        unreadCount: 2,
+        lastMessage: { content: 'Cheguei' },
+      }),
     );
   });
 
-  it('unwatches and disconnects on cleanup', async () => {
-    const { mock } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
+  it('unwatches presence and summaries on cleanup', () => {
     const { unmount } = renderHook(
       () =>
         useGroupListRealtime({
@@ -199,39 +171,20 @@ describe('useGroupListRealtime', () => {
         }),
       { wrapper: makeWrapper() },
     );
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     unmount();
 
-    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.UNWATCH_PRESENCE, {
-      groupIds: ['g-1', 'g-2'],
-    });
-    expect(mock.emit).toHaveBeenCalledWith(
-      ChatSocketEvents.UNWATCH_GROUP_SUMMARIES,
-      {
-        groupIds: ['g-2', 'g-3'],
-      },
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.UNWATCH_PRESENCE,
+      { groupIds: ['g-1', 'g-2'] },
     );
-    expect(mock.removeAllListeners).toHaveBeenCalled();
-    expect(mock.disconnect).toHaveBeenCalled();
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.UNWATCH_GROUP_SUMMARIES,
+      { groupIds: ['g-2', 'g-3'] },
+    );
   });
 
-  it('does not create a socket without token, watched ids, or enabled state', () => {
-    useAuthStore.setState({ accessToken: null } as never);
-
-    const withoutToken = renderHook(
-      () =>
-        useGroupListRealtime({
-          presenceGroupIds: ['g-1'],
-          summaryGroupIds: ['g-1'],
-        }),
-      { wrapper: makeWrapper() },
-    );
-    withoutToken.unmount();
-
-    act(() => {
-      useAuthStore.setState({ accessToken: 'tok' } as never);
-    });
+  it('does not subscribe with no watched ids or when disabled', () => {
     renderHook(
       () =>
         useGroupListRealtime({
@@ -250,6 +203,6 @@ describe('useGroupListRealtime', () => {
       { wrapper: makeWrapper() },
     );
 
-    expect(mockedCreateChatSocket).not.toHaveBeenCalled();
+    expect(handle.manager.subscribe).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import {
   InfiniteData,
   QueryClient,
@@ -11,36 +11,22 @@ import type {
   DmConversationDto,
   ListDmConversationsResponse,
 } from '@/infra/api/dm.api';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import {
+  makeManagerMock,
+  type ManagerMockHandle,
+} from '@/infra/socket/test-utils';
 import {
   DM_CONVERSATIONS_KEY,
   dmConversationsKey,
 } from '../useDmConversations/useDmConversations';
 import { useDmInboxRealtime } from './useDmInboxRealtime';
 
-jest.mock('@/infra/socket/chat-socket', () => ({
-  createChatSocket: jest.fn(),
+jest.mock('@/infra/socket/ChatSocketProvider', () => ({
+  useChatSocketManager: jest.fn(),
 }));
 
-type SocketHandler = (...args: unknown[]) => void;
-
-function makeSocketMock() {
-  const handlers = new Map<string, SocketHandler>();
-  const emit = jest.fn();
-  const on = jest.fn((event: string, handler: SocketHandler) => {
-    handlers.set(event, handler);
-  });
-  const removeAllListeners = jest.fn();
-  const disconnect = jest.fn();
-  return {
-    mock: { emit, on, removeAllListeners, disconnect },
-    fire: (event: string, payload?: unknown) => {
-      handlers.get(event)?.(payload);
-    },
-  };
-}
-
-const mockedCreateChatSocket = createChatSocket as jest.Mock;
+const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
 
 const conversation: DmConversationDto = {
   peerId: 'u-1',
@@ -75,52 +61,38 @@ function makeWrapper(client = makeClient()) {
 }
 
 describe('useDmInboxRealtime', () => {
+  let handle: ManagerMockHandle;
+
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({
-      user: {
-        id: 'me',
-        displayName: 'Me',
-        avatarUrl: null,
-      } as never,
+      user: { id: 'me', displayName: 'Me', avatarUrl: null } as never,
       accessToken: 'tok',
       refreshToken: 'ref',
       isAuthenticated: true,
       isNewUser: false,
     });
+    handle = makeManagerMock();
+    mockedUseChatSocketManager.mockReturnValue(handle.manager);
   });
 
-  it('watches the caller DM inbox on connect', async () => {
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
+  it('subscribes to the DM inbox once mounted and connected', () => {
+    handle.setConnected(true);
+    renderHook(() => useDmInboxRealtime(), { wrapper: makeWrapper() });
 
-    renderHook(() => useDmInboxRealtime(), {
-      wrapper: makeWrapper(),
-    });
-
-    await waitFor(() =>
-      expect(mockedCreateChatSocket).toHaveBeenCalledWith('tok'),
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.WATCH_DM_INBOX,
+      {},
     );
-
-    act(() => {
-      fire('connect');
-    });
-
-    expect(mock.emit).toHaveBeenCalledWith(ChatSocketEvents.WATCH_DM_INBOX, {});
   });
 
-  it('applies dm_summary_update payloads to conversation caches', async () => {
+  it('applies dm_summary_update payloads to conversation caches', () => {
     const client = makeClient();
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
-    renderHook(() => useDmInboxRealtime(), {
-      wrapper: makeWrapper(client),
-    });
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+    handle.setConnected(true);
+    renderHook(() => useDmInboxRealtime(), { wrapper: makeWrapper(client) });
 
     act(() => {
-      fire(ChatSocketEvents.DM_SUMMARY_UPDATE, {
+      handle.fire(ChatSocketEvents.DM_SUMMARY_UPDATE, {
         peerId: 'u-1',
         lastActivityAt: '2026-05-18T12:00:00.000Z',
         lastReadAt: '2026-05-18T12:01:00.000Z',
@@ -134,33 +106,26 @@ describe('useDmInboxRealtime', () => {
       });
     });
 
-    await waitFor(() =>
-      expect(
-        client.getQueryData<InfiniteData<ListDmConversationsResponse>>(
-          dmConversationsKey(20),
-        )?.pages[0].data[0],
-      ).toMatchObject({
-        lastReadAt: '2026-05-18T12:01:00.000Z',
-        unreadCount: 0,
-        archived: true,
-        lastMessage: { content: 'fresh' },
-      }),
-    );
+    expect(
+      client.getQueryData<InfiniteData<ListDmConversationsResponse>>(
+        dmConversationsKey(20),
+      )?.pages[0].data[0],
+    ).toMatchObject({
+      lastReadAt: '2026-05-18T12:01:00.000Z',
+      unreadCount: 0,
+      archived: true,
+      lastMessage: { content: 'fresh' },
+    });
   });
 
-  it('invalidates conversations when a request is accepted on another device', async () => {
+  it('invalidates conversations when a request is accepted on another device', () => {
     const client = makeClient();
     const invalidate = jest.spyOn(client, 'invalidateQueries');
-    const { mock, fire } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
-    renderHook(() => useDmInboxRealtime(), {
-      wrapper: makeWrapper(client),
-    });
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+    handle.setConnected(true);
+    renderHook(() => useDmInboxRealtime(), { wrapper: makeWrapper(client) });
 
     act(() => {
-      fire(ChatSocketEvents.DM_REQUEST_ACCEPTED, {
+      handle.fire(ChatSocketEvents.DM_REQUEST_ACCEPTED, {
         id: 'dm-1',
         senderId: 'me',
         senderName: 'Me',
@@ -178,38 +143,26 @@ describe('useDmInboxRealtime', () => {
     });
   });
 
-  it('unwatches and disconnects on cleanup', async () => {
-    const { mock } = makeSocketMock();
-    mockedCreateChatSocket.mockReturnValueOnce(mock);
-
+  it('unsubscribes the inbox on unmount', () => {
+    handle.setConnected(true);
     const { unmount } = renderHook(() => useDmInboxRealtime(), {
       wrapper: makeWrapper(),
     });
-    await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
 
     unmount();
 
-    expect(mock.emit).toHaveBeenCalledWith(
+    expect(handle.manager.emit).toHaveBeenCalledWith(
       ChatSocketEvents.UNWATCH_DM_INBOX,
       {},
     );
-    expect(mock.removeAllListeners).toHaveBeenCalled();
-    expect(mock.disconnect).toHaveBeenCalled();
   });
 
-  it('does not create a socket when disabled or unauthenticated', () => {
-    const { unmount } = renderHook(() => useDmInboxRealtime({ enabled: false }), {
-      wrapper: makeWrapper(),
-    });
-    unmount();
-
-    act(() => {
-      useAuthStore.setState({ accessToken: null } as never);
-    });
-    renderHook(() => useDmInboxRealtime(), {
+  it('does not subscribe when disabled', () => {
+    handle.setConnected(true);
+    renderHook(() => useDmInboxRealtime({ enabled: false }), {
       wrapper: makeWrapper(),
     });
 
-    expect(mockedCreateChatSocket).not.toHaveBeenCalled();
+    expect(handle.manager.subscribe).not.toHaveBeenCalled();
   });
 });

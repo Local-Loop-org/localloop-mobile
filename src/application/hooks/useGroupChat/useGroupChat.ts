@@ -1,7 +1,6 @@
 // src/application/hooks/useGroupChat/useGroupChat.ts
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -11,7 +10,7 @@ import {
 import { ChatSocketEvents, type PresenceUpdate } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import {
   ChatMessage,
   MessageHistoryResponse,
@@ -118,19 +117,17 @@ function getAckSummary(payload: unknown): GroupSummaryUpdate | null {
 }
 
 /**
- * Owns the lifecycle of a single group's chat: history via React Query
- * (`useInfiniteQuery`), the Socket.IO connection, live `new_message` events,
- * and optimistic `send_message`. Server echoes reconcile with in-flight temps
- * via the same cache writer. Disconnects on unmount but keeps the query cache
- * warm so reopens within `gcTime` render instantly.
+ * Owns a single group's chat history (React Query) and wires its live events
+ * into the app-level chat socket via the manager. The manager owns connection
+ * lifecycle; this hook only adds listeners, ref-counts the group room, and
+ * emits sends + mark-read.
  */
 export function useGroupChat(groupId: string) {
   const accessToken = useAuthStore((s) => s.accessToken);
   const currentUser = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
+  const manager = useChatSocketManager();
 
-  const socketRef = useRef<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [socketError, setSocketError] = useState<ChatErrorKind | null>(null);
 
@@ -164,51 +161,34 @@ export function useGroupChat(groupId: string) {
 
   const historyReady = !historyQuery.isLoading && !historyQuery.isError;
 
-  const markGroupRead = useCallback(
-    (socket: Socket) => {
-      markMyGroupReadInCaches(queryClient, groupId);
+  const markGroupRead = useCallback(() => {
+    markMyGroupReadInCaches(queryClient, groupId);
 
-      socket
-        .timeout(MARK_READ_ACK_TIMEOUT_MS)
-        .emit(
-          ChatSocketEvents.MARK_GROUP_READ,
-          { groupId },
-          (error: Error | null, payload?: unknown) => {
-            if (error) {
-              queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
-              return;
-            }
+    manager.emitWithAck(
+      ChatSocketEvents.MARK_GROUP_READ,
+      { groupId },
+      MARK_READ_ACK_TIMEOUT_MS,
+      (error: Error | null, payload?: unknown) => {
+        if (error) {
+          queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+          return;
+        }
 
-            const summary = getAckSummary(payload);
-            if (!summary) {
-              queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
-              return;
-            }
+        const summary = getAckSummary(payload);
+        if (!summary) {
+          queryClient.invalidateQueries({ queryKey: MY_GROUPS_KEY });
+          return;
+        }
 
-            applyGroupSummaryUpdate(queryClient, summary);
-          },
-        );
-    },
-    [groupId, queryClient],
-  );
+        applyGroupSummaryUpdate(queryClient, summary);
+      },
+    );
+  }, [groupId, queryClient, manager]);
 
   useEffect(() => {
     if (!accessToken) return;
     if (isJoining) return;
     if (!historyReady) return;
-
-    const socket = createChatSocket(accessToken);
-    socketRef.current = socket;
-
-    const handleConnect = () => {
-      socket.emit(ChatSocketEvents.JOIN_GROUP, { groupId });
-      markGroupRead(socket);
-      setConnected(true);
-    };
-
-    const handleDisconnect = () => {
-      setConnected(false);
-    };
 
     const handleNewMessage = (message: ChatMessage) => {
       markPushMessageSeen(message.id);
@@ -216,7 +196,7 @@ export function useGroupChat(groupId: string) {
         chatHistoryKey(groupId),
         (old) => upsertIncomingMessage(old, message),
       );
-      markGroupRead(socket);
+      markGroupRead();
     };
 
     const handlePresenceUpdate = (payload: PresenceUpdate) => {
@@ -230,18 +210,35 @@ export function useGroupChat(groupId: string) {
       console.warn('[chat] socket error', payload);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on(ChatSocketEvents.NEW_MESSAGE, handleNewMessage);
-    socket.on(ChatSocketEvents.PRESENCE_UPDATE, handlePresenceUpdate);
-    socket.on(ChatSocketEvents.ERROR, handleSocketError);
+    const offNew = manager.addListener<ChatMessage>(
+      ChatSocketEvents.NEW_MESSAGE,
+      handleNewMessage,
+    );
+    const offPresence = manager.addListener<PresenceUpdate>(
+      ChatSocketEvents.PRESENCE_UPDATE,
+      handlePresenceUpdate,
+    );
+    const offError = manager.addListener<SocketErrorPayload>(
+      ChatSocketEvents.ERROR,
+      handleSocketError,
+    );
+
+    const offJoin = manager.subscribe({
+      key: `group:join:${groupId}`,
+      subscribe: () => {
+        manager.emit(ChatSocketEvents.JOIN_GROUP, { groupId });
+        markGroupRead();
+      },
+      unsubscribe: () => {
+        manager.emit(ChatSocketEvents.LEAVE_GROUP, { groupId });
+      },
+    });
 
     return () => {
-      socket.emit(ChatSocketEvents.LEAVE_GROUP, { groupId });
-      socket.removeAllListeners();
-      socket.disconnect();
-      socketRef.current = null;
-      setConnected(false);
+      offNew();
+      offPresence();
+      offError();
+      offJoin();
       setOnlineCount(0);
     };
   }, [
@@ -251,14 +248,13 @@ export function useGroupChat(groupId: string) {
     historyReady,
     isJoining,
     markGroupRead,
+    manager,
   ]);
 
   const sendMessage = useCallback(
     (content: string) => {
       const trimmed = content.trim();
       if (!trimmed) return;
-      const socket = socketRef.current;
-      if (!socket) return;
       if (!currentUser) return;
 
       const temp = createOptimisticMessage(currentUser, trimmed);
@@ -267,14 +263,14 @@ export function useGroupChat(groupId: string) {
         (old) => prependTempMessage(old, temp),
       );
 
-      socket.emit(ChatSocketEvents.SEND_MESSAGE, {
+      manager.emit(ChatSocketEvents.SEND_MESSAGE, {
         groupId,
         content: trimmed,
         storageKey: null,
         mediaType: null,
       });
     },
-    [groupId, currentUser, queryClient],
+    [groupId, currentUser, queryClient, manager],
   );
 
   const loadOlder = useCallback(() => {
@@ -287,7 +283,7 @@ export function useGroupChat(groupId: string) {
     loading: historyQuery.isLoading || isJoining,
     loadingMore: historyQuery.isFetchingNextPage,
     error: historyQuery.isError ? ('load_failed' as const) : socketError,
-    connected,
+    connected: manager.connected,
     onlineCount,
     hasMore: historyQuery.hasNextPage ?? false,
     currentUserId: currentUser?.id ?? null,
