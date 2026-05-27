@@ -4,9 +4,8 @@ import {
   ChatSocketEvents,
   type DmSummaryUpdate,
 } from '@localloop/shared-types';
-import { useAuthStore } from '@/application/stores/auth.store';
 import type { ChatMessage } from '@/infra/api/messages.api';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import {
   applyDmSummaryUpdate,
   DM_CONVERSATIONS_KEY,
@@ -28,17 +27,11 @@ type DmRequestAcceptedPayload = ChatMessage & {
 export function useDmInboxRealtime({
   enabled = true,
 }: UseDmInboxRealtimeOptions = {}): void {
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const manager = useChatSocketManager();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!enabled || !accessToken) return;
-
-    const socket = createChatSocket(accessToken);
-
-    const handleConnect = () => {
-      socket.emit(ChatSocketEvents.WATCH_DM_INBOX, {});
-    };
+    if (!enabled) return;
 
     const handleSummaryUpdate = (payload: DmSummaryUpdate) => {
       applyDmSummaryUpdate(queryClient, payload);
@@ -53,15 +46,34 @@ export function useDmInboxRealtime({
       console.warn('[dm-inbox-realtime] socket error', payload);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on(ChatSocketEvents.DM_SUMMARY_UPDATE, handleSummaryUpdate);
-    socket.on(ChatSocketEvents.DM_REQUEST_ACCEPTED, handleRequestAccepted);
-    socket.on(ChatSocketEvents.ERROR, handleSocketError);
+    const offSummary = manager.addListener<DmSummaryUpdate>(
+      ChatSocketEvents.DM_SUMMARY_UPDATE,
+      handleSummaryUpdate,
+    );
+    const offAccepted = manager.addListener<DmRequestAcceptedPayload>(
+      ChatSocketEvents.DM_REQUEST_ACCEPTED,
+      handleRequestAccepted,
+    );
+    const offError = manager.addListener<SocketErrorPayload>(
+      ChatSocketEvents.ERROR,
+      handleSocketError,
+    );
+
+    const offSubscription = manager.subscribe({
+      key: 'dm:inbox',
+      subscribe: () => {
+        manager.emit(ChatSocketEvents.WATCH_DM_INBOX, {});
+      },
+      unsubscribe: () => {
+        manager.emit(ChatSocketEvents.UNWATCH_DM_INBOX, {});
+      },
+    });
 
     return () => {
-      socket.emit(ChatSocketEvents.UNWATCH_DM_INBOX, {});
-      socket.removeAllListeners();
-      socket.disconnect();
+      offSummary();
+      offAccepted();
+      offError();
+      offSubscription();
     };
-  }, [accessToken, enabled, queryClient]);
+  }, [manager, enabled, queryClient]);
 }

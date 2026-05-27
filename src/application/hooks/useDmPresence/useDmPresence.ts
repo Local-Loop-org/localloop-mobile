@@ -3,8 +3,7 @@ import {
   ChatSocketEvents,
   type DmPresenceUpdate,
 } from '@localloop/shared-types';
-import { useAuthStore } from '@/application/stores/auth.store';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 
 export type DmPresenceStatus = { kind: 'online' } | null;
 
@@ -14,19 +13,12 @@ type SocketErrorPayload = {
 };
 
 export function useDmPresence(peerId: string): DmPresenceStatus {
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const manager = useChatSocketManager();
   const [online, setOnline] = useState(false);
 
   useEffect(() => {
     setOnline(false);
-
-    if (!accessToken || peerId.length === 0) return;
-
-    const socket = createChatSocket(accessToken);
-
-    const handleConnect = () => {
-      socket.emit(ChatSocketEvents.WATCH_DM_PRESENCE, { peerId });
-    };
+    if (peerId.length === 0) return;
 
     const handlePresenceUpdate = (payload: DmPresenceUpdate) => {
       if (payload.peerId !== peerId) return;
@@ -38,16 +30,31 @@ export function useDmPresence(peerId: string): DmPresenceStatus {
       console.warn('[dm-presence] socket error', payload);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on(ChatSocketEvents.DM_PRESENCE_UPDATE, handlePresenceUpdate);
-    socket.on(ChatSocketEvents.ERROR, handleSocketError);
+    const offPresence = manager.addListener<DmPresenceUpdate>(
+      ChatSocketEvents.DM_PRESENCE_UPDATE,
+      handlePresenceUpdate,
+    );
+    const offError = manager.addListener<SocketErrorPayload>(
+      ChatSocketEvents.ERROR,
+      handleSocketError,
+    );
+
+    const offSubscription = manager.subscribe({
+      key: `dm:presence:${peerId}`,
+      subscribe: () => {
+        manager.emit(ChatSocketEvents.WATCH_DM_PRESENCE, { peerId });
+      },
+      unsubscribe: () => {
+        manager.emit(ChatSocketEvents.UNWATCH_DM_PRESENCE, { peerId });
+      },
+    });
 
     return () => {
-      socket.emit(ChatSocketEvents.UNWATCH_DM_PRESENCE, { peerId });
-      socket.removeAllListeners();
-      socket.disconnect();
+      offPresence();
+      offError();
+      offSubscription();
     };
-  }, [accessToken, peerId]);
+  }, [manager, peerId]);
 
   return useMemo(() => (online ? { kind: 'online' } : null), [online]);
 }

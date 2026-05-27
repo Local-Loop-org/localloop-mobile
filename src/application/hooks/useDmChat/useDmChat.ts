@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -11,7 +10,7 @@ import {
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { dmApi } from '@/infra/api/dm.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import type {
@@ -126,9 +125,8 @@ export function useDmChat(peerId: string) {
   const accessToken = useAuthStore((s) => s.accessToken);
   const currentUser = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
+  const manager = useChatSocketManager();
 
-  const socketRef = useRef<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
   const [socketError, setSocketError] = useState<DmChatErrorKind | null>(null);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
 
@@ -154,31 +152,16 @@ export function useDmChat(peerId: string) {
 
   const historyReady = !historyQuery.isLoading && !historyQuery.isError;
 
-  const markDmRead = useCallback(
-    (socket: Socket) => {
-      markDmReadInCaches(queryClient, peerId);
-      socket.emit(ChatSocketEvents.MARK_DM_READ, { peerId });
-    },
-    [peerId, queryClient],
-  );
+  const markDmRead = useCallback(() => {
+    markDmReadInCaches(queryClient, peerId);
+    manager.emit(ChatSocketEvents.MARK_DM_READ, { peerId });
+  }, [peerId, queryClient, manager]);
 
   useEffect(() => {
     if (!accessToken) return;
     if (!historyReady) return;
 
-    const socket = createChatSocket(accessToken);
-    socketRef.current = socket;
-
-    const handleConnect = () => {
-      socket.emit(ChatSocketEvents.JOIN_DM, { userId: peerId });
-      socket.emit(ChatSocketEvents.WATCH_DM_INBOX, {});
-      markDmRead(socket);
-      setConnected(true);
-    };
-
-    const handleDisconnect = () => {
-      setConnected(false);
-    };
+    const currentUserId = currentUser?.id ?? null;
 
     const handleNewMessage = (
       payload: ChatMessage & { type?: string },
@@ -196,8 +179,8 @@ export function useDmChat(peerId: string) {
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),
       );
-      if (payload.senderId !== currentUser?.id) {
-        markDmRead(socket);
+      if (payload.senderId !== currentUserId) {
+        markDmRead();
       }
     };
 
@@ -210,7 +193,7 @@ export function useDmChat(peerId: string) {
     };
 
     const handleRequestAccepted = (payload: DmRequestAcceptedPayload) => {
-      if (!messageBelongsToPeer(payload, peerId, currentUser?.id ?? null)) {
+      if (!messageBelongsToPeer(payload, peerId, currentUserId)) {
         return;
       }
       markPushMessageSeen(payload.id);
@@ -232,21 +215,56 @@ export function useDmChat(peerId: string) {
       console.warn('[dm-chat] socket error', payload);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on(ChatSocketEvents.NEW_DIRECT_MESSAGE, handleNewMessage);
-    socket.on(ChatSocketEvents.DM_REQUEST_SENT, handleRequestSent);
-    socket.on(ChatSocketEvents.DM_REQUEST_ACCEPTED, handleRequestAccepted);
-    socket.on(ChatSocketEvents.DM_SUMMARY_UPDATE, handleSummaryUpdate);
-    socket.on(ChatSocketEvents.ERROR, handleSocketError);
+    const offNew = manager.addListener<ChatMessage & { type?: string }>(
+      ChatSocketEvents.NEW_DIRECT_MESSAGE,
+      handleNewMessage,
+    );
+    const offRequestSent = manager.addListener<DmRequestSentPayload>(
+      ChatSocketEvents.DM_REQUEST_SENT,
+      handleRequestSent,
+    );
+    const offRequestAccepted = manager.addListener<DmRequestAcceptedPayload>(
+      ChatSocketEvents.DM_REQUEST_ACCEPTED,
+      handleRequestAccepted,
+    );
+    const offSummary = manager.addListener<DmSummaryUpdate>(
+      ChatSocketEvents.DM_SUMMARY_UPDATE,
+      handleSummaryUpdate,
+    );
+    const offError = manager.addListener<SocketErrorPayload>(
+      ChatSocketEvents.ERROR,
+      handleSocketError,
+    );
+
+    const offJoin = manager.subscribe({
+      key: `dm:join:${peerId}`,
+      subscribe: () => {
+        manager.emit(ChatSocketEvents.JOIN_DM, { userId: peerId });
+        markDmRead();
+      },
+      unsubscribe: () => {
+        manager.emit(ChatSocketEvents.LEAVE_DM, { userId: peerId });
+      },
+    });
+
+    const offInbox = manager.subscribe({
+      key: 'dm:inbox',
+      subscribe: () => {
+        manager.emit(ChatSocketEvents.WATCH_DM_INBOX, {});
+      },
+      unsubscribe: () => {
+        manager.emit(ChatSocketEvents.UNWATCH_DM_INBOX, {});
+      },
+    });
 
     return () => {
-      socket.emit(ChatSocketEvents.LEAVE_DM, { userId: peerId });
-      socket.emit(ChatSocketEvents.UNWATCH_DM_INBOX, {});
-      socket.removeAllListeners();
-      socket.disconnect();
-      socketRef.current = null;
-      setConnected(false);
+      offNew();
+      offRequestSent();
+      offRequestAccepted();
+      offSummary();
+      offError();
+      offJoin();
+      offInbox();
     };
   }, [
     peerId,
@@ -255,14 +273,13 @@ export function useDmChat(peerId: string) {
     historyReady,
     currentUser?.id,
     markDmRead,
+    manager,
   ]);
 
   const sendMessage = useCallback(
     (content: string) => {
       const trimmed = content.trim();
       if (!trimmed) return;
-      const socket = socketRef.current;
-      if (!socket) return;
       if (!currentUser) return;
 
       const temp = createOptimisticMessage(currentUser, trimmed);
@@ -271,14 +288,14 @@ export function useDmChat(peerId: string) {
         (old) => prependTempMessage(old, temp),
       );
 
-      socket.emit(ChatSocketEvents.SEND_DM, {
+      manager.emit(ChatSocketEvents.SEND_DM, {
         recipientId: peerId,
         content: trimmed,
         mediaUrl: null,
         mediaType: null,
       });
     },
-    [peerId, currentUser, queryClient],
+    [peerId, currentUser, queryClient, manager],
   );
 
   const loadOlder = useCallback(() => {
@@ -291,7 +308,7 @@ export function useDmChat(peerId: string) {
     loading: historyQuery.isLoading,
     loadingMore: historyQuery.isFetchingNextPage,
     error: historyQuery.isError ? ('load_failed' as const) : socketError,
-    connected,
+    connected: manager.connected,
     hasMore: historyQuery.hasNextPage ?? false,
     currentUserId: currentUser?.id ?? null,
     awaitingApproval,

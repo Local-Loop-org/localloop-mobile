@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChatSocketEvents, type PresenceUpdate } from '@localloop/shared-types';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/application/stores/auth.store';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
-import { createChatSocket } from '@/infra/socket/chat-socket';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { applyGroupSummaryUpdate } from '../useMyGroups/useMyGroups';
 
 export type PresenceCountMap = Record<string, number>;
@@ -24,17 +23,17 @@ function normalizeGroupIds(groupIds: string[]): string[] {
 }
 
 /**
- * Watches list-only realtime data without joining counted chat rooms.
- * Presence and summaries can be watched independently while sharing one
- * short-lived socket for the focused list screen.
+ * Watches list-only realtime data without joining counted chat rooms. Uses the
+ * app-level chat socket via the manager; presence and summaries can be watched
+ * independently and are ref-counted so concurrent screens dedupe.
  */
 export function useGroupListRealtime({
   presenceGroupIds,
   summaryGroupIds = [],
   enabled = true,
 }: UseGroupListRealtimeOptions): PresenceCountMap {
-  const accessToken = useAuthStore((s) => s.accessToken);
   const queryClient = useQueryClient();
+  const manager = useChatSocketManager();
   const presenceKey = normalizeGroupIds(presenceGroupIds).join('|');
   const summaryKey = normalizeGroupIds(summaryGroupIds).join('|');
   const watchedPresenceIds = useMemo(
@@ -50,7 +49,6 @@ export function useGroupListRealtime({
   useEffect(() => {
     if (
       !enabled ||
-      !accessToken ||
       (watchedPresenceIds.length === 0 && watchedSummaryIds.length === 0)
     ) {
       setCounts({});
@@ -66,21 +64,6 @@ export function useGroupListRealtime({
         ),
       ),
     );
-
-    const socket = createChatSocket(accessToken);
-
-    const handleConnect = () => {
-      if (watchedPresenceIds.length > 0) {
-        socket.emit(ChatSocketEvents.WATCH_PRESENCE, {
-          groupIds: watchedPresenceIds,
-        });
-      }
-      if (watchedSummaryIds.length > 0) {
-        socket.emit(ChatSocketEvents.WATCH_GROUP_SUMMARIES, {
-          groupIds: watchedSummaryIds,
-        });
-      }
-    };
 
     const handlePresenceUpdate = (payload: PresenceUpdate) => {
       if (!watchedPresence.has(payload.groupId)) return;
@@ -100,27 +83,62 @@ export function useGroupListRealtime({
       console.warn('[group-list-realtime] socket error', payload);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on(ChatSocketEvents.PRESENCE_UPDATE, handlePresenceUpdate);
-    socket.on(ChatSocketEvents.GROUP_SUMMARY_UPDATE, handleGroupSummaryUpdate);
-    socket.on(ChatSocketEvents.ERROR, handleSocketError);
+    const offPresence = manager.addListener<PresenceUpdate>(
+      ChatSocketEvents.PRESENCE_UPDATE,
+      handlePresenceUpdate,
+    );
+    const offSummary = manager.addListener<GroupSummaryUpdate>(
+      ChatSocketEvents.GROUP_SUMMARY_UPDATE,
+      handleGroupSummaryUpdate,
+    );
+    const offError = manager.addListener<{
+      code?: string;
+      message?: string;
+    }>(ChatSocketEvents.ERROR, handleSocketError);
+
+    const offPresenceSub =
+      watchedPresenceIds.length > 0
+        ? manager.subscribe({
+            key: `group:presence:${watchedPresenceIds.join('|')}`,
+            subscribe: () => {
+              manager.emit(ChatSocketEvents.WATCH_PRESENCE, {
+                groupIds: watchedPresenceIds,
+              });
+            },
+            unsubscribe: () => {
+              manager.emit(ChatSocketEvents.UNWATCH_PRESENCE, {
+                groupIds: watchedPresenceIds,
+              });
+            },
+          })
+        : () => {};
+
+    const offSummariesSub =
+      watchedSummaryIds.length > 0
+        ? manager.subscribe({
+            key: `group:summary:${watchedSummaryIds.join('|')}`,
+            subscribe: () => {
+              manager.emit(ChatSocketEvents.WATCH_GROUP_SUMMARIES, {
+                groupIds: watchedSummaryIds,
+              });
+            },
+            unsubscribe: () => {
+              manager.emit(ChatSocketEvents.UNWATCH_GROUP_SUMMARIES, {
+                groupIds: watchedSummaryIds,
+              });
+            },
+          })
+        : () => {};
 
     return () => {
-      if (watchedPresenceIds.length > 0) {
-        socket.emit(ChatSocketEvents.UNWATCH_PRESENCE, {
-          groupIds: watchedPresenceIds,
-        });
-      }
-      if (watchedSummaryIds.length > 0) {
-        socket.emit(ChatSocketEvents.UNWATCH_GROUP_SUMMARIES, {
-          groupIds: watchedSummaryIds,
-        });
-      }
-      socket.removeAllListeners();
-      socket.disconnect();
+      offPresence();
+      offSummary();
+      offError();
+      offPresenceSub();
+      offSummariesSub();
     };
   }, [
-    accessToken,
+    manager,
     enabled,
     queryClient,
     presenceKey,
