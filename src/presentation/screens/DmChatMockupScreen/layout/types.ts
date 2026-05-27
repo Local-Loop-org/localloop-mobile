@@ -8,4 +8,5 @@ export interface DmChatMockupLayoutProps {
   onPressCancelReply: () => void;
   onPressRetry: (messageId: string) => void;
   onCancelRequest: () => void;
+  onSwipeReply: (messageId: string) => void;
 }

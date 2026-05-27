@@ -19,6 +19,7 @@ import { PeerBubble } from '@/shared/ui/chat/PeerBubble';
 import { DaySeparatorItem } from '@/shared/ui/chat/DaySeparatorItem';
 import { TypingBubble } from '@/shared/ui/chat/TypingBubble';
 import { ReplyPreviewChip } from '@/shared/ui/chat/ReplyPreviewChip';
+import { SwipeableBubble } from '@/shared/ui/chat/SwipeableBubble';
 import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
 import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
 import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
@@ -74,6 +75,7 @@ export default function DmChatMockupLayout({
   onPressCancelReply,
   onPressRetry,
   onCancelRequest,
+  onSwipeReply,
 }: DmChatMockupLayoutProps) {
   const items = useMemo(
     () => buildChatListItems(state.messages),
@@ -127,27 +129,33 @@ export default function DmChatMockupLayout({
         }
       : undefined;
 
+    const handleSwipe = () => onSwipeReply(item.message.id);
+
     if (isOwn) {
       const status = state.messageStatuses[item.message.id];
       return (
-        <OwnBubble
-          message={item.message}
-          status={status}
-          previousMessage={previousMessage}
-          nextMessage={nextMessage}
-          replyTo={replyTo}
-          onRetry={() => onPressRetry(item.message.id)}
-        />
+        <SwipeableBubble me onSwipeReply={handleSwipe}>
+          <OwnBubble
+            message={item.message}
+            status={status}
+            previousMessage={previousMessage}
+            nextMessage={nextMessage}
+            replyTo={replyTo}
+            onRetry={() => onPressRetry(item.message.id)}
+          />
+        </SwipeableBubble>
       );
     }
     return (
-      <PeerBubble
-        message={item.message}
-        showSenderName={false}
-        previousMessage={previousMessage}
-        nextMessage={nextMessage}
-        replyTo={replyTo}
-      />
+      <SwipeableBubble me={false} onSwipeReply={handleSwipe}>
+        <PeerBubble
+          message={item.message}
+          showSenderName={false}
+          previousMessage={previousMessage}
+          nextMessage={nextMessage}
+          replyTo={replyTo}
+        />
+      </SwipeableBubble>
     );
   };
 

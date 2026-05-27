@@ -288,6 +288,36 @@ export const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
+  // --- swipe-to-reply wrap ---
+  swipeWrap: {
+    position: 'relative',
+    width: '100%',
+  },
+  swipeIconReveal: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swipeIconRevealMe: {
+    right: 4,
+  },
+  swipeIconRevealPeer: {
+    left: 4,
+  },
+  swipeIconTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // --- typing bubble ---
   typingRow: {
     flexDirection: 'row',
