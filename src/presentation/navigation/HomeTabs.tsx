@@ -2,7 +2,10 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import HomeScreen from "../screens/HomeScreen";
-import InboxScreen from "../screens/InboxScreen";
+// TEMP: Inbox tab is pointed at the DM redesign mockup for visual review.
+// Restore by un-commenting the InboxScreen import and swapping the component below.
+// import InboxScreen from "../screens/InboxScreen";
+import DmChatMockupScreen from "../screens/DmChatMockupScreen";
 import CreateGroupScreen from "../screens/CreateGroupScreen";
 import MapScreen from "../screens/MapScreen";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -31,7 +34,7 @@ export default function HomeTabs() {
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tab.Screen name={TabRoutes.Home} component={HomeScreen} />
-      <Tab.Screen name={TabRoutes.Inbox} component={InboxScreen} />
+      <Tab.Screen name={TabRoutes.Inbox} component={DmChatMockupScreen} />
       <Tab.Screen
         name={TabRoutes.CreateGroup}
         component={CreateGroupScreen}
