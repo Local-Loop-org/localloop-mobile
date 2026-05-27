@@ -14,6 +14,13 @@ const monoFamily = Platform.select({
 });
 
 export const styles = StyleSheet.create({
+  // --- thread (FlatList content padding) ---
+  threadContent: {
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
+  },
+
   // --- separator ---
   separatorWrapper: {
     alignItems: 'center',
