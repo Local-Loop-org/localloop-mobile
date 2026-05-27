@@ -1,24 +1,5 @@
-// src/infra/api/messages.api.ts
-
-import { MediaType } from '@localloop/shared-types';
+import type { GroupMessageHistoryResponse } from '@localloop/shared-types';
 import { apiClient } from './api-client';
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderAvatarUrl: string | null;
-  recipientId?: string;
-  content: string | null;
-  mediaUrl: string | null;
-  mediaType: MediaType | null;
-  createdAt: string;
-}
-
-export interface MessageHistoryResponse {
-  data: ChatMessage[];
-  next_cursor: string | null;
-}
 
 export interface GetHistoryParams {
   limit?: number;
@@ -33,10 +14,10 @@ export const messagesApi = {
   getHistory: async (
     groupId: string,
     params: GetHistoryParams = {},
-  ): Promise<MessageHistoryResponse> => {
+  ): Promise<GroupMessageHistoryResponse> => {
     const query: Record<string, string | number> = { limit: params.limit ?? 50 };
     if (params.before) query.before = params.before;
-    const { data } = await apiClient.get<MessageHistoryResponse>(
+    const { data } = await apiClient.get<GroupMessageHistoryResponse>(
       `/groups/${groupId}/messages`,
       { params: query },
     );

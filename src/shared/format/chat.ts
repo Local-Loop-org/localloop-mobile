@@ -1,6 +1,6 @@
 import { format, isToday, isYesterday, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { ChatMessage } from '@localloop/shared-types';
 
 export type ChatListItem =
   | { kind: 'message'; message: ChatMessage; key: string }

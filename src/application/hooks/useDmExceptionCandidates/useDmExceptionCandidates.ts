@@ -4,11 +4,11 @@ import {
   useInfiniteQuery,
   type UseInfiniteQueryResult,
 } from '@tanstack/react-query';
-import {
-  dmApi,
-  type DmExceptionCandidate,
-  type ListDmExceptionCandidatesResponse,
-} from '@/infra/api/dm.api';
+import type {
+  DmExceptionCandidate,
+  ListDmExceptionCandidatesResponse,
+} from '@localloop/shared-types';
+import { dmApi } from '@/infra/api/dm.api';
 
 export const DM_EXCEPTION_CANDIDATES_KEY = ['dm', 'exception-candidates'] as const;
 

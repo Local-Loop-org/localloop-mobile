@@ -1,5 +1,4 @@
-import type { ChatMessage } from '@/infra/api/messages.api';
-import type { DirectMessageStatus } from '@localloop/shared-types';
+import type { ChatMessage, DirectMessageStatus } from '@localloop/shared-types';
 
 export type DmPeerStatus =
   | { kind: 'online' }

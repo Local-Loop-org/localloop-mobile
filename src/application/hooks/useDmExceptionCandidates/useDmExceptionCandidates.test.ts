@@ -1,10 +1,8 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  dmApi,
-  type DmExceptionCandidate,
-} from '@/infra/api/dm.api';
+import type { DmExceptionCandidate } from '@localloop/shared-types';
+import { dmApi } from '@/infra/api/dm.api';
 import {
   DM_EXCEPTION_CANDIDATES_KEY,
   dmExceptionCandidatesKey,

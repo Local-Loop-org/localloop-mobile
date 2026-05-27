@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { ChatMessage } from '@localloop/shared-types';
 import { formatTime } from '@/shared/format/chat';
 import { OwnBubble } from './OwnBubble';
 import { PeerBubble } from './PeerBubble';

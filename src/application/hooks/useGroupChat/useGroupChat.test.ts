@@ -4,10 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   AnchorType,
   ChatSocketEvents,
+  type GroupMessage,
   MemberRole,
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
-import { messagesApi, ChatMessage } from '@/infra/api/messages.api';
+import { messagesApi } from '@/infra/api/messages.api';
 import {
   groupsApi,
   type GroupSummaryUpdate,
@@ -44,7 +45,7 @@ const mockedGetHistory = messagesApi.getHistory as jest.Mock;
 const mockedJoinGroup = groupsApi.joinGroup as jest.Mock;
 const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
 
-const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
+const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
   id: 'm-1',
   senderId: 'u-1',
   senderName: 'Alice',

@@ -7,15 +7,16 @@ import {
   useIsMutating,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ChatSocketEvents, type PresenceUpdate } from '@localloop/shared-types';
+import {
+  ChatSocketEvents,
+  type GroupMessage,
+  type GroupMessageHistoryResponse,
+  type PresenceUpdate,
+} from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
-import {
-  ChatMessage,
-  MessageHistoryResponse,
-  messagesApi,
-} from '@/infra/api/messages.api';
+import { messagesApi } from '@/infra/api/messages.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
@@ -37,9 +38,9 @@ const chatHistoryKey = (groupId: string) =>
 const MARK_READ_ACK_TIMEOUT_MS = 4_000;
 
 function upsertIncomingMessage(
-  old: InfiniteData<MessageHistoryResponse> | undefined,
-  message: ChatMessage,
-): InfiniteData<MessageHistoryResponse> | undefined {
+  old: InfiniteData<GroupMessageHistoryResponse> | undefined,
+  message: GroupMessage,
+): InfiniteData<GroupMessageHistoryResponse> | undefined {
   if (!old) return old;
   const already = old.pages.some((p) =>
     p.data.some((m) => m.id === message.id),
@@ -67,9 +68,9 @@ function upsertIncomingMessage(
 }
 
 function prependTempMessage(
-  old: InfiniteData<MessageHistoryResponse> | undefined,
-  message: ChatMessage,
-): InfiniteData<MessageHistoryResponse> | undefined {
+  old: InfiniteData<GroupMessageHistoryResponse> | undefined,
+  message: GroupMessage,
+): InfiniteData<GroupMessageHistoryResponse> | undefined {
   if (!old) return old;
   const [first, ...rest] = old.pages;
   if (!first) return old;
@@ -80,7 +81,7 @@ function prependTempMessage(
   };
 }
 
-function createOptimisticMessage(user: User, content: string): ChatMessage {
+function createOptimisticMessage(user: User, content: string): GroupMessage {
   return {
     id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     senderId: user.id,
@@ -140,9 +141,9 @@ export function useGroupChat(groupId: string) {
     }) > 0;
 
   const historyQuery = useInfiniteQuery<
-    MessageHistoryResponse,
+    GroupMessageHistoryResponse,
     Error,
-    InfiniteData<MessageHistoryResponse>,
+    InfiniteData<GroupMessageHistoryResponse>,
     ReturnType<typeof chatHistoryKey>,
     string | undefined
   >({
@@ -190,9 +191,9 @@ export function useGroupChat(groupId: string) {
     if (isJoining) return;
     if (!historyReady) return;
 
-    const handleNewMessage = (message: ChatMessage) => {
+    const handleNewMessage = (message: GroupMessage) => {
       markPushMessageSeen(message.id);
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
         (old) => upsertIncomingMessage(old, message),
       );
@@ -210,7 +211,7 @@ export function useGroupChat(groupId: string) {
       console.warn('[chat] socket error', payload);
     };
 
-    const offNew = manager.addListener<ChatMessage>(
+    const offNew = manager.addListener<GroupMessage>(
       ChatSocketEvents.NEW_MESSAGE,
       handleNewMessage,
     );
@@ -258,7 +259,7 @@ export function useGroupChat(groupId: string) {
       if (!currentUser) return;
 
       const temp = createOptimisticMessage(currentUser, trimmed);
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
         (old) => prependTempMessage(old, temp),
       );
