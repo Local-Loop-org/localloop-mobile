@@ -1,15 +1,10 @@
 import type {
+  DirectMessage,
   DirectMessageHistoryResponse,
-  DmExceptionCandidate,
   ListDmExceptionCandidatesResponse,
 } from '@localloop/shared-types';
-import type { ChatMessage, GetHistoryParams } from './messages.api';
+import type { GetHistoryParams } from './messages.api';
 import { apiClient } from './api-client';
-
-export type {
-  DmExceptionCandidate,
-  ListDmExceptionCandidatesResponse,
-} from '@localloop/shared-types';
 
 export interface DmConversationDto {
   peerId: string;
@@ -89,8 +84,8 @@ export const dmApi = {
     return data;
   },
 
-  acceptDmRequest: async (requestId: string): Promise<ChatMessage> => {
-    const { data } = await apiClient.post<ChatMessage>(
+  acceptDmRequest: async (requestId: string): Promise<DirectMessage> => {
+    const { data } = await apiClient.post<DirectMessage>(
       `/dm/requests/${requestId}/accept`,
     );
     return data;

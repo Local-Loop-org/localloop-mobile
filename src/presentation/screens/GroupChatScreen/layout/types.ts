@@ -1,11 +1,10 @@
-import type { AnchorType } from '@localloop/shared-types';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { AnchorType, GroupMessage } from '@localloop/shared-types';
 
 export interface GroupChatLayoutProps {
   groupName: string;
   anchorType: AnchorType;
   onlineCount: number;
-  messages: ChatMessage[];
+  messages: GroupMessage[];
   currentUserId: string | null;
   loading: boolean;
   loadingMore: boolean;
@@ -15,7 +14,7 @@ export interface GroupChatLayoutProps {
   onChangeDraft: (value: string) => void;
   onSend: () => void;
   onLoadOlder: () => void;
-  onPressMessageAvatar: (message: ChatMessage) => void;
+  onPressMessageAvatar: (message: GroupMessage) => void;
   onBack: () => void;
   onPressHeader: () => void;
   onPressMembers: () => void;

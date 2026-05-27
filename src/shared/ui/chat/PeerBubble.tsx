@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { colors } from '@/shared/theme';
 import Avatar from '@/shared/ui/Avatar';
 import { formatTime } from '@/shared/format/chat';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { ChatMessage } from '@localloop/shared-types';
 import { styles, layoutDimensions } from './styles';
 
 interface PeerBubbleProps {

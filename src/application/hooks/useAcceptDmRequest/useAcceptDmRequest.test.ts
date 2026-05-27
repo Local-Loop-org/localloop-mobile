@@ -5,12 +5,12 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
+import type { DirectMessage } from '@localloop/shared-types';
 import {
   dmApi,
   type ListDmConversationsResponse,
   type ListDmRequestsResponse,
 } from '@/infra/api/dm.api';
-import type { ChatMessage } from '@/infra/api/messages.api';
 import { dmConversationsKey } from '../useDmConversations/useDmConversations';
 import { dmRequestsKey } from '../useDmRequests/useDmRequests';
 import { useAcceptDmRequest } from './useAcceptDmRequest';
@@ -49,11 +49,12 @@ const conversationsData: InfiniteData<ListDmConversationsResponse> = {
   pages: [{ data: [], next_cursor: null }],
 };
 
-const acceptedMessage: ChatMessage = {
+const acceptedMessage: DirectMessage = {
   id: 'dm-1',
   senderId: 'u-1',
   senderName: 'Alice',
   senderAvatarUrl: null,
+  recipientId: 'me',
   content: 'oi',
   mediaUrl: null,
   mediaType: null,

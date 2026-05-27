@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { DirectMessageStatus } from '@localloop/shared-types';
+import type { ChatMessage, DirectMessageStatus } from '@localloop/shared-types';
 import { colors } from '@/shared/theme';
 import { formatTime } from '@/shared/format/chat';
-import type { ChatMessage } from '@/infra/api/messages.api';
 import { styles } from './styles';
 
 interface OwnBubbleProps {

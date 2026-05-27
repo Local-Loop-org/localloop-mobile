@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { ChatMessage } from '@localloop/shared-types';
 import { OwnBubble } from '@/shared/ui/chat/OwnBubble';
 import { PeerBubble } from '@/shared/ui/chat/PeerBubble';
 import DmChatLayout from './index';
@@ -56,7 +56,6 @@ const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   senderId: 'me',
   senderName: 'Me',
   senderAvatarUrl: null,
-  recipientId: 'peer-1',
   content: 'Oi',
   mediaUrl: null,
   mediaType: null,
@@ -96,7 +95,6 @@ describe('DmChatLayout', () => {
           id: 'peer-1',
           senderId: 'peer-1',
           senderName: 'Alice',
-          recipientId: 'me',
         }),
       ],
       messageStatuses: {

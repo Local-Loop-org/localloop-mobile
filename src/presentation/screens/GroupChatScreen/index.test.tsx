@@ -1,9 +1,12 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AnchorType, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  type GroupMessage,
+  MemberRole,
+} from '@localloop/shared-types';
 import GroupChatScreen from './index';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
-import type { ChatMessage } from '@/infra/api/messages.api';
 
 jest.mock('@/application/hooks/useGroupChat/useGroupChat', () => ({
   useGroupChat: jest.fn(),
@@ -40,7 +43,7 @@ const renderScreen = (
   );
 
 const baseHookState = {
-  messages: [] as ChatMessage[],
+  messages: [] as GroupMessage[],
   loading: false,
   loadingMore: false,
   error: null,
@@ -52,7 +55,7 @@ const baseHookState = {
   loadOlder: jest.fn(),
 };
 
-const baseMessage = (over: Partial<ChatMessage> = {}): ChatMessage => ({
+const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
   id: 'm-1',
   senderId: 'u-other',
   senderName: 'Alice',

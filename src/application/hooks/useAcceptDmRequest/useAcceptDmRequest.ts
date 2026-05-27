@@ -11,7 +11,7 @@ import {
   type ListDmConversationsResponse,
   type ListDmRequestsResponse,
 } from '@/infra/api/dm.api';
-import type { ChatMessage } from '@/infra/api/messages.api';
+import type { DirectMessage } from '@localloop/shared-types';
 import { DM_CONVERSATIONS_KEY } from '../useDmConversations/useDmConversations';
 import { DM_REQUESTS_KEY } from '../useDmRequests/useDmRequests';
 
@@ -35,7 +35,7 @@ function removeRequest(
   };
 }
 
-function conversationFromMessage(message: ChatMessage): DmConversationDto {
+function conversationFromMessage(message: DirectMessage): DmConversationDto {
   return {
     peerId: message.senderId,
     peerName: message.senderName,
@@ -53,7 +53,7 @@ function conversationFromMessage(message: ChatMessage): DmConversationDto {
 
 function upsertConversation(
   old: InfiniteData<ListDmConversationsResponse> | undefined,
-  message: ChatMessage,
+  message: DirectMessage,
 ): InfiniteData<ListDmConversationsResponse> | undefined {
   if (!old) return old;
   const [first] = old.pages;
@@ -76,14 +76,14 @@ function upsertConversation(
 }
 
 export function useAcceptDmRequest(): UseMutationResult<
-  ChatMessage,
+  DirectMessage,
   Error,
   string,
   Context
 > {
   const queryClient = useQueryClient();
 
-  return useMutation<ChatMessage, Error, string, Context>({
+  return useMutation<DirectMessage, Error, string, Context>({
     mutationKey: ['dm', 'requests', 'accept'],
     mutationFn: (requestId) => dmApi.acceptDmRequest(requestId),
     onMutate: async (requestId) => {

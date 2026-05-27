@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ChatSocketEvents,
+  type DirectMessage,
   type DmSummaryUpdate,
 } from '@localloop/shared-types';
-import type { ChatMessage } from '@/infra/api/messages.api';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import {
   applyDmSummaryUpdate,
@@ -20,9 +20,7 @@ type SocketErrorPayload = {
   message?: string;
 };
 
-type DmRequestAcceptedPayload = ChatMessage & {
-  recipientId: string;
-};
+type DmRequestAcceptedPayload = DirectMessage;
 
 export function useDmInboxRealtime({
   enabled = true,
