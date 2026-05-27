@@ -6,39 +6,62 @@ import {
   type DmMockVariant,
 } from './mockData';
 
+/** A sentinel signalling that the user has explicitly overridden a base
+ * value. `undefined` means "no override — fall through to mock data". */
+type Override<T> = { value: T } | null;
+
 export default function DmChatMockupScreen() {
   const [variant, setVariant] = useState<DmMockVariant>('online');
-  const [actionSheetOverride, setActionSheetOverride] = useState<
-    boolean | null
-  >(null);
+  const [actionSheetOverride, setActionSheetOverride] =
+    useState<Override<boolean>>(null);
+  const [composingReplyOverride, setComposingReplyOverride] =
+    useState<Override<string | null>>(null);
 
   const baseState = buildDmMockState(variant);
-  const state =
-    actionSheetOverride === null
-      ? baseState
-      : { ...baseState, actionSheetOpen: actionSheetOverride };
+  const state = {
+    ...baseState,
+    actionSheetOpen:
+      actionSheetOverride === null
+        ? baseState.actionSheetOpen
+        : actionSheetOverride.value,
+    composingReplyTo:
+      composingReplyOverride === null
+        ? baseState.composingReplyTo
+        : composingReplyOverride.value,
+  };
+
+  const resetOverrides = () => {
+    setActionSheetOverride(null);
+    setComposingReplyOverride(null);
+  };
 
   const handleSelectVariant = useCallback((v: DmMockVariant) => {
     setVariant(v);
     setActionSheetOverride(null);
+    setComposingReplyOverride(null);
   }, []);
 
   const handleCloseActionSheet = useCallback(() => {
-    setActionSheetOverride(false);
+    setActionSheetOverride({ value: false });
   }, []);
 
   const handleCancelReply = useCallback(() => {
-    // Mockup only — no real reply state to clear. Bounce back to 'online' so the chip disappears.
-    setVariant('online');
+    setComposingReplyOverride({ value: null });
+  }, []);
+
+  const handleSwipeReply = useCallback((messageId: string) => {
+    setComposingReplyOverride({ value: messageId });
   }, []);
 
   const handleRetry = useCallback((_messageId: string) => {
-    // Mockup only — flip the failed state back to the standard online thread so the change is visible.
+    // Mockup only — flip back to the standard online thread to make the change visible.
     setVariant('online');
+    resetOverrides();
   }, []);
 
   const handleCancelRequest = useCallback(() => {
     setVariant('online');
+    resetOverrides();
   }, []);
 
   return (
@@ -50,6 +73,7 @@ export default function DmChatMockupScreen() {
       onPressCancelReply={handleCancelReply}
       onPressRetry={handleRetry}
       onCancelRequest={handleCancelRequest}
+      onSwipeReply={handleSwipeReply}
     />
   );
 }

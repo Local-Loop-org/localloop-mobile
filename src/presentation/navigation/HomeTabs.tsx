@@ -18,6 +18,10 @@ const Tab = createBottomTabNavigator<HomeTabsParamList>();
 function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const currentRoute = state.routes[state.index]?.name ?? TabRoutes.Home;
   if (currentRoute === TabRoutes.CreateGroup) return null;
+  // TEMP: Inbox tab currently renders the DM redesign mockup — hide the nav
+  // bar so the mockup gets the full-screen rhythm of a real chat. Remove this
+  // line when InboxScreen is restored.
+  if (currentRoute === TabRoutes.Inbox) return null;
   return (
     <BottomTabBar
       active={currentRoute as keyof HomeTabsParamList}
