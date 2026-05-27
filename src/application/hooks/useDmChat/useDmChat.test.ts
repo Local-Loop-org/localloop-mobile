@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ChatSocketEvents } from '@localloop/shared-types';
+import { ChatSocketEvents, type DirectMessage } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { dmApi } from '@/infra/api/dm.api';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
@@ -9,7 +9,6 @@ import {
   makeManagerMock,
   type ManagerMockHandle,
 } from '@/infra/socket/test-utils';
-import type { ChatMessage } from '@/infra/api/messages.api';
 import { useDmChat } from './useDmChat';
 
 jest.mock('@/infra/api/dm.api', () => ({
@@ -27,11 +26,14 @@ const mockedGetDmHistory = dmApi.getDmHistory as jest.MockedFunction<
 >;
 const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
 
-const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
+const baseMessage = (
+  overrides: Partial<DirectMessage> = {},
+): DirectMessage => ({
   id: 'dm-1',
   senderId: 'peer-1',
   senderName: 'Alice',
   senderAvatarUrl: null,
+  recipientId: 'me',
   content: 'ola',
   mediaUrl: null,
   mediaType: null,
@@ -70,6 +72,8 @@ describe('useDmChat', () => {
   it('loads history, joins the DM room, watches the inbox, and marks read', async () => {
     mockedGetDmHistory.mockResolvedValueOnce({
       data: [baseMessage()],
+      lastReadAt: null,
+      peerLastReadAt: null,
       next_cursor: null,
     });
 
@@ -95,7 +99,12 @@ describe('useDmChat', () => {
   });
 
   it('sendMessage optimistically prepends a temp DM and emits send_dm', async () => {
-    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
 
     const { result } = renderHook(() => useDmChat('peer-1'), {
       wrapper: makeWrapper(),
@@ -124,7 +133,12 @@ describe('useDmChat', () => {
   });
 
   it('emits leave_dm and unwatch_dm_inbox on unmount', async () => {
-    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
 
     const { result, unmount } = renderHook(() => useDmChat('peer-1'), {
       wrapper: makeWrapper(),
@@ -144,7 +158,12 @@ describe('useDmChat', () => {
   });
 
   it('marks the DM read after incoming peer messages', async () => {
-    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
 
     const { result } = renderHook(() => useDmChat('peer-1'), {
       wrapper: makeWrapper(),
@@ -169,7 +188,12 @@ describe('useDmChat', () => {
   });
 
   it('handles dm_request_sent by removing temp messages and waiting for approval', async () => {
-    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
 
     const { result } = renderHook(() => useDmChat('peer-1'), {
       wrapper: makeWrapper(),
@@ -190,7 +214,12 @@ describe('useDmChat', () => {
   });
 
   it('handles dm_request_accepted by materializing the message and clearing approval', async () => {
-    mockedGetDmHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
 
     const { result } = renderHook(() => useDmChat('peer-1'), {
       wrapper: makeWrapper(),

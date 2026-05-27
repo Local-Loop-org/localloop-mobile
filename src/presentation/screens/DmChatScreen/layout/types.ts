@@ -1,4 +1,5 @@
 import type { ChatMessage } from '@/infra/api/messages.api';
+import type { DirectMessageStatus } from '@localloop/shared-types';
 
 export type DmPeerStatus =
   | { kind: 'online' }
@@ -11,6 +12,7 @@ export interface DmChatLayoutProps {
   peerAvatarUrl: string | null;
   peerStatus: DmPeerStatus;
   messages: ChatMessage[];
+  messageStatuses: Record<string, DirectMessageStatus>;
   currentUserId: string | null;
   loading: boolean;
   loadingMore: boolean;

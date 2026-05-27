@@ -55,6 +55,7 @@ export default function DmChatLayout({
   peerAvatarUrl,
   peerStatus,
   messages,
+  messageStatuses,
   currentUserId,
   loading,
   loadingMore,
@@ -79,7 +80,10 @@ export default function DmChatLayout({
     }
     const isOwn = item.message.senderId === currentUserId;
     return isOwn ? (
-      <OwnBubble message={item.message} />
+      <OwnBubble
+        message={item.message}
+        status={messageStatuses[item.message.id]}
+      />
     ) : (
       <PeerBubble message={item.message} showSenderName={false} />
     );

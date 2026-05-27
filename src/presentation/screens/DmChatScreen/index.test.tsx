@@ -4,6 +4,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
+import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import DmChatScreen from './index';
 import type { DmChatScreenProps } from './types';
@@ -14,6 +15,10 @@ jest.mock('@/application/hooks/useDmChat/useDmChat', () => ({
 
 jest.mock('@/application/hooks/useDmPresence/useDmPresence', () => ({
   useDmPresence: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useDmReadState/useDmReadState', () => ({
+  useDmReadState: jest.fn(),
 }));
 
 jest.mock(
@@ -35,12 +40,16 @@ jest.mock('./layout', () => {
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return function MockDmChatLayout(props: {
+    messageStatuses: unknown;
     moreDisabled?: boolean;
     onPressMore: () => void;
     peerStatus: unknown;
   }) {
     return (
       <View>
+        <Text testID="message-statuses">
+          {JSON.stringify(props.messageStatuses)}
+        </Text>
         <Text testID="more-disabled">{String(!!props.moreDisabled)}</Text>
         <Text testID="peer-status">{JSON.stringify(props.peerStatus)}</Text>
         <TouchableOpacity testID="header-more" onPress={props.onPressMore}>
@@ -54,6 +63,9 @@ jest.mock('./layout', () => {
 const mockedUseDmChat = useDmChat as jest.MockedFunction<typeof useDmChat>;
 const mockedUseDmPresence = useDmPresence as jest.MockedFunction<
   typeof useDmPresence
+>;
+const mockedUseDmReadState = useDmReadState as jest.MockedFunction<
+  typeof useDmReadState
 >;
 const mockedUseArchiveDmConversation =
   useArchiveDmConversation as jest.MockedFunction<
@@ -112,6 +124,11 @@ describe('DmChatScreen', () => {
       connected: true,
     } as never);
     mockedUseDmPresence.mockReturnValue(null);
+    mockedUseDmReadState.mockReturnValue({
+      lastReadAt: null,
+      peerLastReadAt: null,
+      messageStatuses: {},
+    });
     mockedUseArchiveDmConversation.mockReturnValue({
       mutate: archiveMutate,
       isPending: false,
@@ -197,6 +214,21 @@ describe('DmChatScreen', () => {
     expect(mockedUseDmPresence).toHaveBeenCalledWith('peer-1');
     expect(getByTestId('peer-status').props.children).toBe(
       JSON.stringify({ kind: 'online' }),
+    );
+  });
+
+  it('passes DM read statuses into the layout', () => {
+    mockedUseDmReadState.mockReturnValue({
+      lastReadAt: null,
+      peerLastReadAt: '2026-05-27T10:00:00.000Z',
+      messageStatuses: { 'dm-1': 'read' },
+    });
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(mockedUseDmReadState).toHaveBeenCalledWith('peer-1');
+    expect(getByTestId('message-statuses').props.children).toBe(
+      JSON.stringify({ 'dm-1': 'read' }),
     );
   });
 });
