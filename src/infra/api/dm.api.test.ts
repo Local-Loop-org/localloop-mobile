@@ -215,7 +215,12 @@ describe('dmApi', () => {
   });
 
   it('getDmHistory keeps using before pagination for conversation history', async () => {
-    const response = { data: [], next_cursor: null };
+    const response = {
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    };
     mock.onGet('/dm/u-1').reply((config) => {
       expect(config.params).toEqual({ limit: 50, before: 'older' });
       return [200, response];

@@ -6,22 +6,25 @@ import {
 } from '@tanstack/react-query';
 import {
   ChatSocketEvents,
+  type DirectMessage,
+  type DirectMessageHistoryResponse,
   type DmSummaryUpdate,
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
-import { dmApi } from '@/infra/api/dm.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
-import type {
-  ChatMessage,
-  MessageHistoryResponse,
-} from '@/infra/api/messages.api';
 import {
   applyDmSummaryUpdate,
   DM_CONVERSATIONS_KEY,
   markDmReadInCaches,
 } from '../useDmConversations/useDmConversations';
+import {
+  dmHistoryKey,
+  fetchDmHistoryPage,
+  getNextDmHistoryPageParam,
+  type DmHistoryInfiniteData,
+} from '../useDmHistory/dmHistoryQuery';
 
 export type DmChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -34,16 +37,12 @@ interface DmRequestSentPayload {
   requestId: string;
 }
 
-type DmRequestAcceptedPayload = ChatMessage & {
-  recipientId: string;
-};
-
-const dmHistoryKey = (peerId: string) => ['dm', 'history', peerId] as const;
+type DmRequestAcceptedPayload = DirectMessage;
 
 function upsertIncomingMessage(
-  old: InfiniteData<MessageHistoryResponse> | undefined,
-  message: ChatMessage,
-): InfiniteData<MessageHistoryResponse> | undefined {
+  old: DmHistoryInfiniteData | undefined,
+  message: DirectMessage,
+): DmHistoryInfiniteData | undefined {
   if (!old) return old;
   const already = old.pages.some((p) =>
     p.data.some((m) => m.id === message.id),
@@ -71,9 +70,9 @@ function upsertIncomingMessage(
 }
 
 function prependTempMessage(
-  old: InfiniteData<MessageHistoryResponse> | undefined,
-  message: ChatMessage,
-): InfiniteData<MessageHistoryResponse> | undefined {
+  old: DmHistoryInfiniteData | undefined,
+  message: DirectMessage,
+): DmHistoryInfiniteData | undefined {
   if (!old) return old;
   const [first, ...rest] = old.pages;
   if (!first) return old;
@@ -85,8 +84,8 @@ function prependTempMessage(
 }
 
 function removeTempMessages(
-  old: InfiniteData<MessageHistoryResponse> | undefined,
-): InfiniteData<MessageHistoryResponse> | undefined {
+  old: DmHistoryInfiniteData | undefined,
+): DmHistoryInfiniteData | undefined {
   if (!old) return old;
   return {
     ...old,
@@ -97,12 +96,17 @@ function removeTempMessages(
   };
 }
 
-function createOptimisticMessage(user: User, content: string): ChatMessage {
+function createOptimisticMessage(
+  user: User,
+  peerId: string,
+  content: string,
+): DirectMessage {
   return {
     id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     senderId: user.id,
     senderName: user.displayName,
     senderAvatarUrl: user.avatarUrl,
+    recipientId: peerId,
     content,
     mediaUrl: null,
     mediaType: null,
@@ -111,7 +115,7 @@ function createOptimisticMessage(user: User, content: string): ChatMessage {
 }
 
 function messageBelongsToPeer(
-  message: ChatMessage,
+  message: DirectMessage,
   peerId: string,
   currentUserId: string | null,
 ): boolean {
@@ -131,17 +135,16 @@ export function useDmChat(peerId: string) {
   const [awaitingApproval, setAwaitingApproval] = useState(false);
 
   const historyQuery = useInfiniteQuery<
-    MessageHistoryResponse,
+    DirectMessageHistoryResponse,
     Error,
-    InfiniteData<MessageHistoryResponse>,
+    InfiniteData<DirectMessageHistoryResponse>,
     ReturnType<typeof dmHistoryKey>,
     string | undefined
   >({
     queryKey: dmHistoryKey(peerId),
-    queryFn: ({ pageParam }) =>
-      dmApi.getDmHistory(peerId, pageParam ? { before: pageParam } : {}),
+    queryFn: ({ pageParam }) => fetchDmHistoryPage(peerId, pageParam),
     initialPageParam: undefined,
-    getNextPageParam: (last) => last.next_cursor ?? undefined,
+    getNextPageParam: getNextDmHistoryPageParam,
     enabled: !!accessToken,
   });
 
@@ -163,11 +166,9 @@ export function useDmChat(peerId: string) {
 
     const currentUserId = currentUser?.id ?? null;
 
-    const handleNewMessage = (
-      payload: ChatMessage & { type?: string },
-    ) => {
+    const handleNewMessage = (payload: DirectMessage & { type?: string }) => {
       if (payload.type === 'request') {
-        queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+        queryClient.setQueryData<DmHistoryInfiniteData>(
           dmHistoryKey(peerId),
           removeTempMessages,
         );
@@ -175,7 +176,7 @@ export function useDmChat(peerId: string) {
         return;
       }
       markPushMessageSeen(payload.id);
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),
       );
@@ -185,7 +186,7 @@ export function useDmChat(peerId: string) {
     };
 
     const handleRequestSent = (_payload: DmRequestSentPayload) => {
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         removeTempMessages,
       );
@@ -197,7 +198,7 @@ export function useDmChat(peerId: string) {
         return;
       }
       markPushMessageSeen(payload.id);
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         (old) => upsertIncomingMessage(old, payload),
       );
@@ -215,7 +216,7 @@ export function useDmChat(peerId: string) {
       console.warn('[dm-chat] socket error', payload);
     };
 
-    const offNew = manager.addListener<ChatMessage & { type?: string }>(
+    const offNew = manager.addListener<DirectMessage & { type?: string }>(
       ChatSocketEvents.NEW_DIRECT_MESSAGE,
       handleNewMessage,
     );
@@ -282,8 +283,8 @@ export function useDmChat(peerId: string) {
       if (!trimmed) return;
       if (!currentUser) return;
 
-      const temp = createOptimisticMessage(currentUser, trimmed);
-      queryClient.setQueryData<InfiniteData<MessageHistoryResponse>>(
+      const temp = createOptimisticMessage(currentUser, peerId, trimmed);
+      queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         (old) => prependTempMessage(old, temp),
       );

@@ -1,12 +1,9 @@
 import type {
+  DirectMessageHistoryResponse,
   DmExceptionCandidate,
   ListDmExceptionCandidatesResponse,
 } from '@localloop/shared-types';
-import type {
-  ChatMessage,
-  GetHistoryParams,
-  MessageHistoryResponse,
-} from './messages.api';
+import type { ChatMessage, GetHistoryParams } from './messages.api';
 import { apiClient } from './api-client';
 
 export type {
@@ -147,10 +144,10 @@ export const dmApi = {
   getDmHistory: async (
     peerId: string,
     params: GetHistoryParams = {},
-  ): Promise<MessageHistoryResponse> => {
+  ): Promise<DirectMessageHistoryResponse> => {
     const query: Record<string, string | number> = { limit: params.limit ?? 50 };
     if (params.before) query.before = params.before;
-    const { data } = await apiClient.get<MessageHistoryResponse>(
+    const { data } = await apiClient.get<DirectMessageHistoryResponse>(
       `/dm/${peerId}`,
       { params: query },
     );
