@@ -92,8 +92,15 @@ export function MessageStatusIndicator({
     );
   }
 
+  const testID =
+    status === 'sent'
+      ? 'own-status-sent'
+      : status === 'read'
+        ? 'own-status-read'
+        : undefined;
+
   return (
-    <View style={styles.statusRow}>
+    <View style={styles.statusRow} testID={testID}>
       <Text style={styles.statusTimestamp}>{timestamp}</Text>
       {status === 'sent' && <SingleCheck color={colors.faint} />}
       {status === 'read' && <DoubleCheck color={colors.primary} />}

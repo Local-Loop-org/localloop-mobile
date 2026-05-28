@@ -459,6 +459,104 @@ describe('useGroupChat', () => {
     expect(result.current.onlineCount).toBe(0);
   });
 
+  describe('messageStatuses', () => {
+    it("marks own temp messages as 'sending' and own confirmed messages as 'sent'", async () => {
+      mockedGetHistory.mockResolvedValueOnce({
+        data: [
+          baseMessage({ id: 'm-mine-old', senderId: 'me', content: 'older' }),
+        ],
+        next_cursor: null,
+      });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      act(() => {
+        result.current.sendMessage('newer');
+      });
+      await waitFor(() => expect(result.current.messages).toHaveLength(2));
+
+      const tempId = result.current.messages[0].id;
+      expect(tempId.startsWith('temp-')).toBe(true);
+      expect(result.current.messageStatuses[tempId]).toBe('sending');
+      expect(result.current.messageStatuses['m-mine-old']).toBe('sent');
+    });
+
+    it('omits peer messages from the status map', async () => {
+      mockedGetHistory.mockResolvedValueOnce({
+        data: [
+          baseMessage({ id: 'm-peer', senderId: 'u-other', content: 'hi' }),
+          baseMessage({ id: 'm-mine', senderId: 'me', content: 'hey' }),
+        ],
+        next_cursor: null,
+      });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.messageStatuses).toEqual({ 'm-mine': 'sent' });
+      expect(result.current.messageStatuses['m-peer']).toBeUndefined();
+    });
+
+    it("flips 'sending' to 'sent' when the server echo replaces the temp", async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      act(() => {
+        result.current.sendMessage('hello world');
+      });
+      await waitFor(() => expect(result.current.messages).toHaveLength(1));
+      const tempId = result.current.messages[0].id;
+      expect(result.current.messageStatuses[tempId]).toBe('sending');
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_MESSAGE,
+          baseMessage({
+            id: 'server-uuid-1',
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'hello world',
+          }),
+        );
+      });
+
+      await waitFor(() =>
+        expect(result.current.messageStatuses['server-uuid-1']).toBe('sent'),
+      );
+      expect(result.current.messageStatuses[tempId]).toBeUndefined();
+    });
+
+    it('returns an empty status map when there is no authenticated user', async () => {
+      useAuthStore.setState({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        isNewUser: false,
+      });
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+
+      expect(result.current.messageStatuses).toEqual({});
+    });
+  });
+
   it('gates history fetch and subscription while a join-group mutation for the same id is pending', async () => {
     let resolveJoin: (v: {
       status: 'joined';

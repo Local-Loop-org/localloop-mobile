@@ -44,6 +44,7 @@ const renderScreen = (
 
 const baseHookState = {
   messages: [] as GroupMessage[],
+  messageStatuses: {} as Record<string, 'sending' | 'sent'>,
   loading: false,
   loadingMore: false,
   error: null,
