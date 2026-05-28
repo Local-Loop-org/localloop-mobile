@@ -1,45 +1,28 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
-import { OwnBubble } from '@/shared/ui/chat/OwnBubble';
-import { PeerBubble } from '@/shared/ui/chat/PeerBubble';
-import { DaySeparatorItem } from '@/shared/ui/chat/DaySeparatorItem';
-import { buildChatListItems, type ChatListItem } from '@/shared/format/chat';
+import { ChatThread } from '@/shared/ui/chat/ChatThread';
+import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
+import { GroupActionSheet } from '@/shared/ui/chat/GroupActionSheet';
 import AnchorIcon from '../components/AnchorIcon';
 import { layoutDimensions, styles } from './styles';
 import type { GroupChatLayoutProps } from './types';
-
-function shouldShowPeerSenderName(
-  items: ChatListItem[],
-  index: number,
-): boolean {
-  const current = items[index];
-  if (!current || current.kind !== 'message') return false;
-
-  const olderAdjacent = items[index + 1];
-  if (!olderAdjacent || olderAdjacent.kind === 'separator') return true;
-
-  return olderAdjacent.message.senderId !== current.message.senderId;
-}
 
 export default function GroupChatLayout({
   groupName,
   anchorType,
   onlineCount,
+  memberCount,
   messages,
   currentUserId,
   loading,
@@ -47,38 +30,18 @@ export default function GroupChatLayout({
   hasMore,
   errorMessage,
   draft,
+  actionSheetOpen,
   onChangeDraft,
   onSend,
   onLoadOlder,
   onPressMessageAvatar,
   onBack,
   onPressHeader,
-  onPressMembers,
+  onPressMore,
+  onCloseActionSheet,
+  onSelectAction,
 }: GroupChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0;
-  const items = useMemo(() => buildChatListItems(messages), [messages]);
-
-  const renderItem = ({
-    item,
-    index,
-  }: {
-    item: ChatListItem;
-    index: number;
-  }) => {
-    if (item.kind === 'separator') {
-      return <DaySeparatorItem label={item.label} />;
-    }
-    const isOwn = item.message.senderId === currentUserId;
-    return isOwn ? (
-      <OwnBubble message={item.message} />
-    ) : (
-      <PeerBubble
-        message={item.message}
-        showSenderName={shouldShowPeerSenderName(items, index)}
-        onPressAvatar={() => onPressMessageAvatar(item.message)}
-      />
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -125,10 +88,12 @@ export default function GroupChatLayout({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconBtn}
-            onPress={onPressMembers}
-            testID='header-members'
+            onPress={onPressMore}
+            accessibilityRole='button'
+            accessibilityLabel='Mais ações do grupo'
+            testID='header-more'
           >
-            <Icon name='users' size={17} color={colors.text} />
+            <Icon name='more' size={17} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -141,12 +106,14 @@ export default function GroupChatLayout({
             <ActivityIndicator color={colors.primary} size='large' />
           </View>
         ) : (
-          <FlatList
-            inverted
-            data={items}
-            keyExtractor={(item) => item.key}
-            contentContainerStyle={styles.listContent}
-            renderItem={renderItem}
+          <ChatThread
+            messages={messages}
+            currentUserId={currentUserId ?? ''}
+            showPeerSenderName
+            onPressPeerAvatar={(senderId) => {
+              const m = messages.find((msg) => msg.senderId === senderId);
+              if (m) onPressMessageAvatar(m);
+            }}
             onEndReached={hasMore ? onLoadOlder : undefined}
             onEndReachedThreshold={0.2}
             ListFooterComponent={
@@ -166,45 +133,23 @@ export default function GroupChatLayout({
           />
         )}
 
-        <View style={styles.composer}>
-          <TouchableOpacity
-            style={styles.composerBtn}
-            testID='composer-attach'
-            disabled
-          >
-            <Icon name='plus' size={18} color={colors.dim} />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.inputPill}
-            placeholder='Escreva uma mensagem'
-            placeholderTextColor={colors.faint}
-            value={draft}
-            onChangeText={onChangeDraft}
-            multiline
+        <ChatComposer
+          draft={draft}
+          onChangeDraft={onChangeDraft}
+          onSend={onSend}
+          sendDisabled={sendDisabled}
+        />
+
+        {actionSheetOpen ? (
+          <GroupActionSheet
+            groupName={groupName}
+            anchorType={anchorType}
+            memberCount={memberCount}
+            onlineCount={onlineCount}
+            onClose={onCloseActionSheet}
+            onSelect={onSelectAction}
           />
-          <TouchableOpacity
-            style={[
-              styles.composerSend,
-              sendDisabled && styles.composerSendDisabled,
-            ]}
-            disabled={sendDisabled}
-            onPress={onSend}
-            testID='send-button'
-          >
-            <LinearGradient
-              colors={[colors.primary, colors.accent2]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <Icon
-              name='send'
-              size={15}
-              color={colors.white}
-              strokeWidth={2.2}
-            />
-          </TouchableOpacity>
-        </View>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

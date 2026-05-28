@@ -199,11 +199,11 @@ describe('GroupChatScreen', () => {
     mockedUseGroupChat.mockReturnValue({ ...baseHookState, sendMessage });
     const { getByTestId, getByPlaceholderText } = renderScreen();
 
-    fireEvent.press(getByTestId('send-button'));
+    fireEvent.press(getByTestId('composer-send'));
     expect(sendMessage).not.toHaveBeenCalled();
 
     fireEvent.changeText(getByPlaceholderText('Escreva uma mensagem'), '   ');
-    fireEvent.press(getByTestId('send-button'));
+    fireEvent.press(getByTestId('composer-send'));
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
@@ -214,7 +214,7 @@ describe('GroupChatScreen', () => {
 
     const input = getByPlaceholderText('Escreva uma mensagem');
     fireEvent.changeText(input, '  olá  ');
-    fireEvent.press(getByTestId('send-button'));
+    fireEvent.press(getByTestId('composer-send'));
 
     expect(sendMessage).toHaveBeenCalledWith('olá');
     await waitFor(() => {
@@ -247,10 +247,11 @@ describe('GroupChatScreen', () => {
     });
   });
 
-  it('header members icon navigates to GroupMembers forwarding myRole', () => {
+  it('action sheet Members item navigates to GroupMembers forwarding myRole', () => {
     mockedUseGroupChat.mockReturnValue(baseHookState);
     const { getByTestId } = renderScreen({ myRole: MemberRole.OWNER });
-    fireEvent.press(getByTestId('header-members'));
+    fireEvent.press(getByTestId('header-more'));
+    fireEvent.press(getByTestId('group-action-members'));
     expect(navigation.navigate).toHaveBeenCalledWith('GroupMembers', {
       groupId: 'g-1',
       myRole: MemberRole.OWNER,

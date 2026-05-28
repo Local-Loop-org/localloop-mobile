@@ -44,6 +44,9 @@ jest.mock('./layout', () => {
     moreDisabled?: boolean;
     onPressMore: () => void;
     peerStatus: unknown;
+    actionSheetOpen: boolean;
+    archived: boolean;
+    onSelectAction: (id: string) => void;
   }) {
     return (
       <View>
@@ -52,8 +55,16 @@ jest.mock('./layout', () => {
         </Text>
         <Text testID="more-disabled">{String(!!props.moreDisabled)}</Text>
         <Text testID="peer-status">{JSON.stringify(props.peerStatus)}</Text>
+        <Text testID="action-sheet-open">{String(props.actionSheetOpen)}</Text>
+        <Text testID="archived">{String(props.archived)}</Text>
         <TouchableOpacity testID="header-more" onPress={props.onPressMore}>
           <Text>more</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="select-archive"
+          onPress={() => props.onSelectAction('archive')}
+        >
+          <Text>archive</Text>
         </TouchableOpacity>
       </View>
     );
@@ -139,36 +150,34 @@ describe('DmChatScreen', () => {
     } as never);
   });
 
-  it('shows an archive action from the header menu', () => {
+  it('opens the action sheet and fires archive when selected', () => {
     const { getByTestId } = renderScreen(false);
 
+    expect(getByTestId('action-sheet-open').props.children).toBe('false');
+    expect(getByTestId('archived').props.children).toBe('false');
+
     fireEvent.press(getByTestId('header-more'));
+    expect(getByTestId('action-sheet-open').props.children).toBe('true');
 
-    expect(Alert.alert).toHaveBeenCalledWith('Alice', undefined, [
-      { text: 'Cancelar', style: 'cancel' },
-      expect.objectContaining({ text: 'Arquivar' }),
-    ]);
-
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
     act(() => {
-      buttons[1].onPress();
+      fireEvent.press(getByTestId('select-archive'));
     });
 
     expect(archiveMutate).toHaveBeenCalledWith(
       'peer-1',
       expect.objectContaining({ onError: expect.any(Function) }),
     );
+    expect(getByTestId('action-sheet-open').props.children).toBe('false');
   });
 
-  it('shows an unarchive action for initially archived conversations', () => {
+  it('fires unarchive when selected for initially archived conversations', () => {
     const { getByTestId } = renderScreen(true);
 
-    fireEvent.press(getByTestId('header-more'));
+    expect(getByTestId('archived').props.children).toBe('true');
 
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
-    expect(buttons[1].text).toBe('Desarquivar');
+    fireEvent.press(getByTestId('header-more'));
     act(() => {
-      buttons[1].onPress();
+      fireEvent.press(getByTestId('select-archive'));
     });
 
     expect(unarchiveMutate).toHaveBeenCalledWith(
@@ -180,10 +189,9 @@ describe('DmChatScreen', () => {
   it('shows an error alert when archive fails', () => {
     const { getByTestId } = renderScreen(false);
     fireEvent.press(getByTestId('header-more'));
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
 
     act(() => {
-      buttons[1].onPress();
+      fireEvent.press(getByTestId('select-archive'));
     });
     act(() => {
       archiveMutate.mock.calls[0][1].onError();
