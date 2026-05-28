@@ -37,13 +37,18 @@ const baseProps: DmChatLayoutProps = {
   hasMore: false,
   errorMessage: null,
   awaitingApproval: false,
+  archived: false,
   draft: '',
+  actionSheetOpen: false,
   onChangeDraft: jest.fn(),
   onSend: jest.fn(),
   onLoadOlder: jest.fn(),
   onBack: jest.fn(),
   onPressHeader: jest.fn(),
   onPressMore: jest.fn(),
+  onCloseActionSheet: jest.fn(),
+  onSelectAction: jest.fn(),
+  onCancelRequest: jest.fn(),
   moreDisabled: false,
 };
 

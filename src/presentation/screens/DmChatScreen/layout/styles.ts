@@ -4,8 +4,6 @@ import { colors, spacing } from '@/shared/theme';
 const HEADER_BTN = 38;
 const HEADER_RADIUS = 11;
 const PEER_AVATAR = 36;
-const COMPOSER_BTN = 38;
-const COMPOSER_RADIUS = 22;
 
 export const layoutDimensions = {
   peerAvatar: PEER_AVATAR,
@@ -122,56 +120,5 @@ export const styles = StyleSheet.create({
   loadingMoreWrapper: {
     paddingVertical: spacing.md,
     alignItems: 'center',
-  },
-  // --- list ---
-  listContent: {
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    paddingBottom: 10,
-  },
-  // --- composer ---
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 24,
-    gap: 6,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-  composerBtn: {
-    width: COMPOSER_BTN,
-    height: COMPOSER_BTN,
-    borderRadius: HEADER_RADIUS,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  composerSend: {
-    width: COMPOSER_BTN,
-    height: COMPOSER_BTN,
-    borderRadius: HEADER_RADIUS,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  composerSendDisabled: {
-    opacity: 0.4,
-  },
-  inputPill: {
-    flex: 1,
-    minHeight: COMPOSER_BTN,
-    maxHeight: 120,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: COMPOSER_RADIUS,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    fontSize: 13.5,
-    color: colors.text,
   },
 });

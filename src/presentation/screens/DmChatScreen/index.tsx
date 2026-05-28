@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import DmChatLayout from './layout';
+import type { DmActionId } from '@/shared/ui/chat/DmActionSheet';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
@@ -27,6 +28,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   } = route.params;
   const [draft, setDraft] = useState('');
   const [archived, setArchived] = useState(initialArchived);
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
   const peerStatus = useDmPresence(peerId);
@@ -62,7 +64,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     setDraft('');
   };
 
-  const toggleArchived = () => {
+  const toggleArchived = useCallback(() => {
     const nextArchived = !archived;
     setArchived(nextArchived);
     const mutation = nextArchived ? archiveDm : unarchiveDm;
@@ -77,18 +79,21 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         );
       },
     });
-  };
+  }, [archived, archiveDm, peerId, unarchiveDm]);
 
   const handlePressMore = () => {
     if (archiveDm.isPending || unarchiveDm.isPending) return;
-    Alert.alert(peerName, undefined, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: archived ? 'Desarquivar' : 'Arquivar',
-        onPress: toggleArchived,
-      },
-    ]);
+    setActionSheetOpen(true);
   };
+
+  const handleSelectAction = useCallback(
+    (action: DmActionId) => {
+      setActionSheetOpen(false);
+      if (action === 'archive') toggleArchived();
+      // profile / mute / clear / block / report not wired yet — close only.
+    },
+    [toggleArchived],
+  );
 
   return (
     <DmChatLayout
@@ -103,7 +108,9 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       hasMore={hasMore}
       errorMessage={error ? ERROR_LABELS[error] : null}
       awaitingApproval={awaitingApproval}
+      archived={archived}
       draft={draft}
+      actionSheetOpen={actionSheetOpen}
       onChangeDraft={setDraft}
       onSend={handleSend}
       onLoadOlder={loadOlder}
@@ -112,6 +119,11 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         // TODO(dm-m2): navigate to peer profile
       }}
       onPressMore={handlePressMore}
+      onCloseActionSheet={() => setActionSheetOpen(false)}
+      onSelectAction={handleSelectAction}
+      onCancelRequest={() => {
+        // TODO: cancel pending DM approval — no backend hook yet
+      }}
       moreDisabled={archiveDm.isPending || unarchiveDm.isPending}
     />
   );

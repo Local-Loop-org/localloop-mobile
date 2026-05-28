@@ -16,7 +16,8 @@ export type GroupActionId =
 interface GroupActionSheetProps {
   groupName: string;
   anchorType: AnchorType;
-  memberCount: number;
+  /** Omit when not yet available — the subtitle then drops the member prefix. */
+  memberCount?: number;
   onlineCount: number;
   onClose: () => void;
   onSelect: (action: GroupActionId) => void;
@@ -102,7 +103,9 @@ export function GroupActionSheet({
               {groupName}
             </Text>
             <Text style={styles.sheetHeaderSubtitle} numberOfLines={1}>
-              {memberCount} MEMBROS · {onlineCount} ONLINE
+              {memberCount != null
+                ? `${memberCount} MEMBROS · ${onlineCount} ONLINE`
+                : `${onlineCount} ONLINE`}
             </Text>
           </View>
           <Pressable

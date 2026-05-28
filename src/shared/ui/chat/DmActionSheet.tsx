@@ -10,12 +10,16 @@ export type DmActionId =
   | 'profile'
   | 'mute'
   | 'clear'
+  | 'archive'
   | 'block'
   | 'report';
 
 interface DmActionSheetProps {
   peerName: string;
   peerAvatarUrl: string | null;
+  /** Whether the conversation is currently archived — toggles the
+   * archive item's label between "Arquivar" and "Desarquivar". */
+  archived?: boolean;
   onClose: () => void;
   onSelect: (action: DmActionId) => void;
 }
@@ -28,7 +32,7 @@ interface ActionItem {
   danger?: boolean;
 }
 
-function buildItems(peerFirstName: string): ActionItem[] {
+function buildItems(peerFirstName: string, archived: boolean): ActionItem[] {
   return [
     {
       id: 'profile',
@@ -41,6 +45,14 @@ function buildItems(peerFirstName: string): ActionItem[] {
       label: 'Silenciar',
       icon: 'bell',
       sub: 'Sem notificações desta conversa',
+    },
+    {
+      id: 'archive',
+      label: archived ? 'Desarquivar conversa' : 'Arquivar conversa',
+      icon: 'logout',
+      sub: archived
+        ? 'Voltar a mostrar na lista'
+        : 'Esconder da lista até nova mensagem',
     },
     {
       id: 'clear',
@@ -68,11 +80,12 @@ function buildItems(peerFirstName: string): ActionItem[] {
 export function DmActionSheet({
   peerName,
   peerAvatarUrl,
+  archived = false,
   onClose,
   onSelect,
 }: DmActionSheetProps) {
   const peerFirstName = peerName.split(' ')[0] || peerName;
-  const items = buildItems(peerFirstName);
+  const items = buildItems(peerFirstName, archived);
 
   return (
     <View style={styles.sheetOverlay} testID='dm-action-sheet'>

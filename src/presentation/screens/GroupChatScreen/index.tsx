@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
@@ -8,6 +8,7 @@ import {
   dismissPresentedNotificationsForConversation,
   setActivePushConversation,
 } from '@/infra/notifications/push-notifications';
+import type { GroupActionId } from '@/shared/ui/chat/GroupActionSheet';
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -32,6 +33,7 @@ export default function GroupChatScreen({
   } = useGroupChat(groupId);
 
   const [draft, setDraft] = useState('');
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const conversationKey = groupPushConversationKey(groupId);
 
   useEffect(() => {
@@ -60,6 +62,24 @@ export default function GroupChatScreen({
     });
   };
 
+  const handlePressHeader = useCallback(() => {
+    navigation.navigate(StackRoutes.GroupDetail, { groupId });
+  }, [navigation, groupId]);
+
+  const handlePressMembers = useCallback(() => {
+    navigation.navigate(StackRoutes.GroupMembers, { groupId, myRole });
+  }, [navigation, groupId, myRole]);
+
+  const handleSelectAction = useCallback(
+    (action: GroupActionId) => {
+      setActionSheetOpen(false);
+      if (action === 'details') handlePressHeader();
+      else if (action === 'members') handlePressMembers();
+      // mute / leave / report not wired yet — close only.
+    },
+    [handlePressHeader, handlePressMembers],
+  );
+
   return (
     <GroupChatLayout
       groupName={groupName}
@@ -72,15 +92,16 @@ export default function GroupChatScreen({
       hasMore={hasMore}
       errorMessage={error ? ERROR_LABEL[error] : null}
       draft={draft}
+      actionSheetOpen={actionSheetOpen}
       onChangeDraft={setDraft}
       onSend={handleSend}
       onLoadOlder={loadOlder}
       onPressMessageAvatar={handlePressMessageAvatar}
       onBack={() => navigation.goBack()}
-      onPressHeader={() => navigation.navigate(StackRoutes.GroupDetail, { groupId })}
-      onPressMembers={() =>
-        navigation.navigate(StackRoutes.GroupMembers, { groupId, myRole })
-      }
+      onPressHeader={handlePressHeader}
+      onPressMore={() => setActionSheetOpen(true)}
+      onCloseActionSheet={() => setActionSheetOpen(false)}
+      onSelectAction={handleSelectAction}
     />
   );
 }
