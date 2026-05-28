@@ -7,7 +7,10 @@ import HomeScreen from "../screens/HomeScreen";
 // import InboxScreen from "../screens/InboxScreen";
 import DmChatMockupScreen from "../screens/DmChatMockupScreen";
 import CreateGroupScreen from "../screens/CreateGroupScreen";
-import MapScreen from "../screens/MapScreen";
+// TEMP: Map tab is pointed at the Group redesign mockup for visual review.
+// Restore by un-commenting the MapScreen import and swapping the component below.
+// import MapScreen from "../screens/MapScreen";
+import GroupChatMockupScreen from "../screens/GroupChatMockupScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import { BottomTabBar } from "../screens/HomeScreen/layout/BottomTabBar";
 import type { HomeTabsParamList } from "./types";
@@ -22,6 +25,8 @@ function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   // bar so the mockup gets the full-screen rhythm of a real chat. Remove this
   // line when InboxScreen is restored.
   if (currentRoute === TabRoutes.Inbox) return null;
+  // TEMP: Map tab currently renders the Group redesign mockup — same reason.
+  if (currentRoute === TabRoutes.Map) return null;
   return (
     <BottomTabBar
       active={currentRoute as keyof HomeTabsParamList}
@@ -44,7 +49,7 @@ export default function HomeTabs() {
         component={CreateGroupScreen}
         options={{ tabBarButton: () => null }}
       />
-      <Tab.Screen name={TabRoutes.Map} component={MapScreen} />
+      <Tab.Screen name={TabRoutes.Map} component={GroupChatMockupScreen} />
       <Tab.Screen name={TabRoutes.Profile} component={ProfileScreen} />
     </Tab.Navigator>
   );

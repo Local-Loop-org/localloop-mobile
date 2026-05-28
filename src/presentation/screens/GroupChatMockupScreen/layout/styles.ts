@@ -3,10 +3,10 @@ import { colors, spacing } from '@/shared/theme';
 
 const HEADER_BTN = 38;
 const HEADER_RADIUS = 11;
-const PEER_AVATAR = 36;
+const HEADER_ANCHOR = 36;
 
 export const layoutDimensions = {
-  peerAvatar: PEER_AVATAR,
+  headerAnchor: HEADER_ANCHOR,
 };
 
 const monoFamily = Platform.select({
@@ -101,22 +101,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
   },
-  peerAvatarWrap: {
-    width: PEER_AVATAR,
-    height: PEER_AVATAR,
-    position: 'relative',
-  },
-  peerOnlineDot: {
-    position: 'absolute',
-    right: -1,
-    bottom: -1,
-    width: 11,
-    height: 11,
-    borderRadius: 5.5,
-    backgroundColor: colors.success,
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
   headerTitle: {
     fontSize: 15,
     fontWeight: '700',
@@ -138,26 +122,5 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: colors.primary,
   },
-  headerSubtitlePending: {
-    color: colors.accent2,
-  },
-  headerSubtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  headerOnlineDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.success,
-  },
 
-  // --- list ---
-  listContent: {
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    paddingBottom: 10,
-  },
 });
