@@ -4,62 +4,44 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
-import Avatar from '@/shared/ui/Avatar';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
-import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
-import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
-import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
+import { GroupActionSheet } from '@/shared/ui/chat/GroupActionSheet';
+import AnchorIcon from '@/presentation/screens/GroupChatScreen/components/AnchorIcon';
 import { layoutDimensions, styles } from './styles';
-import type { DmChatMockupLayoutProps } from './types';
+import type { GroupChatMockupLayoutProps } from './types';
 import { ME, VARIANT_LABELS } from '../mockData';
 
-function PresenceSubtitle({
+function Subtitle({
   presence,
+  onlineCount,
 }: {
-  presence: DmChatMockupLayoutProps['state']['presence'];
+  presence: GroupChatMockupLayoutProps['state']['presence'];
+  onlineCount: number;
 }) {
-  if (presence.kind === 'online') {
-    return (
-      <View style={styles.headerSubtitleRow}>
-        <View style={styles.headerOnlineDot} />
-        <Text style={[styles.headerSubtitle, styles.headerSubtitleOnline]}>
-          ONLINE
-        </Text>
-      </View>
-    );
-  }
   if (presence.kind === 'typing') {
     return (
       <Text style={[styles.headerSubtitle, styles.headerSubtitleTyping]}>
-        Digitando…
-      </Text>
-    );
-  }
-  if (presence.kind === 'pendingApproval') {
-    return (
-      <Text style={[styles.headerSubtitle, styles.headerSubtitlePending]}>
-        AGUARDANDO APROVAÇÃO
+        {presence.senderName} está digitando…
       </Text>
     );
   }
   return (
-    <Text style={styles.headerSubtitle}>
-      Visto por último {presence.label}
+    <Text style={[styles.headerSubtitle, styles.headerSubtitleOnline]}>
+      · {onlineCount} ONLINE ·
     </Text>
   );
 }
 
-export default function DmChatMockupLayout({
+export default function GroupChatMockupLayout({
   state,
   variants,
   onSelectVariant,
   onCloseActionSheet,
   onPressCancelReply,
   onPressRetry,
-  onCancelRequest,
   onSwipeReply,
-}: DmChatMockupLayoutProps) {
+}: GroupChatMockupLayoutProps) {
   const composingOriginal = state.composingReplyTo
     ? state.messages.find((m) => m.id === state.composingReplyTo)
     : null;
@@ -80,7 +62,7 @@ export default function DmChatMockupLayout({
       <StatusBar style='light' />
 
       <View style={styles.pickerWrap}>
-        <Text style={styles.pickerTitle}>· VARIAÇÕES DA TELA DE DM ·</Text>
+        <Text style={styles.pickerTitle}>· VARIAÇÕES DA TELA DE GRUPO ·</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -122,27 +104,24 @@ export default function DmChatMockupLayout({
             <Icon name='chevronLeft' size={17} color={colors.text} />
           </Pressable>
           <View style={styles.headerCenter}>
-            <View style={styles.peerAvatarWrap}>
-              <Avatar
-                name={state.peer.name}
-                uri={state.peer.avatarUrl}
-                size={layoutDimensions.peerAvatar}
-              />
-              {state.presence.kind === 'online' && (
-                <View style={styles.peerOnlineDot} testID='mock-peer-online-dot' />
-              )}
-            </View>
+            <AnchorIcon
+              type={state.group.anchorType}
+              size={layoutDimensions.headerAnchor}
+            />
             <View style={styles.headerCenterText}>
               <Text style={styles.headerTitle} numberOfLines={1}>
-                {state.peer.name}
+                {state.group.name}
               </Text>
-              <PresenceSubtitle presence={state.presence} />
+              <Subtitle
+                presence={state.presence}
+                onlineCount={state.group.onlineCount}
+              />
             </View>
           </View>
           <Pressable
             style={styles.iconBtn}
             accessibilityRole='button'
-            accessibilityLabel='Mais ações da conversa'
+            accessibilityLabel='Mais ações do grupo'
             onPress={() => onSelectVariant('menu')}
             testID='mock-header-more'
           >
@@ -150,37 +129,28 @@ export default function DmChatMockupLayout({
           </Pressable>
         </View>
 
-        {state.awaitingApproval && (
-          <DmRequestBanner peerFirstName={state.peer.name.split(' ')[0]} />
-        )}
-
         <ChatThread
           messages={state.messages}
           currentUserId={ME.id}
           messageStatuses={state.messageStatuses}
           messageReplyTo={state.messageReplyTo}
-          showPeerSenderName={false}
+          showPeerSenderName
           showTypingBubble={state.showTypingBubble}
           onSwipeReply={onSwipeReply}
           onPressRetry={onPressRetry}
         />
 
-        {state.awaitingApproval ? (
-          <DmRequestComposer
-            peerFirstName={state.peer.name.split(' ')[0]}
-            onCancel={onCancelRequest}
-          />
-        ) : (
-          <ChatComposer
-            draft={state.composingDraft}
-            composingReplyTo={composerReplyTo}
-          />
-        )}
+        <ChatComposer
+          draft={state.composingDraft}
+          composingReplyTo={composerReplyTo}
+        />
 
         {state.actionSheetOpen && (
-          <DmActionSheet
-            peerName={state.peer.name}
-            peerAvatarUrl={state.peer.avatarUrl}
+          <GroupActionSheet
+            groupName={state.group.name}
+            anchorType={state.group.anchorType}
+            memberCount={state.group.memberCount}
+            onlineCount={state.group.onlineCount}
             onClose={onCloseActionSheet}
             onSelect={onCloseActionSheet}
           />

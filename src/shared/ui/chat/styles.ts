@@ -295,6 +295,62 @@ export const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
+  // --- composer (shared between DM and Group) ---
+  composerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 24,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  composerBarNoTopBorder: {
+    borderTopWidth: 0,
+  },
+  composerAttachBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  composerInputPill: {
+    flex: 1,
+    minHeight: 38,
+    maxHeight: 120,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  composerInputTextInput: {
+    flex: 1,
+    fontSize: 13.5,
+    color: colors.text,
+    padding: 0,
+  },
+  composerSendBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  composerSendBtnDisabled: {
+    opacity: 0.4,
+  },
+
   // --- swipe-to-reply wrap ---
   swipeWrap: {
     position: 'relative',
@@ -388,6 +444,14 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  sheetAnchorTile: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: `${colors.primary}22`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetHeaderText: {
     flex: 1,
