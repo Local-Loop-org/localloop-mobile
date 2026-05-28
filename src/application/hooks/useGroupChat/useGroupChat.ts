@@ -160,6 +160,18 @@ export function useGroupChat(groupId: string) {
     [historyQuery.data],
   );
 
+  const currentUserId = currentUser?.id ?? null;
+
+  const messageStatuses = useMemo<Record<string, 'sending' | 'sent'>>(() => {
+    if (!currentUserId) return {};
+    const out: Record<string, 'sending' | 'sent'> = {};
+    for (const m of messages) {
+      if (m.senderId !== currentUserId) continue;
+      out[m.id] = m.id.startsWith('temp-') ? 'sending' : 'sent';
+    }
+    return out;
+  }, [messages, currentUserId]);
+
   const historyReady = !historyQuery.isLoading && !historyQuery.isError;
 
   const markGroupRead = useCallback(() => {
@@ -281,13 +293,14 @@ export function useGroupChat(groupId: string) {
 
   return {
     messages,
+    messageStatuses,
     loading: historyQuery.isLoading || isJoining,
     loadingMore: historyQuery.isFetchingNextPage,
     error: historyQuery.isError ? ('load_failed' as const) : socketError,
     connected: manager.connected,
     onlineCount,
     hasMore: historyQuery.hasNextPage ?? false,
-    currentUserId: currentUser?.id ?? null,
+    currentUserId,
     sendMessage,
     loadOlder,
   };

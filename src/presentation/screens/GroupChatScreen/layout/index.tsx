@@ -24,6 +24,7 @@ export default function GroupChatLayout({
   onlineCount,
   memberCount,
   messages,
+  messageStatuses,
   currentUserId,
   loading,
   loadingMore,
@@ -108,6 +109,7 @@ export default function GroupChatLayout({
         ) : (
           <ChatThread
             messages={messages}
+            messageStatuses={messageStatuses}
             currentUserId={currentUserId ?? ''}
             showPeerSenderName
             onPressPeerAvatar={(senderId) => {

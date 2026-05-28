@@ -8,6 +8,10 @@ export interface GroupChatLayoutProps {
   /** Optional — when omitted, the action sheet subtitle hides the member prefix. */
   memberCount?: number;
   messages: GroupMessage[];
+  /** Per-message send status for own bubbles, keyed by message id.
+   * 'sending' while the optimistic temp is in flight; 'sent' after the server
+   * echo replaces it. Peer messages are absent. */
+  messageStatuses: Record<string, 'sending' | 'sent'>;
   currentUserId: string | null;
   loading: boolean;
   loadingMore: boolean;

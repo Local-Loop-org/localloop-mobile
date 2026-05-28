@@ -82,3 +82,50 @@ describe('chat bubbles', () => {
     expect(queryByTestId('peer-timestamp-peer-1')).toBeNull();
   });
 });
+
+describe('OwnBubble enhanced mode · status indicator', () => {
+  // Enhanced mode is triggered when `previousMessage` or `nextMessage` is
+  // passed. `nextMessage={null}` also forces `lastOfRun=true`, which is the
+  // branch that renders the status row.
+  const renderEnhanced = (status?: 'sending' | 'sent' | 'read') =>
+    render(
+      <OwnBubble
+        message={baseMessage({ id: 'own-1', senderId: 'me' })}
+        previousMessage={null}
+        nextMessage={null}
+        status={status}
+      />,
+    );
+
+  it("shows the sending indicator when status is 'sending'", () => {
+    const { getByTestId, queryByTestId } = renderEnhanced('sending');
+
+    expect(getByTestId('own-status-sending')).toBeTruthy();
+    expect(queryByTestId('own-status-sent')).toBeNull();
+    expect(queryByTestId('own-status-read')).toBeNull();
+  });
+
+  it("shows the sent indicator when status is 'sent'", () => {
+    const { getByTestId, queryByTestId } = renderEnhanced('sent');
+
+    expect(getByTestId('own-status-sent')).toBeTruthy();
+    expect(queryByTestId('own-status-sending')).toBeNull();
+    expect(queryByTestId('own-status-read')).toBeNull();
+  });
+
+  it("shows the read indicator when status is 'read'", () => {
+    const { getByTestId, queryByTestId } = renderEnhanced('read');
+
+    expect(getByTestId('own-status-read')).toBeTruthy();
+    expect(queryByTestId('own-status-sending')).toBeNull();
+    expect(queryByTestId('own-status-sent')).toBeNull();
+  });
+
+  it('renders only the timestamp row when status is undefined', () => {
+    const { queryByTestId } = renderEnhanced(undefined);
+
+    expect(queryByTestId('own-status-sending')).toBeNull();
+    expect(queryByTestId('own-status-sent')).toBeNull();
+    expect(queryByTestId('own-status-read')).toBeNull();
+  });
+});

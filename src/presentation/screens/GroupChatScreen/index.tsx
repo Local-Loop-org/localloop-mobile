@@ -22,6 +22,7 @@ export default function GroupChatScreen({
   const { groupId, groupName, anchorType, myRole } = route.params;
   const {
     messages,
+    messageStatuses,
     loading,
     loadingMore,
     error,
@@ -86,6 +87,7 @@ export default function GroupChatScreen({
       anchorType={anchorType}
       onlineCount={onlineCount}
       messages={messages}
+      messageStatuses={messageStatuses}
       currentUserId={currentUserId}
       loading={loading}
       loadingMore={loadingMore}
