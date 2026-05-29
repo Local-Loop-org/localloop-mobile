@@ -38,6 +38,7 @@ function makeWrapper() {
 function buildMessage(id: string): GroupMessage {
   return {
     id,
+    clientMessageId: null,
     senderId: 'u-1',
     senderName: 'Alice',
     senderAvatarUrl: null,

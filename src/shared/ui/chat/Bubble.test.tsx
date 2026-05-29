@@ -7,6 +7,7 @@ import { PeerBubble } from './PeerBubble';
 
 const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
+  clientMessageId: null,
   senderId: 'u-other',
   senderName: 'Alice',
   senderAvatarUrl: null,

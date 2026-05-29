@@ -62,6 +62,7 @@ function renderLayout(overrides: Partial<DmChatLayoutProps> = {}) {
 
 const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: 'm-1',
+  clientMessageId: null,
   senderId: 'me',
   senderName: 'Me',
   senderAvatarUrl: null,
