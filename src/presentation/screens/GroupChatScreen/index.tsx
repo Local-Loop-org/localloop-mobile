@@ -151,6 +151,22 @@ export default function GroupChatScreen({
     [messages, currentUserId, myRole],
   );
 
+  const openReplyComposerFor = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target) return;
+      const snippet = truncateReplySnippet(target.content);
+      if (!snippet) return;
+      setComposingReplyTo({
+        id: target.id,
+        authorId: target.senderId,
+        authorName: target.senderName,
+        snippet,
+      });
+    },
+    [messages],
+  );
+
   const handleSelectMessageAction = useCallback(
     (action: MessageActionId) => {
       const id = messageActionTargetId;
@@ -161,20 +177,11 @@ export default function GroupChatScreen({
         return;
       }
       if (action === 'reply') {
-        const target = messages.find((m) => m.id === id);
-        if (!target) return;
-        const snippet = truncateReplySnippet(target.content);
-        if (!snippet) return;
-        setComposingReplyTo({
-          id: target.id,
-          authorId: target.senderId,
-          authorName: target.senderName,
-          snippet,
-        });
+        openReplyComposerFor(id);
       }
       // 'edit' wired in C13.
     },
-    [messageActionTargetId, deleteMessage, groupId, messages],
+    [messageActionTargetId, deleteMessage, groupId, openReplyComposerFor],
   );
 
   const composerReplyTo = useMemo(() => {
@@ -215,6 +222,7 @@ export default function GroupChatScreen({
       onCloseActionSheet={() => setActionSheetOpen(false)}
       onSelectAction={handleSelectAction}
       onLongPressMessage={handleLongPressMessage}
+      onSwipeReply={openReplyComposerFor}
       onSelectMessageAction={handleSelectMessageAction}
       onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />

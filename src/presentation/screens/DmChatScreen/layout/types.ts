@@ -48,6 +48,9 @@ export interface DmChatLayoutProps {
   /** Long-press on a chat bubble — the screen decides whether to open the
    * per-message action sheet based on the policy. */
   onLongPressMessage: (messageId: string) => void;
+  /** Horizontal swipe on a chat bubble — opens the reply composer for that
+   * message, same flow as the action-sheet "Responder" entry. */
+  onSwipeReply: (messageId: string) => void;
   /** Dispatched when the user taps an item in the per-message action sheet. */
   onSelectMessageAction: (action: MessageActionId) => void;
   /** Dispatched when the per-message action sheet is dismissed. */

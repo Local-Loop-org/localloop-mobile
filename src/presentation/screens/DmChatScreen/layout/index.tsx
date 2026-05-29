@@ -73,6 +73,7 @@ export default function DmChatLayout({
   onCancelRequest,
   moreDisabled,
   onLongPressMessage,
+  onSwipeReply,
   onSelectMessageAction,
   onCloseMessageActionSheet,
 }: DmChatLayoutProps) {
@@ -154,6 +155,7 @@ export default function DmChatLayout({
             showPeerSenderName={false}
             showTypingBubble={isTyping}
             onLongPressMessage={onLongPressMessage}
+            onSwipeReply={onSwipeReply}
             onEndReached={hasMore ? onLoadOlder : undefined}
             onEndReachedThreshold={0.2}
             ListFooterComponent={

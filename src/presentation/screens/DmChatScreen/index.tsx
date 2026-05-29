@@ -163,6 +163,22 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     [messages, currentUserId],
   );
 
+  const openReplyComposerFor = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target) return;
+      const snippet = truncateReplySnippet(target.content);
+      if (!snippet) return;
+      setComposingReplyTo({
+        id: target.id,
+        authorId: target.senderId,
+        authorName: target.senderName,
+        snippet,
+      });
+    },
+    [messages],
+  );
+
   const handleSelectMessageAction = useCallback(
     (action: MessageActionId) => {
       const id = messageActionTargetId;
@@ -173,20 +189,11 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         return;
       }
       if (action === 'reply') {
-        const target = messages.find((m) => m.id === id);
-        if (!target) return;
-        const snippet = truncateReplySnippet(target.content);
-        if (!snippet) return;
-        setComposingReplyTo({
-          id: target.id,
-          authorId: target.senderId,
-          authorName: target.senderName,
-          snippet,
-        });
+        openReplyComposerFor(id);
       }
       // 'edit' wired in C13.
     },
-    [messageActionTargetId, deleteMessage, peerId, messages],
+    [messageActionTargetId, deleteMessage, peerId, openReplyComposerFor],
   );
 
   const composerReplyTo = useMemo(() => {
@@ -234,6 +241,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       moreDisabled={archiveDm.isPending || unarchiveDm.isPending}
       messageActionSheet={messageActionSheet}
       onLongPressMessage={handleLongPressMessage}
+      onSwipeReply={openReplyComposerFor}
       onSelectMessageAction={handleSelectMessageAction}
       onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />

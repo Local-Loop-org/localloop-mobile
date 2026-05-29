@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { FlatList, StyleProp, ViewStyle } from 'react-native';
-import type { ChatMessage } from '@localloop/shared-types';
+import type { ChatMessage, ChatMessageReplyTo } from '@localloop/shared-types';
 import {
   buildChatListItems,
   type ChatListItem,
@@ -17,8 +17,6 @@ export interface ChatThreadProps {
 
   /** Per-message status overrides, keyed by message id (own messages only). */
   messageStatuses?: Record<string, OwnBubbleStatus>;
-  /** Per-message reply target: message id → original message id (must also be in `messages`). */
-  messageReplyTo?: Record<string, string>;
 
   /** Group chat shows sender names on peer bubbles; DM hides them. */
   showPeerSenderName?: boolean;
@@ -28,7 +26,6 @@ export interface ChatThreadProps {
   // ── handlers (all optional) ──────────────────────────────────
   onSwipeReply?: (messageId: string) => void;
   onPressRetry?: (messageId: string) => void;
-  onPressReplyOriginal?: (originalMessageId: string) => void;
   onPressPeerAvatar?: (senderId: string) => void;
   onLongPressMessage?: (messageId: string) => void;
 
@@ -41,18 +38,15 @@ export interface ChatThreadProps {
 }
 
 const EMPTY_STATUSES: Record<string, OwnBubbleStatus> = {};
-const EMPTY_REPLY_TO: Record<string, string> = {};
 
 export function ChatThread({
   messages,
   currentUserId,
   messageStatuses = EMPTY_STATUSES,
-  messageReplyTo = EMPTY_REPLY_TO,
   showPeerSenderName = false,
   showTypingBubble = false,
   onSwipeReply,
   onPressRetry,
-  onPressReplyOriginal,
   onPressPeerAvatar,
   onLongPressMessage,
   onEndReached,
@@ -68,6 +62,50 @@ export function ChatThread({
     messages.forEach((m) => map.set(m.id, m));
     return map;
   }, [messages]);
+
+  const itemIndexByMessageId = useMemo(() => {
+    const map = new Map<string, number>();
+    items.forEach((it, idx) => {
+      if (it.kind === 'message') map.set(it.message.id, idx);
+    });
+    return map;
+  }, [items]);
+
+  const listRef = useRef<FlatList<ChatListItem>>(null);
+
+  const scrollToMessage = useCallback(
+    (originalMessageId: string) => {
+      const index = itemIndexByMessageId.get(originalMessageId);
+      if (index === undefined) return;
+      listRef.current?.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    },
+    [itemIndexByMessageId],
+  );
+
+  const handleScrollToIndexFailed = useCallback(
+    (info: {
+      index: number;
+      highestMeasuredFrameIndex: number;
+      averageItemLength: number;
+    }) => {
+      listRef.current?.scrollToOffset({
+        offset: info.averageItemLength * info.index,
+        animated: false,
+      });
+      setTimeout(() => {
+        listRef.current?.scrollToIndex({
+          index: info.index,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }, 50);
+    },
+    [],
+  );
 
   const renderItem = ({
     item,
@@ -90,19 +128,15 @@ export function ChatThread({
       newerItem && newerItem.kind === 'message' ? newerItem.message : null;
 
     const isOwn = item.message.senderId === currentUserId;
-    const replyOriginalId = messageReplyTo[item.message.id];
-    const replyOriginal = replyOriginalId
-      ? messageById.get(replyOriginalId)
-      : null;
-    const replyTo = replyOriginal
-      ? {
-          author: isReplyAuthorMe(replyOriginal, currentUserId)
-            ? 'Você'
-            : (replyOriginal.senderName.split(' ')[0] ??
-              replyOriginal.senderName),
-          text: replyOriginal.content ?? '',
-        }
+    const replyToMeta = item.message.replyTo;
+    const replyDisplay = replyToMeta
+      ? resolveReplyDisplay(replyToMeta, messageById, currentUserId)
       : undefined;
+    const replyTargetLoaded =
+      replyToMeta !== null &&
+      replyToMeta !== undefined &&
+      !replyToMeta.isDeleted &&
+      messageById.has(replyToMeta.id);
 
     if (isOwn) {
       return (
@@ -111,11 +145,11 @@ export function ChatThread({
           status={messageStatuses[item.message.id]}
           previousMessage={previousMessage}
           nextMessage={nextMessage}
-          replyTo={replyTo}
+          replyTo={replyDisplay}
           onRetry={onPressRetry ? () => onPressRetry(item.message.id) : undefined}
           onPressReply={
-            replyOriginal && onPressReplyOriginal
-              ? () => onPressReplyOriginal(replyOriginal.id)
+            replyTargetLoaded && replyToMeta
+              ? () => scrollToMessage(replyToMeta.id)
               : undefined
           }
           onSwipeReply={
@@ -135,15 +169,15 @@ export function ChatThread({
         showSenderName={showPeerSenderName}
         previousMessage={previousMessage}
         nextMessage={nextMessage}
-        replyTo={replyTo}
+        replyTo={replyDisplay}
         onPressAvatar={
           onPressPeerAvatar
             ? () => onPressPeerAvatar(item.message.senderId)
             : undefined
         }
         onPressReply={
-          replyOriginal && onPressReplyOriginal
-            ? () => onPressReplyOriginal(replyOriginal.id)
+          replyTargetLoaded && replyToMeta
+            ? () => scrollToMessage(replyToMeta.id)
             : undefined
         }
         onSwipeReply={
@@ -160,6 +194,7 @@ export function ChatThread({
 
   return (
     <FlatList
+      ref={listRef}
       inverted
       data={items}
       keyExtractor={(item) => item.key}
@@ -167,6 +202,7 @@ export function ChatThread({
       contentContainerStyle={contentContainerStyle ?? chatStyles.threadContent}
       onEndReached={onEndReached}
       onEndReachedThreshold={onEndReachedThreshold}
+      onScrollToIndexFailed={handleScrollToIndexFailed}
       ListHeaderComponent={showTypingBubble ? <TypingBubble /> : null}
       ListFooterComponent={ListFooterComponent}
       ListEmptyComponent={ListEmptyComponent}
@@ -174,6 +210,22 @@ export function ChatThread({
   );
 }
 
-function isReplyAuthorMe(message: ChatMessage, currentUserId: string): boolean {
-  return message.senderId === currentUserId;
+function resolveReplyDisplay(
+  replyTo: ChatMessageReplyTo,
+  messageById: Map<string, ChatMessage>,
+  currentUserId: string,
+): { author: string; text: string } {
+  if (replyTo.isDeleted) {
+    return { author: 'Mensagem apagada', text: '' };
+  }
+  const parent = messageById.get(replyTo.id);
+  if (parent) {
+    const author =
+      parent.senderId === currentUserId
+        ? 'Você'
+        : (parent.senderName.split(' ')[0] ?? parent.senderName);
+    return { author, text: parent.content ?? '' };
+  }
+  const author = replyTo.authorId === currentUserId ? 'Você' : 'Mensagem';
+  return { author, text: replyTo.snippet ?? '' };
 }
