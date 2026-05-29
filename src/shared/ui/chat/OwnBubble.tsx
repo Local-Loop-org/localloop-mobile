@@ -29,6 +29,8 @@ interface OwnBubbleProps {
    * (swipes left, reveals a reply icon, fires this callback past the
    * 56px threshold). Opt-in — pass nothing to disable. */
   onSwipeReply?: () => void;
+  /** Long-press opens the per-message ActionSheet (reply / edit / delete). */
+  onLongPress?: () => void;
 }
 
 export function OwnBubble({
@@ -40,6 +42,7 @@ export function OwnBubble({
   onRetry,
   onPressReply,
   onSwipeReply,
+  onLongPress,
 }: OwnBubbleProps) {
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
@@ -113,11 +116,15 @@ export function OwnBubble({
       <View style={styles.ownColumn}>
         <Pressable
           onPress={handlePressBubble}
+          onLongPress={onLongPress}
           accessibilityRole='button'
           accessibilityLabel={
             tapTimestampVisible
               ? 'Ocultar horário da mensagem'
               : 'Mostrar horário da mensagem'
+          }
+          accessibilityHint={
+            onLongPress ? 'Toque longo para mais ações' : undefined
           }
           testID={`own-bubble-${message.id}`}
         >

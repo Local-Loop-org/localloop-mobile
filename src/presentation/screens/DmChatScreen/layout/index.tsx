@@ -14,6 +14,7 @@ import { colors } from '@/shared/theme';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
 import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
+import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
 import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
 import { formatTime } from '@/shared/format/chat';
@@ -59,6 +60,7 @@ export default function DmChatLayout({
   archived,
   draft,
   actionSheetOpen,
+  messageActionSheet,
   onChangeDraft,
   onSend,
   onLoadOlder,
@@ -69,6 +71,9 @@ export default function DmChatLayout({
   onSelectAction,
   onCancelRequest,
   moreDisabled,
+  onLongPressMessage,
+  onSelectMessageAction,
+  onCloseMessageActionSheet,
 }: DmChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0 || awaitingApproval;
   const isTyping = peerStatus?.kind === 'typing';
@@ -147,6 +152,7 @@ export default function DmChatLayout({
             messageStatuses={messageStatuses}
             showPeerSenderName={false}
             showTypingBubble={isTyping}
+            onLongPressMessage={onLongPressMessage}
             onEndReached={hasMore ? onLoadOlder : undefined}
             onEndReachedThreshold={0.2}
             ListFooterComponent={
@@ -187,6 +193,15 @@ export default function DmChatLayout({
             archived={archived}
             onClose={onCloseActionSheet}
             onSelect={onSelectAction}
+          />
+        ) : null}
+
+        {messageActionSheet ? (
+          <MessageActionSheet
+            messagePreview={messageActionSheet.messagePreview}
+            available={messageActionSheet.available}
+            onClose={onCloseMessageActionSheet}
+            onSelect={onSelectMessageAction}
           />
         ) : null}
       </KeyboardAvoidingView>

@@ -20,6 +20,8 @@ interface PeerBubbleProps {
   /** Same as `OwnBubble.onSwipeReply` — opt-in swipe-to-reply gesture
    * (peer bubbles swipe right). */
   onSwipeReply?: () => void;
+  /** Long-press opens the per-message ActionSheet (reply / edit / delete). */
+  onLongPress?: () => void;
 }
 
 export function PeerBubble({
@@ -31,6 +33,7 @@ export function PeerBubble({
   replyTo,
   onPressReply,
   onSwipeReply,
+  onLongPress,
 }: PeerBubbleProps) {
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
@@ -134,11 +137,15 @@ export function PeerBubble({
         )}
         <Pressable
           onPress={handlePressBubble}
+          onLongPress={onLongPress}
           accessibilityRole='button'
           accessibilityLabel={
             tapTimestampVisible
               ? 'Ocultar horário da mensagem'
               : 'Mostrar horário da mensagem'
+          }
+          accessibilityHint={
+            onLongPress ? 'Toque longo para mais ações' : undefined
           }
           testID={`peer-bubble-${message.id}`}
         >

@@ -1,5 +1,7 @@
 import type { ChatMessage, DirectMessageStatus } from '@localloop/shared-types';
 import type { DmActionId } from '@/shared/ui/chat/DmActionSheet';
+import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
+import type { AvailableMessageActions } from '@/shared/ui/chat/messageActionPolicy';
 
 export type DmPeerStatus =
   | { kind: 'online' }
@@ -23,6 +25,11 @@ export interface DmChatLayoutProps {
   draft: string;
   /** Whether the bottom action sheet is currently shown. */
   actionSheetOpen: boolean;
+  /** The per-message action sheet renders when this is non-null. */
+  messageActionSheet: {
+    messagePreview: string;
+    available: AvailableMessageActions;
+  } | null;
   onChangeDraft: (value: string) => void;
   onSend: () => void;
   onLoadOlder: () => void;
@@ -35,4 +42,11 @@ export interface DmChatLayoutProps {
   /** Dispatched when the user cancels a pending DM approval. */
   onCancelRequest: () => void;
   moreDisabled?: boolean;
+  /** Long-press on a chat bubble — the screen decides whether to open the
+   * per-message action sheet based on the policy. */
+  onLongPressMessage: (messageId: string) => void;
+  /** Dispatched when the user taps an item in the per-message action sheet. */
+  onSelectMessageAction: (action: MessageActionId) => void;
+  /** Dispatched when the per-message action sheet is dismissed. */
+  onCloseMessageActionSheet: () => void;
 }

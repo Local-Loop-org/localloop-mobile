@@ -7,6 +7,7 @@ import {
 import {
   ChatSocketEvents,
   type DirectMessage,
+  type DirectMessageDeleted,
   type DirectMessageHistoryResponse,
   type DmSummaryUpdate,
 } from '@localloop/shared-types';
@@ -25,6 +26,7 @@ import {
   getNextDmHistoryPageParam,
   type DmHistoryInfiniteData,
 } from '../useDmHistory/dmHistoryQuery';
+import { removeDirectMessageById } from '../useDeleteDirectMessage/useDeleteDirectMessage';
 
 export type DmChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -111,6 +113,9 @@ function createOptimisticMessage(
     mediaUrl: null,
     mediaType: null,
     createdAt: new Date().toISOString(),
+    replyTo: null,
+    isDeleted: false,
+    editedAt: null,
   };
 }
 
@@ -210,6 +215,15 @@ export function useDmChat(peerId: string) {
       applyDmSummaryUpdate(queryClient, payload);
     };
 
+    const handleDirectMessageDeleted = (payload: DirectMessageDeleted) => {
+      // Scope filter: ignore deletes for unrelated DM threads.
+      if (payload.senderId !== peerId && payload.recipientId !== peerId) return;
+      queryClient.setQueryData<DmHistoryInfiniteData>(
+        dmHistoryKey(peerId),
+        (old) => removeDirectMessageById(old, payload.messageId),
+      );
+    };
+
     const handleSocketError = (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
@@ -219,6 +233,10 @@ export function useDmChat(peerId: string) {
     const offNew = manager.addListener<DirectMessage & { type?: string }>(
       ChatSocketEvents.NEW_DIRECT_MESSAGE,
       handleNewMessage,
+    );
+    const offDeleted = manager.addListener<DirectMessageDeleted>(
+      ChatSocketEvents.DIRECT_MESSAGE_DELETED,
+      handleDirectMessageDeleted,
     );
     const offRequestSent = manager.addListener<DmRequestSentPayload>(
       ChatSocketEvents.DM_REQUEST_SENT,
@@ -260,6 +278,7 @@ export function useDmChat(peerId: string) {
 
     return () => {
       offNew();
+      offDeleted();
       offRequestSent();
       offRequestAccepted();
       offSummary();

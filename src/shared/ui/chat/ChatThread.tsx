@@ -30,6 +30,7 @@ export interface ChatThreadProps {
   onPressRetry?: (messageId: string) => void;
   onPressReplyOriginal?: (originalMessageId: string) => void;
   onPressPeerAvatar?: (senderId: string) => void;
+  onLongPressMessage?: (messageId: string) => void;
 
   // ── FlatList passthroughs ────────────────────────────────────
   onEndReached?: () => void;
@@ -53,6 +54,7 @@ export function ChatThread({
   onPressRetry,
   onPressReplyOriginal,
   onPressPeerAvatar,
+  onLongPressMessage,
   onEndReached,
   onEndReachedThreshold,
   ListFooterComponent,
@@ -119,6 +121,11 @@ export function ChatThread({
           onSwipeReply={
             onSwipeReply ? () => onSwipeReply(item.message.id) : undefined
           }
+          onLongPress={
+            onLongPressMessage
+              ? () => onLongPressMessage(item.message.id)
+              : undefined
+          }
         />
       );
     }
@@ -141,6 +148,11 @@ export function ChatThread({
         }
         onSwipeReply={
           onSwipeReply ? () => onSwipeReply(item.message.id) : undefined
+        }
+        onLongPress={
+          onLongPressMessage
+            ? () => onLongPressMessage(item.message.id)
+            : undefined
         }
       />
     );

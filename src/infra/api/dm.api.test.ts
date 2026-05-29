@@ -230,4 +230,16 @@ describe('dmApi', () => {
       dmApi.getDmHistory('u-1', { before: 'older' }),
     ).resolves.toEqual(response);
   });
+
+  it('deleteDirectMessage DELETEs /dm/messages/:messageId (literal segment, not :userId)', async () => {
+    mock.onDelete('/dm/messages/m-1').replyOnce(204);
+    await expect(dmApi.deleteDirectMessage('m-1')).resolves.toBeUndefined();
+  });
+
+  it('deleteDirectMessage bubbles up non-2xx errors', async () => {
+    mock.onDelete('/dm/messages/m-1').reply(404, { message: 'not found' });
+    await expect(dmApi.deleteDirectMessage('m-1')).rejects.toMatchObject({
+      response: { status: 404 },
+    });
+  });
 });

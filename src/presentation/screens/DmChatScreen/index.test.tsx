@@ -1,11 +1,13 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
+import { dmApi } from '@/infra/api/dm.api';
 import DmChatScreen from './index';
 import type { DmChatScreenProps } from './types';
 
@@ -35,6 +37,10 @@ jest.mock(
   }),
 );
 
+jest.mock('@/infra/api/dm.api', () => ({
+  dmApi: { deleteDirectMessage: jest.fn(() => Promise.resolve()) },
+}));
+
 jest.mock('./layout', () => {
   const React = require('react');
   const { Text, TouchableOpacity, View } = require('react-native');
@@ -47,6 +53,9 @@ jest.mock('./layout', () => {
     actionSheetOpen: boolean;
     archived: boolean;
     onSelectAction: (id: string) => void;
+    messageActionSheet: unknown;
+    onLongPressMessage: (messageId: string) => void;
+    onSelectMessageAction: (action: string) => void;
   }) {
     return (
       <View>
@@ -57,6 +66,9 @@ jest.mock('./layout', () => {
         <Text testID="peer-status">{JSON.stringify(props.peerStatus)}</Text>
         <Text testID="action-sheet-open">{String(props.actionSheetOpen)}</Text>
         <Text testID="archived">{String(props.archived)}</Text>
+        <Text testID="message-action-sheet-open">
+          {String(props.messageActionSheet !== null)}
+        </Text>
         <TouchableOpacity testID="header-more" onPress={props.onPressMore}>
           <Text>more</Text>
         </TouchableOpacity>
@@ -65,6 +77,18 @@ jest.mock('./layout', () => {
           onPress={() => props.onSelectAction('archive')}
         >
           <Text>archive</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="simulate-long-press-dm-mine"
+          onPress={() => props.onLongPressMessage('dm-mine')}
+        >
+          <Text>long-press</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="simulate-select-delete"
+          onPress={() => props.onSelectMessageAction('delete')}
+        >
+          <Text>select-delete</Text>
         </TouchableOpacity>
       </View>
     );
@@ -109,12 +133,22 @@ function makeRoute(
   };
 }
 
+function makeQueryWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+}
+
 function renderScreen(initialArchived = false) {
   return render(
     <DmChatScreen
       navigation={navigation}
       route={makeRoute(initialArchived)}
     />,
+    { wrapper: makeQueryWrapper() },
   );
 }
 
@@ -238,5 +272,53 @@ describe('DmChatScreen', () => {
     expect(getByTestId('message-statuses').props.children).toBe(
       JSON.stringify({ 'dm-1': 'read' }),
     );
+  });
+
+  it('opens the per-message action sheet on long-press of an own message and routes Delete to the DM endpoint', async () => {
+    const mockedDelete = dmApi.deleteDirectMessage as jest.MockedFunction<
+      typeof dmApi.deleteDirectMessage
+    >;
+    mockedDelete.mockClear();
+    mockedUseDmChat.mockReturnValue({
+      messages: [
+        {
+          id: 'dm-mine',
+          senderId: 'me',
+          senderName: 'Me',
+          senderAvatarUrl: null,
+          recipientId: 'peer-1',
+          content: 'oi',
+          mediaUrl: null,
+          mediaType: null,
+          createdAt: '2026-05-28T10:00:00.000Z',
+          replyTo: null,
+          isDeleted: false,
+          editedAt: null,
+        },
+      ],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      currentUserId: 'me',
+      awaitingApproval: false,
+      sendMessage: jest.fn(),
+      loadOlder: jest.fn(),
+      connected: true,
+    } as never);
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(getByTestId('message-action-sheet-open').props.children).toBe('false');
+
+    fireEvent.press(getByTestId('simulate-long-press-dm-mine'));
+    expect(getByTestId('message-action-sheet-open').props.children).toBe('true');
+
+    fireEvent.press(getByTestId('simulate-select-delete'));
+
+    await waitFor(() =>
+      expect(mockedDelete).toHaveBeenCalledWith('dm-mine'),
+    );
+    expect(getByTestId('message-action-sheet-open').props.children).toBe('false');
   });
 });

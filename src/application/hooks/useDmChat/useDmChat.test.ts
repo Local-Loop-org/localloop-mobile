@@ -38,6 +38,9 @@ const baseMessage = (
   mediaUrl: null,
   mediaType: null,
   createdAt: '2026-05-17T10:00:00.000Z',
+  replyTo: null,
+  isDeleted: false,
+  editedAt: null,
   ...overrides,
 });
 

@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import DmChatLayout from './layout';
 import type { DmActionId } from '@/shared/ui/chat/DmActionSheet';
+import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
+import {
+  availableMessageActions,
+  hasAnyAction,
+} from '@/shared/ui/chat/messageActionPolicy';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
+import { useDeleteDirectMessage } from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
@@ -29,8 +35,12 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const [draft, setDraft] = useState('');
   const [archived, setArchived] = useState(initialArchived);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [messageActionTargetId, setMessageActionTargetId] = useState<
+    string | null
+  >(null);
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
+  const deleteMessage = useDeleteDirectMessage();
   const peerStatus = useDmPresence(peerId);
   const { messageStatuses } = useDmReadState(peerId);
   const conversationKey = dmPushConversationKey(peerId);
@@ -95,6 +105,56 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     [toggleArchived],
   );
 
+  const targetMessage = useMemo(
+    () =>
+      messageActionTargetId
+        ? (messages.find((m) => m.id === messageActionTargetId) ?? null)
+        : null,
+    [messages, messageActionTargetId],
+  );
+
+  const messageActionSheet = useMemo(() => {
+    if (!targetMessage) return null;
+    const available = availableMessageActions({
+      message: targetMessage,
+      currentUserId,
+      conversation: 'dm',
+    });
+    if (!hasAnyAction(available)) return null;
+    return {
+      messagePreview: targetMessage.content ?? '',
+      available,
+    };
+  }, [targetMessage, currentUserId]);
+
+  const handleLongPressMessage = useCallback(
+    (messageId: string) => {
+      const msg = messages.find((m) => m.id === messageId);
+      if (!msg) return;
+      const available = availableMessageActions({
+        message: msg,
+        currentUserId,
+        conversation: 'dm',
+      });
+      if (!hasAnyAction(available)) return;
+      setMessageActionTargetId(messageId);
+    },
+    [messages, currentUserId],
+  );
+
+  const handleSelectMessageAction = useCallback(
+    (action: MessageActionId) => {
+      const id = messageActionTargetId;
+      setMessageActionTargetId(null);
+      if (!id) return;
+      if (action === 'delete') {
+        deleteMessage.mutate({ peerId, messageId: id });
+      }
+      // 'reply' wired in C8; 'edit' wired in C13.
+    },
+    [messageActionTargetId, deleteMessage, peerId],
+  );
+
   return (
     <DmChatLayout
       peerName={peerName}
@@ -125,6 +185,10 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         // TODO: cancel pending DM approval — no backend hook yet
       }}
       moreDisabled={archiveDm.isPending || unarchiveDm.isPending}
+      messageActionSheet={messageActionSheet}
+      onLongPressMessage={handleLongPressMessage}
+      onSelectMessageAction={handleSelectMessageAction}
+      onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />
   );
 }
