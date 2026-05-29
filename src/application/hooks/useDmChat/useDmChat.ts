@@ -54,12 +54,14 @@ function upsertIncomingMessage(
   const [first, ...rest] = old.pages;
   if (!first) return old;
 
-  const tempIdx = first.data.findIndex(
-    (m) =>
-      m.id.startsWith('temp-') &&
-      m.senderId === message.senderId &&
-      m.content === message.content,
-  );
+  const tempIdx =
+    message.clientMessageId !== null
+      ? first.data.findIndex(
+          (m) =>
+            m.id.startsWith('temp-') &&
+            m.clientMessageId === message.clientMessageId,
+        )
+      : -1;
   const cleaned =
     tempIdx >= 0
       ? [...first.data.slice(0, tempIdx), ...first.data.slice(tempIdx + 1)]
@@ -103,8 +105,10 @@ function createOptimisticMessage(
   peerId: string,
   content: string,
 ): DirectMessage {
+  const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
-    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: tempId,
+    clientMessageId: tempId,
     senderId: user.id,
     senderName: user.displayName,
     senderAvatarUrl: user.avatarUrl,
@@ -313,6 +317,7 @@ export function useDmChat(peerId: string) {
         content: trimmed,
         mediaUrl: null,
         mediaType: null,
+        clientMessageId: temp.clientMessageId,
       });
     },
     [peerId, currentUser, queryClient, manager],

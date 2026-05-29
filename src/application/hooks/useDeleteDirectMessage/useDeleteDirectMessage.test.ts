@@ -38,6 +38,7 @@ function makeWrapper() {
 function buildMessage(id: string): DirectMessage {
   return {
     id,
+    clientMessageId: null,
     senderId: 'me',
     senderName: 'Me',
     senderAvatarUrl: null,

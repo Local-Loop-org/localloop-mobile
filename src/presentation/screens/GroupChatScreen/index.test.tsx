@@ -75,6 +75,7 @@ const baseHookState = {
 
 const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
   id: 'm-1',
+  clientMessageId: null,
   senderId: 'u-other',
   senderName: 'Alice',
   senderAvatarUrl: null,

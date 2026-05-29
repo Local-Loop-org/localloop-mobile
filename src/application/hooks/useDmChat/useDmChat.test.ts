@@ -30,6 +30,7 @@ const baseMessage = (
   overrides: Partial<DirectMessage> = {},
 ): DirectMessage => ({
   id: 'dm-1',
+  clientMessageId: null,
   senderId: 'peer-1',
   senderName: 'Alice',
   senderAvatarUrl: null,
@@ -131,7 +132,78 @@ describe('useDmChat', () => {
         content: 'oi',
         mediaUrl: null,
         mediaType: null,
+        clientMessageId: expect.stringMatching(/^temp-/),
       },
+    );
+    expect(result.current.messages[0]?.clientMessageId).toBe(
+      result.current.messages[0]?.id,
+    );
+  });
+
+  it('reconciles two duplicate-content DM sends to distinct bubbles via clientMessageId', async () => {
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
+
+    const { result } = renderHook(() => useDmChat('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.sendMessage('same text');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    const firstClientId = result.current.messages[0].clientMessageId;
+
+    act(() => {
+      result.current.sendMessage('same text');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(2));
+    const secondClientId = result.current.messages[0].clientMessageId;
+    expect(firstClientId).not.toBe(secondClientId);
+
+    act(() => {
+      handle.fire(
+        ChatSocketEvents.NEW_DIRECT_MESSAGE,
+        baseMessage({
+          id: 'server-first',
+          clientMessageId: firstClientId,
+          senderId: 'me',
+          recipientId: 'peer-1',
+          content: 'same text',
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'server-first',
+        secondClientId,
+      ]),
+    );
+
+    act(() => {
+      handle.fire(
+        ChatSocketEvents.NEW_DIRECT_MESSAGE,
+        baseMessage({
+          id: 'server-second',
+          clientMessageId: secondClientId,
+          senderId: 'me',
+          recipientId: 'peer-1',
+          content: 'same text',
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'server-second',
+        'server-first',
+      ]),
     );
   });
 

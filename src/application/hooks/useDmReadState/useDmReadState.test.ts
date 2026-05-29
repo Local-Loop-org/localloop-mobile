@@ -34,6 +34,7 @@ const baseMessage = (
   overrides: Partial<DirectMessage> = {},
 ): DirectMessage => ({
   id: 'dm-1',
+  clientMessageId: null,
   senderId: 'me',
   senderName: 'Me',
   senderAvatarUrl: null,
