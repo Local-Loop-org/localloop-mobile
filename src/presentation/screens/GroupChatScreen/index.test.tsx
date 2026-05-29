@@ -238,7 +238,7 @@ describe('GroupChatScreen', () => {
     fireEvent.changeText(input, '  olá  ');
     fireEvent.press(getByTestId('composer-send'));
 
-    expect(sendMessage).toHaveBeenCalledWith('olá');
+    expect(sendMessage).toHaveBeenCalledWith({ content: 'olá', replyTo: null });
     await waitFor(() => {
       expect(getByPlaceholderText('Escreva uma mensagem').props.value).toBe('');
     });
@@ -406,6 +406,110 @@ describe('GroupChatScreen', () => {
 
       expect(queryByTestId('message-action-sheet')).toBeNull();
       expect(mockedDelete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reply composer', () => {
+    it('renders the reply preview chip with the peer first name after Reply', () => {
+      mockedUseGroupChat.mockReturnValue({
+        ...baseHookState,
+        messages: [
+          baseMessage({
+            id: 'peer-1',
+            senderId: 'u-other',
+            senderName: 'Alice Lima',
+            content: 'oi pessoal',
+          }),
+        ],
+      });
+      const { getByTestId } = renderScreen();
+
+      fireEvent(getByTestId('peer-bubble-peer-1'), 'onLongPress');
+      fireEvent.press(getByTestId('message-action-reply'));
+
+      const chip = getByTestId('reply-preview-chip');
+      expect(chip).toBeTruthy();
+      // ReplyPreviewChip uppercases the label and renders "RESPONDENDO A <NAME>"
+      expect(chip).toHaveTextContent(/RESPONDENDO A ALICE/);
+      expect(chip).toHaveTextContent(/oi pessoal/);
+    });
+
+    it("uses 'VOCÊ' as the chip label when replying to own message", () => {
+      mockedUseGroupChat.mockReturnValue({
+        ...baseHookState,
+        messages: [
+          baseMessage({ id: 'mine-1', senderId: 'me', content: 'minha msg' }),
+        ],
+      });
+      const { getByTestId } = renderScreen();
+
+      fireEvent(getByTestId('own-bubble-mine-1'), 'onLongPress');
+      fireEvent.press(getByTestId('message-action-reply'));
+
+      expect(getByTestId('reply-preview-chip')).toHaveTextContent(
+        /RESPONDENDO A VOCÊ/,
+      );
+    });
+
+    it('clears the chip when the cancel button is tapped', () => {
+      mockedUseGroupChat.mockReturnValue({
+        ...baseHookState,
+        messages: [
+          baseMessage({
+            id: 'peer-1',
+            senderId: 'u-other',
+            senderName: 'Alice',
+            content: 'oi',
+          }),
+        ],
+      });
+      const { getByTestId, queryByTestId } = renderScreen();
+
+      fireEvent(getByTestId('peer-bubble-peer-1'), 'onLongPress');
+      fireEvent.press(getByTestId('message-action-reply'));
+      expect(getByTestId('reply-preview-chip')).toBeTruthy();
+
+      fireEvent.press(getByTestId('reply-preview-cancel'));
+      expect(queryByTestId('reply-preview-chip')).toBeNull();
+    });
+
+    it('forwards replyTo through sendMessage and clears the chip on send', async () => {
+      const sendMessage = jest.fn();
+      mockedUseGroupChat.mockReturnValue({
+        ...baseHookState,
+        sendMessage,
+        messages: [
+          baseMessage({
+            id: 'peer-1',
+            senderId: 'u-other',
+            senderName: 'Alice',
+            content: 'mensagem original',
+          }),
+        ],
+      });
+      const { getByTestId, getByPlaceholderText, queryByTestId } = renderScreen();
+
+      fireEvent(getByTestId('peer-bubble-peer-1'), 'onLongPress');
+      fireEvent.press(getByTestId('message-action-reply'));
+
+      fireEvent.changeText(
+        getByPlaceholderText('Escreva uma mensagem'),
+        'minha resposta',
+      );
+      fireEvent.press(getByTestId('composer-send'));
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        content: 'minha resposta',
+        replyTo: {
+          id: 'peer-1',
+          authorId: 'u-other',
+          snippet: 'mensagem original',
+          isDeleted: false,
+        },
+      });
+      await waitFor(() =>
+        expect(queryByTestId('reply-preview-chip')).toBeNull(),
+      );
     });
   });
 });

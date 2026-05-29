@@ -116,7 +116,7 @@ describe('useDmChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('  oi  ');
+      result.current.sendMessage({ content: '  oi  ' });
     });
 
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
@@ -133,10 +133,47 @@ describe('useDmChat', () => {
         mediaUrl: null,
         mediaType: null,
         clientMessageId: expect.stringMatching(/^temp-/),
+        replyToMessageId: null,
       },
     );
     expect(result.current.messages[0]?.clientMessageId).toBe(
       result.current.messages[0]?.id,
+    );
+  });
+
+  it('forwards replyTo on the optimistic message and replyToMessageId on the emit', async () => {
+    mockedGetDmHistory.mockResolvedValueOnce({
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    });
+
+    const { result } = renderHook(() => useDmChat('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const replyTo = {
+      id: 'parent-msg-1',
+      authorId: 'peer-1',
+      snippet: 'mensagem original',
+      isDeleted: false,
+    };
+
+    act(() => {
+      result.current.sendMessage({ content: 'minha resposta', replyTo });
+    });
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    expect(result.current.messages[0]?.replyTo).toEqual(replyTo);
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.SEND_DM,
+      expect.objectContaining({
+        recipientId: 'peer-1',
+        content: 'minha resposta',
+        replyToMessageId: 'parent-msg-1',
+      }),
     );
   });
 
@@ -154,13 +191,13 @@ describe('useDmChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('same text');
+      result.current.sendMessage({ content: 'same text' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
     const firstClientId = result.current.messages[0].clientMessageId;
 
     act(() => {
-      result.current.sendMessage('same text');
+      result.current.sendMessage({ content: 'same text' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(2));
     const secondClientId = result.current.messages[0].clientMessageId;
@@ -276,7 +313,7 @@ describe('useDmChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('oi');
+      result.current.sendMessage({ content: 'oi' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
 
@@ -302,7 +339,7 @@ describe('useDmChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('oi');
+      result.current.sendMessage({ content: 'oi' });
     });
     act(() => {
       handle.fire(ChatSocketEvents.DM_REQUEST_SENT, { requestId: 'req-1' });

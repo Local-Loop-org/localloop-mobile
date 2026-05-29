@@ -39,6 +39,7 @@ const baseProps: DmChatLayoutProps = {
   awaitingApproval: false,
   archived: false,
   draft: '',
+  composingReplyTo: null,
   actionSheetOpen: false,
   onChangeDraft: jest.fn(),
   onSend: jest.fn(),

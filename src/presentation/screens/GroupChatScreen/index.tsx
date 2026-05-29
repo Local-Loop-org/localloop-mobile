@@ -15,6 +15,14 @@ import {
   availableMessageActions,
   hasAnyAction,
 } from '@/shared/ui/chat/messageActionPolicy';
+import { truncateReplySnippet } from '@/shared/ui/chat/replySnippet';
+
+interface ComposingReplyTarget {
+  id: string;
+  authorId: string;
+  authorName: string;
+  snippet: string;
+}
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -45,6 +53,8 @@ export default function GroupChatScreen({
   const [messageActionTargetId, setMessageActionTargetId] = useState<
     string | null
   >(null);
+  const [composingReplyTo, setComposingReplyTo] =
+    useState<ComposingReplyTarget | null>(null);
   const conversationKey = groupPushConversationKey(groupId);
 
   useEffect(() => {
@@ -61,8 +71,19 @@ export default function GroupChatScreen({
   const handleSend = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
-    sendMessage(trimmed);
+    sendMessage({
+      content: trimmed,
+      replyTo: composingReplyTo
+        ? {
+            id: composingReplyTo.id,
+            authorId: composingReplyTo.authorId,
+            snippet: composingReplyTo.snippet,
+            isDeleted: false,
+          }
+        : null,
+    });
     setDraft('');
+    setComposingReplyTo(null);
   };
 
   const handlePressMessageAvatar = (message: (typeof messages)[number]) => {
@@ -137,11 +158,36 @@ export default function GroupChatScreen({
       if (!id) return;
       if (action === 'delete') {
         deleteMessage.mutate({ groupId, messageId: id });
+        return;
       }
-      // 'reply' wired in C8 (composer); 'edit' wired in C13.
+      if (action === 'reply') {
+        const target = messages.find((m) => m.id === id);
+        if (!target) return;
+        const snippet = truncateReplySnippet(target.content);
+        if (!snippet) return;
+        setComposingReplyTo({
+          id: target.id,
+          authorId: target.senderId,
+          authorName: target.senderName,
+          snippet,
+        });
+      }
+      // 'edit' wired in C13.
     },
-    [messageActionTargetId, deleteMessage, groupId],
+    [messageActionTargetId, deleteMessage, groupId, messages],
   );
+
+  const composerReplyTo = useMemo(() => {
+    if (!composingReplyTo) return null;
+    const isMe = composingReplyTo.authorId === currentUserId;
+    const firstName =
+      composingReplyTo.authorName.split(' ')[0] ?? composingReplyTo.authorName;
+    return {
+      authorLabel: isMe ? 'Você' : firstName,
+      originalText: composingReplyTo.snippet,
+      onCancel: () => setComposingReplyTo(null),
+    };
+  }, [composingReplyTo, currentUserId]);
 
   return (
     <GroupChatLayout
@@ -156,6 +202,7 @@ export default function GroupChatScreen({
       hasMore={hasMore}
       errorMessage={error ? ERROR_LABEL[error] : null}
       draft={draft}
+      composingReplyTo={composerReplyTo}
       actionSheetOpen={actionSheetOpen}
       messageActionSheet={messageActionSheet}
       onChangeDraft={setDraft}

@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-query';
 import {
   ChatSocketEvents,
+  type ChatMessageReplyTo,
   type GroupMessage,
   type GroupMessageHistoryResponse,
   type MessageDeleted,
@@ -85,7 +86,11 @@ function prependTempMessage(
   };
 }
 
-function createOptimisticMessage(user: User, content: string): GroupMessage {
+function createOptimisticMessage(
+  user: User,
+  content: string,
+  replyTo: ChatMessageReplyTo | null = null,
+): GroupMessage {
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
     id: tempId,
@@ -97,7 +102,7 @@ function createOptimisticMessage(user: User, content: string): GroupMessage {
     mediaUrl: null,
     mediaType: null,
     createdAt: new Date().toISOString(),
-    replyTo: null,
+    replyTo,
     isDeleted: false,
     editedAt: null,
   };
@@ -287,12 +292,13 @@ export function useGroupChat(groupId: string) {
   ]);
 
   const sendMessage = useCallback(
-    (content: string) => {
-      const trimmed = content.trim();
+    (input: { content: string; replyTo?: ChatMessageReplyTo | null }) => {
+      const trimmed = input.content.trim();
       if (!trimmed) return;
       if (!currentUser) return;
 
-      const temp = createOptimisticMessage(currentUser, trimmed);
+      const replyTo = input.replyTo ?? null;
+      const temp = createOptimisticMessage(currentUser, trimmed, replyTo);
       queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
         (old) => prependTempMessage(old, temp),
@@ -304,6 +310,7 @@ export function useGroupChat(groupId: string) {
         storageKey: null,
         mediaType: null,
         clientMessageId: temp.clientMessageId,
+        replyToMessageId: replyTo?.id ?? null,
       });
     },
     [groupId, currentUser, queryClient, manager],

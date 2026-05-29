@@ -59,6 +59,7 @@ export default function DmChatLayout({
   awaitingApproval,
   archived,
   draft,
+  composingReplyTo,
   actionSheetOpen,
   messageActionSheet,
   onChangeDraft,
@@ -180,6 +181,7 @@ export default function DmChatLayout({
         ) : (
           <ChatComposer
             draft={draft}
+            composingReplyTo={composingReplyTo}
             onChangeDraft={onChangeDraft}
             onSend={onSend}
             sendDisabled={sendDisabled}

@@ -54,8 +54,11 @@ jest.mock('./layout', () => {
     archived: boolean;
     onSelectAction: (id: string) => void;
     messageActionSheet: unknown;
+    composingReplyTo: { authorLabel: string; originalText: string; onCancel: () => void } | null;
     onLongPressMessage: (messageId: string) => void;
     onSelectMessageAction: (action: string) => void;
+    onChangeDraft: (value: string) => void;
+    onSend: () => void;
   }) {
     return (
       <View>
@@ -68,6 +71,14 @@ jest.mock('./layout', () => {
         <Text testID="archived">{String(props.archived)}</Text>
         <Text testID="message-action-sheet-open">
           {String(props.messageActionSheet !== null)}
+        </Text>
+        <Text testID="composing-reply-to">
+          {props.composingReplyTo
+            ? JSON.stringify({
+                authorLabel: props.composingReplyTo.authorLabel,
+                originalText: props.composingReplyTo.originalText,
+              })
+            : 'null'}
         </Text>
         <TouchableOpacity testID="header-more" onPress={props.onPressMore}>
           <Text>more</Text>
@@ -85,10 +96,37 @@ jest.mock('./layout', () => {
           <Text>long-press</Text>
         </TouchableOpacity>
         <TouchableOpacity
+          testID="simulate-long-press-dm-peer"
+          onPress={() => props.onLongPressMessage('dm-peer')}
+        >
+          <Text>long-press-peer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           testID="simulate-select-delete"
           onPress={() => props.onSelectMessageAction('delete')}
         >
           <Text>select-delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="simulate-select-reply"
+          onPress={() => props.onSelectMessageAction('reply')}
+        >
+          <Text>select-reply</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="simulate-cancel-reply"
+          onPress={() => props.composingReplyTo?.onCancel()}
+        >
+          <Text>cancel-reply</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="simulate-set-draft"
+          onPress={() => props.onChangeDraft('texto')}
+        >
+          <Text>set-draft</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="simulate-send" onPress={props.onSend}>
+          <Text>send</Text>
         </TouchableOpacity>
       </View>
     );
@@ -272,6 +310,172 @@ describe('DmChatScreen', () => {
     expect(getByTestId('message-statuses').props.children).toBe(
       JSON.stringify({ 'dm-1': 'read' }),
     );
+  });
+
+  it('populates composingReplyTo with the peer first name when Reply is selected on a peer message', () => {
+    mockedUseDmChat.mockReturnValue({
+      messages: [
+        {
+          id: 'dm-peer',
+          senderId: 'peer-1',
+          senderName: 'Alice Wonder',
+          senderAvatarUrl: null,
+          recipientId: 'me',
+          content: 'olá mundo',
+          mediaUrl: null,
+          mediaType: null,
+          createdAt: '2026-05-28T10:00:00.000Z',
+          replyTo: null,
+          isDeleted: false,
+          editedAt: null,
+        },
+      ],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      currentUserId: 'me',
+      awaitingApproval: false,
+      sendMessage: jest.fn(),
+      loadOlder: jest.fn(),
+      connected: true,
+    } as never);
+
+    const { getByTestId } = renderScreen(false);
+
+    fireEvent.press(getByTestId('simulate-long-press-dm-peer'));
+    fireEvent.press(getByTestId('simulate-select-reply'));
+
+    expect(getByTestId('composing-reply-to').props.children).toBe(
+      JSON.stringify({ authorLabel: 'Alice', originalText: 'olá mundo' }),
+    );
+  });
+
+  it("uses 'Você' as the author label when replying to an own message", () => {
+    mockedUseDmChat.mockReturnValue({
+      messages: [
+        {
+          id: 'dm-mine',
+          senderId: 'me',
+          senderName: 'Me',
+          senderAvatarUrl: null,
+          recipientId: 'peer-1',
+          content: 'minha msg',
+          mediaUrl: null,
+          mediaType: null,
+          createdAt: '2026-05-28T10:00:00.000Z',
+          replyTo: null,
+          isDeleted: false,
+          editedAt: null,
+        },
+      ],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      currentUserId: 'me',
+      awaitingApproval: false,
+      sendMessage: jest.fn(),
+      loadOlder: jest.fn(),
+      connected: true,
+    } as never);
+
+    const { getByTestId } = renderScreen(false);
+
+    fireEvent.press(getByTestId('simulate-long-press-dm-mine'));
+    fireEvent.press(getByTestId('simulate-select-reply'));
+
+    expect(getByTestId('composing-reply-to').props.children).toBe(
+      JSON.stringify({ authorLabel: 'Você', originalText: 'minha msg' }),
+    );
+  });
+
+  it('clears composingReplyTo when the chip cancel is tapped', () => {
+    mockedUseDmChat.mockReturnValue({
+      messages: [
+        {
+          id: 'dm-peer',
+          senderId: 'peer-1',
+          senderName: 'Alice',
+          senderAvatarUrl: null,
+          recipientId: 'me',
+          content: 'oi',
+          mediaUrl: null,
+          mediaType: null,
+          createdAt: '2026-05-28T10:00:00.000Z',
+          replyTo: null,
+          isDeleted: false,
+          editedAt: null,
+        },
+      ],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      currentUserId: 'me',
+      awaitingApproval: false,
+      sendMessage: jest.fn(),
+      loadOlder: jest.fn(),
+      connected: true,
+    } as never);
+
+    const { getByTestId } = renderScreen(false);
+
+    fireEvent.press(getByTestId('simulate-long-press-dm-peer'));
+    fireEvent.press(getByTestId('simulate-select-reply'));
+    expect(getByTestId('composing-reply-to').props.children).not.toBe('null');
+
+    fireEvent.press(getByTestId('simulate-cancel-reply'));
+    expect(getByTestId('composing-reply-to').props.children).toBe('null');
+  });
+
+  it('forwards replyTo through sendMessage and clears composingReplyTo on send', () => {
+    const sendMessage = jest.fn();
+    mockedUseDmChat.mockReturnValue({
+      messages: [
+        {
+          id: 'dm-peer',
+          senderId: 'peer-1',
+          senderName: 'Alice',
+          senderAvatarUrl: null,
+          recipientId: 'me',
+          content: 'mensagem original',
+          mediaUrl: null,
+          mediaType: null,
+          createdAt: '2026-05-28T10:00:00.000Z',
+          replyTo: null,
+          isDeleted: false,
+          editedAt: null,
+        },
+      ],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      currentUserId: 'me',
+      awaitingApproval: false,
+      sendMessage,
+      loadOlder: jest.fn(),
+      connected: true,
+    } as never);
+
+    const { getByTestId } = renderScreen(false);
+
+    fireEvent.press(getByTestId('simulate-long-press-dm-peer'));
+    fireEvent.press(getByTestId('simulate-select-reply'));
+    fireEvent.press(getByTestId('simulate-set-draft'));
+    fireEvent.press(getByTestId('simulate-send'));
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      content: 'texto',
+      replyTo: {
+        id: 'dm-peer',
+        authorId: 'peer-1',
+        snippet: 'mensagem original',
+        isDeleted: false,
+      },
+    });
+    expect(getByTestId('composing-reply-to').props.children).toBe('null');
   });
 
   it('opens the per-message action sheet on long-press of an own message and routes Delete to the DM endpoint', async () => {

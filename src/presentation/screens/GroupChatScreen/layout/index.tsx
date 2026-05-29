@@ -32,6 +32,7 @@ export default function GroupChatLayout({
   hasMore,
   errorMessage,
   draft,
+  composingReplyTo,
   actionSheetOpen,
   messageActionSheet,
   onChangeDraft,
@@ -143,6 +144,7 @@ export default function GroupChatLayout({
 
         <ChatComposer
           draft={draft}
+          composingReplyTo={composingReplyTo}
           onChangeDraft={onChangeDraft}
           onSend={onSend}
           sendDisabled={sendDisabled}

@@ -278,7 +278,7 @@ describe('useGroupChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('  hi  ');
+      result.current.sendMessage({ content: '  hi  ' });
     });
 
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
@@ -295,9 +295,42 @@ describe('useGroupChat', () => {
         storageKey: null,
         mediaType: null,
         clientMessageId: expect.stringMatching(/^temp-/),
+        replyToMessageId: null,
       },
     );
     expect(temp.clientMessageId).toBe(temp.id);
+  });
+
+  it('forwards replyTo on the optimistic message and replyToMessageId on the emit', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    attachAckCapture(handle);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const replyTo = {
+      id: 'parent-msg-1',
+      authorId: 'u-other',
+      snippet: 'mensagem original',
+      isDeleted: false,
+    };
+
+    act(() => {
+      result.current.sendMessage({ content: 'resposta', replyTo });
+    });
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    expect(result.current.messages[0]?.replyTo).toEqual(replyTo);
+    expect(handle.manager.emit).toHaveBeenCalledWith(
+      ChatSocketEvents.SEND_MESSAGE,
+      expect.objectContaining({
+        groupId: 'g-1',
+        content: 'resposta',
+        replyToMessageId: 'parent-msg-1',
+      }),
+    );
   });
 
   it('reconciles the server echo with an optimistic temp via clientMessageId', async () => {
@@ -310,7 +343,7 @@ describe('useGroupChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('hello world');
+      result.current.sendMessage({ content: 'hello world' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
     const tempClientId = result.current.messages[0].clientMessageId;
@@ -346,13 +379,13 @@ describe('useGroupChat', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.sendMessage('same text');
+      result.current.sendMessage({ content: 'same text' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
     const firstClientId = result.current.messages[0].clientMessageId;
 
     act(() => {
-      result.current.sendMessage('same text');
+      result.current.sendMessage({ content: 'same text' });
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(2));
     const secondClientId = result.current.messages[0].clientMessageId;
@@ -448,7 +481,7 @@ describe('useGroupChat', () => {
 
     (handle.manager.emit as jest.Mock).mockClear();
     act(() => {
-      result.current.sendMessage('   ');
+      result.current.sendMessage({ content: '   ' });
     });
     expect(handle.manager.emit).not.toHaveBeenCalled();
     expect(result.current.messages).toHaveLength(0);
@@ -547,7 +580,7 @@ describe('useGroupChat', () => {
       await waitFor(() => expect(result.current.loading).toBe(false));
 
       act(() => {
-        result.current.sendMessage('newer');
+        result.current.sendMessage({ content: 'newer' });
       });
       await waitFor(() => expect(result.current.messages).toHaveLength(2));
 
@@ -586,7 +619,7 @@ describe('useGroupChat', () => {
       await waitFor(() => expect(result.current.loading).toBe(false));
 
       act(() => {
-        result.current.sendMessage('hello world');
+        result.current.sendMessage({ content: 'hello world' });
       });
       await waitFor(() => expect(result.current.messages).toHaveLength(1));
       const tempId = result.current.messages[0].id;

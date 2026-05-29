@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import {
   ChatSocketEvents,
+  type ChatMessageReplyTo,
   type DirectMessage,
   type DirectMessageDeleted,
   type DirectMessageHistoryResponse,
@@ -104,6 +105,7 @@ function createOptimisticMessage(
   user: User,
   peerId: string,
   content: string,
+  replyTo: ChatMessageReplyTo | null = null,
 ): DirectMessage {
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
@@ -117,7 +119,7 @@ function createOptimisticMessage(
     mediaUrl: null,
     mediaType: null,
     createdAt: new Date().toISOString(),
-    replyTo: null,
+    replyTo,
     isDeleted: false,
     editedAt: null,
   };
@@ -301,12 +303,13 @@ export function useDmChat(peerId: string) {
   ]);
 
   const sendMessage = useCallback(
-    (content: string) => {
-      const trimmed = content.trim();
+    (input: { content: string; replyTo?: ChatMessageReplyTo | null }) => {
+      const trimmed = input.content.trim();
       if (!trimmed) return;
       if (!currentUser) return;
 
-      const temp = createOptimisticMessage(currentUser, peerId, trimmed);
+      const replyTo = input.replyTo ?? null;
+      const temp = createOptimisticMessage(currentUser, peerId, trimmed, replyTo);
       queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         (old) => prependTempMessage(old, temp),
@@ -318,6 +321,7 @@ export function useDmChat(peerId: string) {
         mediaUrl: null,
         mediaType: null,
         clientMessageId: temp.clientMessageId,
+        replyToMessageId: replyTo?.id ?? null,
       });
     },
     [peerId, currentUser, queryClient, manager],
