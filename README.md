@@ -103,6 +103,11 @@ Required environment variables (all `EXPO_PUBLIC_*` so they're embedded at build
 - `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL (used for OAuth)
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
 
+Android Firebase config is intentionally not tracked. Keep a local
+`google-services.json` at the repo root for local native builds, or configure an
+EAS secret file named `GOOGLE_SERVICES_JSON`; `app.config.js` reads that file
+path during config resolution.
+
 ## CI/CD — APK delivery
 
 Pipeline at [.github/workflows/ci.yml](.github/workflows/ci.yml):
