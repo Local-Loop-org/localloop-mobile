@@ -51,6 +51,7 @@ const conversationsData: InfiniteData<ListDmConversationsResponse> = {
 
 const acceptedMessage: DirectMessage = {
   id: 'dm-1',
+  clientMessageId: null,
   senderId: 'u-1',
   senderName: 'Alice',
   senderAvatarUrl: null,

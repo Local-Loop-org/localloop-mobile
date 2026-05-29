@@ -47,6 +47,7 @@ const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
 
 const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
   id: 'm-1',
+  clientMessageId: null,
   senderId: 'u-1',
   senderName: 'Alice',
   senderAvatarUrl: null,
@@ -293,11 +294,13 @@ describe('useGroupChat', () => {
         content: 'hi',
         storageKey: null,
         mediaType: null,
+        clientMessageId: expect.stringMatching(/^temp-/),
       },
     );
+    expect(temp.clientMessageId).toBe(temp.id);
   });
 
-  it('reconciles the server echo with an optimistic temp (same senderId + content)', async () => {
+  it('reconciles the server echo with an optimistic temp via clientMessageId', async () => {
     mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
     attachAckCapture(handle);
 
@@ -310,13 +313,16 @@ describe('useGroupChat', () => {
       result.current.sendMessage('hello world');
     });
     await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    const tempClientId = result.current.messages[0].clientMessageId;
     expect(result.current.messages[0].id.startsWith('temp-')).toBe(true);
+    expect(tempClientId).not.toBeNull();
 
     act(() => {
       handle.fire(
         ChatSocketEvents.NEW_MESSAGE,
         baseMessage({
           id: 'server-uuid-1',
+          clientMessageId: tempClientId,
           senderId: 'me',
           senderName: 'Me',
           content: 'hello world',
@@ -328,6 +334,69 @@ describe('useGroupChat', () => {
       expect(result.current.messages[0]?.id).toBe('server-uuid-1'),
     );
     expect(result.current.messages).toHaveLength(1);
+  });
+
+  it('reconciles two duplicate-content sends to distinct bubbles via clientMessageId', async () => {
+    mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+    attachAckCapture(handle);
+
+    const { result } = renderHook(() => useGroupChat('g-1'), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.sendMessage('same text');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    const firstClientId = result.current.messages[0].clientMessageId;
+
+    act(() => {
+      result.current.sendMessage('same text');
+    });
+    await waitFor(() => expect(result.current.messages).toHaveLength(2));
+    const secondClientId = result.current.messages[0].clientMessageId;
+    expect(firstClientId).not.toBe(secondClientId);
+
+    act(() => {
+      handle.fire(
+        ChatSocketEvents.NEW_MESSAGE,
+        baseMessage({
+          id: 'server-first',
+          clientMessageId: firstClientId,
+          senderId: 'me',
+          senderName: 'Me',
+          content: 'same text',
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'server-first',
+        secondClientId,
+      ]),
+    );
+
+    act(() => {
+      handle.fire(
+        ChatSocketEvents.NEW_MESSAGE,
+        baseMessage({
+          id: 'server-second',
+          clientMessageId: secondClientId,
+          senderId: 'me',
+          senderName: 'Me',
+          content: 'same text',
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.messages.map((m) => m.id)).toEqual([
+        'server-second',
+        'server-first',
+      ]),
+    );
   });
 
   it('loadOlder fetches the next page using the previous next_cursor', async () => {
@@ -521,6 +590,7 @@ describe('useGroupChat', () => {
       });
       await waitFor(() => expect(result.current.messages).toHaveLength(1));
       const tempId = result.current.messages[0].id;
+      const tempClientId = result.current.messages[0].clientMessageId;
       expect(result.current.messageStatuses[tempId]).toBe('sending');
 
       act(() => {
@@ -528,6 +598,7 @@ describe('useGroupChat', () => {
           ChatSocketEvents.NEW_MESSAGE,
           baseMessage({
             id: 'server-uuid-1',
+            clientMessageId: tempClientId,
             senderId: 'me',
             senderName: 'Me',
             content: 'hello world',

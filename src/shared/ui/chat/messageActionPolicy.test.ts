@@ -11,6 +11,7 @@ const OTHER = 'other';
 function msg(overrides: Partial<ChatMessage> = {}): ChatMessage {
   return {
     id: 'm-1',
+    clientMessageId: null,
     senderId: OTHER,
     senderName: 'Alice',
     senderAvatarUrl: null,
