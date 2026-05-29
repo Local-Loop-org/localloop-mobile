@@ -148,4 +148,8 @@ export const dmApi = {
     );
     return data;
   },
+
+  deleteDirectMessage: async (messageId: string): Promise<void> => {
+    await apiClient.delete(`/dm/messages/${messageId}`);
+  },
 };

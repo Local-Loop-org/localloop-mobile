@@ -14,6 +14,7 @@ import { colors } from '@/shared/theme';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
 import { GroupActionSheet } from '@/shared/ui/chat/GroupActionSheet';
+import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import AnchorIcon from '../components/AnchorIcon';
 import { layoutDimensions, styles } from './styles';
 import type { GroupChatLayoutProps } from './types';
@@ -32,6 +33,7 @@ export default function GroupChatLayout({
   errorMessage,
   draft,
   actionSheetOpen,
+  messageActionSheet,
   onChangeDraft,
   onSend,
   onLoadOlder,
@@ -41,6 +43,9 @@ export default function GroupChatLayout({
   onPressMore,
   onCloseActionSheet,
   onSelectAction,
+  onLongPressMessage,
+  onSelectMessageAction,
+  onCloseMessageActionSheet,
 }: GroupChatLayoutProps) {
   const sendDisabled = draft.trim().length === 0;
 
@@ -112,6 +117,7 @@ export default function GroupChatLayout({
             messageStatuses={messageStatuses}
             currentUserId={currentUserId ?? ''}
             showPeerSenderName
+            onLongPressMessage={onLongPressMessage}
             onPressPeerAvatar={(senderId) => {
               const m = messages.find((msg) => msg.senderId === senderId);
               if (m) onPressMessageAvatar(m);
@@ -150,6 +156,15 @@ export default function GroupChatLayout({
             onlineCount={onlineCount}
             onClose={onCloseActionSheet}
             onSelect={onSelectAction}
+          />
+        ) : null}
+
+        {messageActionSheet ? (
+          <MessageActionSheet
+            messagePreview={messageActionSheet.messagePreview}
+            available={messageActionSheet.available}
+            onClose={onCloseMessageActionSheet}
+            onSelect={onSelectMessageAction}
           />
         ) : null}
       </KeyboardAvoidingView>

@@ -11,6 +11,7 @@ import {
   ChatSocketEvents,
   type GroupMessage,
   type GroupMessageHistoryResponse,
+  type MessageDeleted,
   type PresenceUpdate,
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
@@ -18,6 +19,7 @@ import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { messagesApi } from '@/infra/api/messages.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
+import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
   applyGroupSummaryUpdate,
@@ -32,7 +34,7 @@ interface SocketErrorPayload {
   message?: string;
 }
 
-const chatHistoryKey = (groupId: string) =>
+export const chatHistoryKey = (groupId: string) =>
   ['chat', 'history', groupId] as const;
 
 const MARK_READ_ACK_TIMEOUT_MS = 4_000;
@@ -91,6 +93,9 @@ function createOptimisticMessage(user: User, content: string): GroupMessage {
     mediaUrl: null,
     mediaType: null,
     createdAt: new Date().toISOString(),
+    replyTo: null,
+    isDeleted: false,
+    editedAt: null,
   };
 }
 
@@ -217,6 +222,14 @@ export function useGroupChat(groupId: string) {
       setOnlineCount(payload.count);
     };
 
+    const handleMessageDeleted = (payload: MessageDeleted) => {
+      if (payload.groupId !== groupId) return;
+      queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+        chatHistoryKey(groupId),
+        (old) => removeGroupMessageById(old, payload.messageId),
+      );
+    };
+
     const handleSocketError = (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
@@ -226,6 +239,10 @@ export function useGroupChat(groupId: string) {
     const offNew = manager.addListener<GroupMessage>(
       ChatSocketEvents.NEW_MESSAGE,
       handleNewMessage,
+    );
+    const offDeleted = manager.addListener<MessageDeleted>(
+      ChatSocketEvents.MESSAGE_DELETED,
+      handleMessageDeleted,
     );
     const offPresence = manager.addListener<PresenceUpdate>(
       ChatSocketEvents.PRESENCE_UPDATE,
@@ -249,6 +266,7 @@ export function useGroupChat(groupId: string) {
 
     return () => {
       offNew();
+      offDeleted();
       offPresence();
       offError();
       offJoin();

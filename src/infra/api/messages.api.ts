@@ -23,4 +23,8 @@ export const messagesApi = {
     );
     return data;
   },
+
+  deleteMessage: async (messageId: string): Promise<void> => {
+    await apiClient.delete(`/messages/${messageId}`);
+  },
 };

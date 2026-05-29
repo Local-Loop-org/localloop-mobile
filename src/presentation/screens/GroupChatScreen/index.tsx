@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
+import { useDeleteGroupMessage } from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -9,6 +10,11 @@ import {
   setActivePushConversation,
 } from '@/infra/notifications/push-notifications';
 import type { GroupActionId } from '@/shared/ui/chat/GroupActionSheet';
+import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
+import {
+  availableMessageActions,
+  hasAnyAction,
+} from '@/shared/ui/chat/messageActionPolicy';
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -32,9 +38,13 @@ export default function GroupChatScreen({
     sendMessage,
     loadOlder,
   } = useGroupChat(groupId);
+  const deleteMessage = useDeleteGroupMessage();
 
   const [draft, setDraft] = useState('');
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [messageActionTargetId, setMessageActionTargetId] = useState<
+    string | null
+  >(null);
   const conversationKey = groupPushConversationKey(groupId);
 
   useEffect(() => {
@@ -81,6 +91,58 @@ export default function GroupChatScreen({
     [handlePressHeader, handlePressMembers],
   );
 
+  const targetMessage = useMemo(
+    () =>
+      messageActionTargetId
+        ? (messages.find((m) => m.id === messageActionTargetId) ?? null)
+        : null,
+    [messages, messageActionTargetId],
+  );
+
+  const messageActionSheet = useMemo(() => {
+    if (!targetMessage) return null;
+    const available = availableMessageActions({
+      message: targetMessage,
+      currentUserId,
+      conversation: 'group',
+      myRole,
+    });
+    if (!hasAnyAction(available)) return null;
+    return {
+      messagePreview: targetMessage.content ?? '',
+      available,
+    };
+  }, [targetMessage, currentUserId, myRole]);
+
+  const handleLongPressMessage = useCallback(
+    (messageId: string) => {
+      const msg = messages.find((m) => m.id === messageId);
+      if (!msg) return;
+      const available = availableMessageActions({
+        message: msg,
+        currentUserId,
+        conversation: 'group',
+        myRole,
+      });
+      if (!hasAnyAction(available)) return;
+      setMessageActionTargetId(messageId);
+    },
+    [messages, currentUserId, myRole],
+  );
+
+  const handleSelectMessageAction = useCallback(
+    (action: MessageActionId) => {
+      const id = messageActionTargetId;
+      setMessageActionTargetId(null);
+      if (!id) return;
+      if (action === 'delete') {
+        deleteMessage.mutate({ groupId, messageId: id });
+      }
+      // 'reply' wired in C8 (composer); 'edit' wired in C13.
+    },
+    [messageActionTargetId, deleteMessage, groupId],
+  );
+
   return (
     <GroupChatLayout
       groupName={groupName}
@@ -95,6 +157,7 @@ export default function GroupChatScreen({
       errorMessage={error ? ERROR_LABEL[error] : null}
       draft={draft}
       actionSheetOpen={actionSheetOpen}
+      messageActionSheet={messageActionSheet}
       onChangeDraft={setDraft}
       onSend={handleSend}
       onLoadOlder={loadOlder}
@@ -104,6 +167,9 @@ export default function GroupChatScreen({
       onPressMore={() => setActionSheetOpen(true)}
       onCloseActionSheet={() => setActionSheetOpen(false)}
       onSelectAction={handleSelectAction}
+      onLongPressMessage={handleLongPressMessage}
+      onSelectMessageAction={handleSelectMessageAction}
+      onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />
   );
 }

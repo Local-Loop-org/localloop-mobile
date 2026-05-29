@@ -59,4 +59,16 @@ describe('messagesApi', () => {
       response: { status: 403 },
     });
   });
+
+  it('deleteMessage DELETEs /messages/:messageId', async () => {
+    mock.onDelete('/messages/m-1').replyOnce(204);
+    await expect(messagesApi.deleteMessage('m-1')).resolves.toBeUndefined();
+  });
+
+  it('deleteMessage bubbles up non-2xx errors', async () => {
+    mock.onDelete('/messages/m-1').reply(403, { message: 'forbidden' });
+    await expect(messagesApi.deleteMessage('m-1')).rejects.toMatchObject({
+      response: { status: 403 },
+    });
+  });
 });

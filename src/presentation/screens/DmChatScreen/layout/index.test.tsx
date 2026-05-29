@@ -50,6 +50,10 @@ const baseProps: DmChatLayoutProps = {
   onSelectAction: jest.fn(),
   onCancelRequest: jest.fn(),
   moreDisabled: false,
+  messageActionSheet: null,
+  onLongPressMessage: jest.fn(),
+  onSelectMessageAction: jest.fn(),
+  onCloseMessageActionSheet: jest.fn(),
 };
 
 function renderLayout(overrides: Partial<DmChatLayoutProps> = {}) {
@@ -65,6 +69,9 @@ const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   mediaUrl: null,
   mediaType: null,
   createdAt: '2026-05-27T10:00:00.000Z',
+  replyTo: null,
+  isDeleted: false,
+  editedAt: null,
   ...overrides,
 });
 

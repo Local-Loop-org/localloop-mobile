@@ -14,6 +14,9 @@ const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   mediaUrl: null,
   mediaType: null,
   createdAt: '2026-04-24T10:00:00.000Z',
+  replyTo: null,
+  isDeleted: false,
+  editedAt: null,
   ...overrides,
 });
 
@@ -80,6 +83,32 @@ describe('chat bubbles', () => {
 
     expect(onPressAvatar).toHaveBeenCalledTimes(1);
     expect(queryByTestId('peer-timestamp-peer-1')).toBeNull();
+  });
+
+  it('fires onLongPress on own bubble long-press', () => {
+    const onLongPress = jest.fn();
+    const message = baseMessage({ id: 'own-1' });
+
+    const { getByTestId } = render(
+      <OwnBubble message={message} onLongPress={onLongPress} />,
+    );
+
+    fireEvent(getByTestId('own-bubble-own-1'), 'onLongPress');
+
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires onLongPress on peer bubble long-press', () => {
+    const onLongPress = jest.fn();
+    const message = baseMessage({ id: 'peer-1' });
+
+    const { getByTestId } = render(
+      <PeerBubble message={message} onLongPress={onLongPress} />,
+    );
+
+    fireEvent(getByTestId('peer-bubble-peer-1'), 'onLongPress');
+
+    expect(onLongPress).toHaveBeenCalledTimes(1);
   });
 });
 
