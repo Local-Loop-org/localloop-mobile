@@ -1,6 +1,6 @@
 // src/application/hooks/useGroupChat/useGroupChat.ts
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -26,6 +26,10 @@ import {
   type ChatMessageWithSendStatus,
   type ChatSendStatus,
 } from '@/shared/chat/sendStatus';
+import {
+  createSendTimeoutTracker,
+  markTempAsError,
+} from '@/shared/chat/sendStatusTracker';
 import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
@@ -155,6 +159,7 @@ export function useGroupChat(groupId: string) {
 
   const [onlineCount, setOnlineCount] = useState(0);
   const [socketError, setSocketError] = useState<ChatErrorKind | null>(null);
+  const trackerRef = useRef(createSendTimeoutTracker()).current;
 
   const isJoining =
     useIsMutating({
@@ -230,6 +235,9 @@ export function useGroupChat(groupId: string) {
     if (!historyReady) return;
 
     const handleNewMessage = (message: GroupMessage) => {
+      if (message.clientMessageId) {
+        trackerRef.clear(message.clientMessageId);
+      }
       markPushMessageSeen(message.id);
       queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
@@ -309,6 +317,7 @@ export function useGroupChat(groupId: string) {
       offPresence();
       offError();
       offJoin();
+      trackerRef.clearAll();
       setOnlineCount(0);
     };
   }, [
@@ -334,16 +343,24 @@ export function useGroupChat(groupId: string) {
         (old) => prependTempMessage(old, temp),
       );
 
+      const clientMessageId = temp.clientMessageId ?? temp.id;
       manager.emit(ChatSocketEvents.SEND_MESSAGE, {
         groupId,
         content: trimmed,
         storageKey: null,
         mediaType: null,
-        clientMessageId: temp.clientMessageId,
+        clientMessageId,
         replyToMessageId: replyTo?.id ?? null,
       });
+
+      trackerRef.track(clientMessageId, (cid) => {
+        queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+          chatHistoryKey(groupId),
+          (old) => markTempAsError(old, cid),
+        );
+      });
     },
-    [groupId, currentUser, queryClient, manager],
+    [groupId, currentUser, queryClient, manager, trackerRef],
   );
 
   const loadOlder = useCallback(() => {
