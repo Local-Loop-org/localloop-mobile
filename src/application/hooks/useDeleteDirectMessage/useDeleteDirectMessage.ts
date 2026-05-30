@@ -10,19 +10,25 @@ import {
 } from '../useDmHistory/dmHistoryQuery';
 
 /**
- * Idempotent: removes the message from every page if present, leaves the cache
- * unchanged otherwise. Shared with the `DIRECT_MESSAGE_DELETED` WS handler in
- * `useDmChat`.
+ * Idempotent: flips the matching message's `isDeleted` to true and blanks its
+ * `content` so the bubble can render as a tombstone in place; returns the
+ * same reference when the message is missing or already marked. Shared with
+ * the `DIRECT_MESSAGE_DELETED` WS handler in `useDmChat`.
  */
-export function removeDirectMessageById(
+export function markDirectMessageDeleted(
   old: DmHistoryInfiniteData | undefined,
   messageId: string,
 ): DmHistoryInfiniteData | undefined {
   if (!old) return old;
   let changed = false;
   const pages = old.pages.map((page) => {
-    const next = page.data.filter((m) => m.id !== messageId);
-    if (next.length === page.data.length) return page;
+    let pageChanged = false;
+    const next = page.data.map((m) => {
+      if (m.id !== messageId || m.isDeleted) return m;
+      pageChanged = true;
+      return { ...m, isDeleted: true, content: '' };
+    });
+    if (!pageChanged) return page;
     changed = true;
     return { ...page, data: next };
   });
@@ -56,7 +62,7 @@ export function useDeleteDirectMessage(): UseMutationResult<
         dmHistoryKey(peerId),
       );
       queryClient.setQueryData<DmHistoryInfiniteData>(dmHistoryKey(peerId), (old) =>
-        removeDirectMessageById(old, messageId),
+        markDirectMessageDeleted(old, messageId),
       );
       return { previous, peerId };
     },

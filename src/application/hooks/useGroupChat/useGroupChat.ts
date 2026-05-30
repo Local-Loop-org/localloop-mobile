@@ -26,7 +26,7 @@ import {
   type ChatMessageWithSendStatus,
   type ChatSendStatus,
 } from '@/shared/chat/sendStatus';
-import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
+import { markGroupMessageDeleted } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
@@ -247,7 +247,7 @@ export function useGroupChat(groupId: string) {
       if (payload.groupId !== groupId) return;
       queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
-        (old) => removeGroupMessageById(old, payload.messageId),
+        (old) => markGroupMessageDeleted(old, payload.messageId),
       );
     };
 

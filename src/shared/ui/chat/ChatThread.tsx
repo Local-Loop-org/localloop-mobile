@@ -219,6 +219,9 @@ function resolveReplyDisplay(
     return { author: 'Mensagem apagada', text: '' };
   }
   const parent = messageById.get(replyTo.id);
+  if (parent?.isDeleted) {
+    return { author: 'Mensagem apagada', text: '' };
+  }
   if (parent) {
     const author =
       parent.senderId === currentUserId

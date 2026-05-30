@@ -41,6 +41,74 @@ export function PeerBubble({
     !previousMessage || previousMessage.senderId !== message.senderId;
   const lastOfRun = !nextMessage || nextMessage.senderId !== message.senderId;
 
+  if (message.isDeleted) {
+    const showAvatarSlot = enhanced ? lastOfRun : true;
+    const avatar = showAvatarSlot ? (
+      <Avatar
+        name={message.senderName}
+        uri={message.senderAvatarUrl}
+        size={layoutDimensions.peerAvatar}
+      />
+    ) : (
+      <View
+        style={{
+          width: layoutDimensions.peerAvatar,
+          height: layoutDimensions.peerAvatar,
+        }}
+      />
+    );
+    const showName = enhanced ? showSenderName && firstOfRun : showSenderName;
+    return (
+      <View
+        style={[
+          styles.peerRow,
+          enhanced && firstOfRun && styles.peerRowFirstOfRun,
+        ]}
+        testID={`peer-row-${message.id}`}
+      >
+        {onPressAvatar && showAvatarSlot ? (
+          <Pressable
+            onPress={onPressAvatar}
+            accessibilityRole='button'
+            accessibilityLabel={`Abrir conversa com ${message.senderName}`}
+            hitSlop={8}
+            testID={`peer-avatar-${message.senderId}`}
+          >
+            {avatar}
+          </Pressable>
+        ) : (
+          avatar
+        )}
+        <View style={styles.peerColumn}>
+          {showName && (
+            <View style={styles.peerNameRow}>
+              <Text style={styles.peerName}>{message.senderName}</Text>
+            </View>
+          )}
+          <View
+            style={[
+              styles.tombstoneBubble,
+              enhanced && !firstOfRun && styles.peerBubbleMidTop,
+              enhanced && !lastOfRun && styles.peerBubbleMidBottom,
+              (!enhanced || lastOfRun) && styles.peerBubbleTail,
+            ]}
+            testID={`peer-tombstone-${message.id}`}
+          >
+            <Text style={styles.tombstoneText}>Mensagem apagada</Text>
+          </View>
+          {(!enhanced || lastOfRun) && (
+            <Text
+              style={styles.peerTimestamp}
+              testID={`peer-timestamp-${message.id}`}
+            >
+              {formatTime(message.createdAt)}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   const [tapTimestampVisible, setTapTimestampVisible] = useState(false);
   const timestamp = formatTime(message.createdAt);
 

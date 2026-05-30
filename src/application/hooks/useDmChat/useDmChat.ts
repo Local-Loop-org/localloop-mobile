@@ -29,7 +29,7 @@ import {
   getNextDmHistoryPageParam,
   type DmHistoryInfiniteData,
 } from '../useDmHistory/dmHistoryQuery';
-import { removeDirectMessageById } from '../useDeleteDirectMessage/useDeleteDirectMessage';
+import { markDirectMessageDeleted } from '../useDeleteDirectMessage/useDeleteDirectMessage';
 import { applyEditedToDirectMessage } from '../useEditDirectMessage/useEditDirectMessage';
 
 export type DmChatErrorKind = 'load_failed' | 'socket_error';
@@ -231,7 +231,7 @@ export function useDmChat(peerId: string) {
       if (payload.senderId !== peerId && payload.recipientId !== peerId) return;
       queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
-        (old) => removeDirectMessageById(old, payload.messageId),
+        (old) => markDirectMessageDeleted(old, payload.messageId),
       );
     };
 

@@ -50,6 +50,40 @@ export function OwnBubble({
     !previousMessage || previousMessage.senderId !== message.senderId;
   const lastOfRun = !nextMessage || nextMessage.senderId !== message.senderId;
 
+  if (message.isDeleted) {
+    return (
+      <View
+        style={[
+          styles.ownRow,
+          enhanced && firstOfRun && styles.ownRowFirstOfRun,
+        ]}
+        testID={`own-row-${message.id}`}
+      >
+        <View style={styles.ownColumn}>
+          <View
+            style={[
+              styles.tombstoneBubble,
+              enhanced && !firstOfRun && styles.ownBubbleMidTop,
+              enhanced && !lastOfRun && styles.ownBubbleMidBottom,
+              (!enhanced || lastOfRun) && styles.ownBubbleTail,
+            ]}
+            testID={`own-tombstone-${message.id}`}
+          >
+            <Text style={styles.tombstoneText}>Mensagem apagada</Text>
+          </View>
+          {(!enhanced || lastOfRun) && (
+            <Text
+              style={styles.ownTimestamp}
+              testID={`own-timestamp-${message.id}`}
+            >
+              {formatTime(message.createdAt)}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   const [tapTimestampVisible, setTapTimestampVisible] = useState(false);
   const isError = status === 'error';
   const isSending = status === 'sending';
