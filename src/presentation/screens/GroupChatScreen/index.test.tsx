@@ -9,6 +9,7 @@ import {
 import GroupChatScreen from './index';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import { messagesApi } from '@/infra/api/messages.api';
+import type { ChatSendStatus } from '@/shared/chat/sendStatus';
 
 jest.mock('@/application/hooks/useGroupChat/useGroupChat', () => ({
   useGroupChat: jest.fn(),
@@ -61,7 +62,7 @@ const renderScreen = (
 
 const baseHookState = {
   messages: [] as GroupMessage[],
-  messageStatuses: {} as Record<string, 'sending' | 'sent'>,
+  messageStatuses: {} as Record<string, ChatSendStatus>,
   loading: false,
   loadingMore: false,
   error: null,

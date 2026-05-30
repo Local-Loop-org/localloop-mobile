@@ -21,6 +21,11 @@ import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { messagesApi } from '@/infra/api/messages.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
+import {
+  getLocalSendStatus,
+  type ChatMessageWithSendStatus,
+  type ChatSendStatus,
+} from '@/shared/chat/sendStatus';
 import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
@@ -31,6 +36,8 @@ import {
 } from '../useMyGroups/useMyGroups';
 
 export type ChatErrorKind = 'load_failed' | 'socket_error';
+export type GroupMessageStatus = ChatSendStatus;
+type GroupMessageWithSendStatus = ChatMessageWithSendStatus<GroupMessage>;
 
 interface SocketErrorPayload {
   code?: string;
@@ -92,11 +99,12 @@ function createOptimisticMessage(
   user: User,
   content: string,
   replyTo: ChatMessageReplyTo | null = null,
-): GroupMessage {
+): GroupMessageWithSendStatus {
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
     id: tempId,
     clientMessageId: tempId,
+    sendStatus: 'sending',
     senderId: user.id,
     senderName: user.displayName,
     senderAvatarUrl: user.avatarUrl,
@@ -171,19 +179,21 @@ export function useGroupChat(groupId: string) {
     enabled: !!accessToken && !isJoining,
   });
 
-  const messages = useMemo(
+  const messages = useMemo<GroupMessageWithSendStatus[]>(
     () => historyQuery.data?.pages.flatMap((p) => p.data) ?? [],
     [historyQuery.data],
   );
 
   const currentUserId = currentUser?.id ?? null;
 
-  const messageStatuses = useMemo<Record<string, 'sending' | 'sent'>>(() => {
+  const messageStatuses = useMemo<Record<string, GroupMessageStatus>>(() => {
     if (!currentUserId) return {};
-    const out: Record<string, 'sending' | 'sent'> = {};
+    const out: Record<string, GroupMessageStatus> = {};
     for (const m of messages) {
       if (m.senderId !== currentUserId) continue;
-      out[m.id] = m.id.startsWith('temp-') ? 'sending' : 'sent';
+      out[m.id] = m.id.startsWith('temp-')
+        ? (getLocalSendStatus(m) ?? 'sending')
+        : 'sent';
     }
     return out;
   }, [messages, currentUserId]);

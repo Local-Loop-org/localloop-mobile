@@ -9,6 +9,7 @@ import {
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import { getLocalSendStatus } from '@/shared/chat/sendStatus';
 import {
   dmHistoryKey,
   fetchDmHistoryPage,
@@ -54,7 +55,7 @@ function buildMessageStatuses(
     if (message.senderId !== currentUserId) return acc;
 
     if (isTempMessage(message)) {
-      acc[message.id] = 'sending';
+      acc[message.id] = getLocalSendStatus(message) ?? 'sending';
       return acc;
     }
 

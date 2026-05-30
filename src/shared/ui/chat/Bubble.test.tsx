@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { ChatMessage } from '@localloop/shared-types';
 import { formatTime } from '@/shared/format/chat';
-import { OwnBubble } from './OwnBubble';
+import { OwnBubble, type OwnBubbleStatus } from './OwnBubble';
 import { PeerBubble } from './PeerBubble';
 
 const baseMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
@@ -117,7 +117,9 @@ describe('OwnBubble enhanced mode · status indicator', () => {
   // Enhanced mode is triggered when `previousMessage` or `nextMessage` is
   // passed. `nextMessage={null}` also forces `lastOfRun=true`, which is the
   // branch that renders the status row.
-  const renderEnhanced = (status?: 'sending' | 'sent' | 'read') =>
+  const renderEnhanced = (
+    status?: Extract<OwnBubbleStatus, 'sending' | 'sent' | 'read'>,
+  ) =>
     render(
       <OwnBubble
         message={baseMessage({ id: 'own-1', senderId: 'me' })}
@@ -157,6 +159,25 @@ describe('OwnBubble enhanced mode · status indicator', () => {
     expect(queryByTestId('own-status-sending')).toBeNull();
     expect(queryByTestId('own-status-sent')).toBeNull();
     expect(queryByTestId('own-status-read')).toBeNull();
+  });
+
+  it("renders the failed row when status is 'error'", () => {
+    const onRetry = jest.fn();
+    const { getByTestId } = render(
+      <OwnBubble
+        message={baseMessage({ id: 'own-1', senderId: 'me' })}
+        previousMessage={null}
+        nextMessage={null}
+        status='error'
+        onRetry={onRetry}
+      />,
+    );
+
+    fireEvent.press(getByTestId('own-retry-link'));
+
+    expect(getByTestId('own-status-failed')).toBeTruthy();
+    expect(getByTestId('own-failed-warning')).toBeTruthy();
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
 

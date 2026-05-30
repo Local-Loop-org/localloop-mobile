@@ -15,6 +15,7 @@ import {
   type MyGroup,
 } from '@/infra/api/groups.api';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import type { ChatMessageWithSendStatus } from '@/shared/chat/sendStatus';
 import {
   makeManagerMock,
   type ManagerMockHandle,
@@ -44,8 +45,11 @@ type MarkReadAck = (error: Error | null, payload?: GroupSummaryUpdate) => void;
 const mockedGetHistory = messagesApi.getHistory as jest.Mock;
 const mockedJoinGroup = groupsApi.joinGroup as jest.Mock;
 const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
+type GroupMessageWithSendStatus = ChatMessageWithSendStatus<GroupMessage>;
 
-const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
+const baseMessage = (
+  over: Partial<GroupMessageWithSendStatus> = {},
+): GroupMessageWithSendStatus => ({
   id: 'm-1',
   clientMessageId: null,
   senderId: 'u-1',
@@ -586,8 +590,31 @@ describe('useGroupChat', () => {
 
       const tempId = result.current.messages[0].id;
       expect(tempId.startsWith('temp-')).toBe(true);
+      expect(result.current.messages[0].sendStatus).toBe('sending');
       expect(result.current.messageStatuses[tempId]).toBe('sending');
       expect(result.current.messageStatuses['m-mine-old']).toBe('sent');
+    });
+
+    it("uses a temp message's local sendStatus when present", async () => {
+      mockedGetHistory.mockResolvedValueOnce({
+        data: [
+          baseMessage({
+            id: 'temp-error',
+            senderId: 'me',
+            content: 'will retry later',
+            sendStatus: 'error',
+          }),
+        ],
+        next_cursor: null,
+      });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.messageStatuses['temp-error']).toBe('error');
     });
 
     it('omits peer messages from the status map', async () => {

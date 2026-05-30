@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '@/application/stores/auth.store';
 import { dmApi } from '@/infra/api/dm.api';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import type { ChatMessageWithSendStatus } from '@/shared/chat/sendStatus';
 import {
   makeManagerMock,
   type ManagerMockHandle,
@@ -29,10 +30,11 @@ const mockedGetDmHistory = dmApi.getDmHistory as jest.MockedFunction<
   typeof dmApi.getDmHistory
 >;
 const mockedUseChatSocketManager = useChatSocketManager as jest.Mock;
+type DirectMessageWithSendStatus = ChatMessageWithSendStatus<DirectMessage>;
 
 const baseMessage = (
-  overrides: Partial<DirectMessage> = {},
-): DirectMessage => ({
+  overrides: Partial<DirectMessageWithSendStatus> = {},
+): DirectMessageWithSendStatus => ({
   id: 'dm-1',
   clientMessageId: null,
   senderId: 'me',
@@ -146,6 +148,29 @@ describe('useDmReadState', () => {
 
     await waitFor(() =>
       expect(result.current.messageStatuses['temp-1']).toBe('sending'),
+    );
+  });
+
+  it("uses a temp message's local sendStatus when present", async () => {
+    mockedGetDmHistory.mockResolvedValueOnce(
+      historyResponse({
+        peerLastReadAt: '2026-05-27T10:10:00.000Z',
+        data: [
+          baseMessage({
+            id: 'temp-error',
+            createdAt: '2026-05-27T10:00:00.000Z',
+            sendStatus: 'error',
+          }),
+        ],
+      }),
+    );
+
+    const { result } = renderHook(() => useDmReadState('peer-1'), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() =>
+      expect(result.current.messageStatuses['temp-error']).toBe('error'),
     );
   });
 
