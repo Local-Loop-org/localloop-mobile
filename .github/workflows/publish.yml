@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npx jest --passWithNoTests
+
+  release-apk:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # TODO: Re-enable iOS build once we have apple dev account
+      # - name: Build and Download IPA
+      #   run: |
+      #     eas build \
+      #       --platform ios \
+      #       --profile production \
+      #       --non-interactive \
+      #       --wait \
+      #       --json > build.json
+
+      # - name: Extract build URL
+      #   id: build-ipa
+      #   run: |
+      #     BUILD_URL=$(cat build.json | jq -r '.[0].artifacts.buildUrl')
+      #     echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+
+      # - name: Download IPA
+      #   run: |
+      #     mkdir -p builds
+      #     curl -L "${{ steps.build.outputs.build_url }}" \
+      #       --output builds/app.ipa
+
+      # - name: Publish Release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: ./builds/app.ipa
+      #     tag_name: ${{ github.ref_name }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build APK on EAS
+        id: build-apk
+        run: |
+          BUILD_JSON=$(eas build --platform android --profile production --non-interactive --json --wait)
+          echo "$BUILD_JSON"
+          APK_URL=$(echo "$BUILD_JSON" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+            echo "Failed to extract APK URL from EAS build output" >&2
+            exit 1
+          fi
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        run: curl -fL -o localloop.apk "${{ steps.build-apk.outputs.apk_url }}"
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            ./localloop.apk \
+            --title "Build ${{ github.run_number }}" \
+            --notes "Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}"
