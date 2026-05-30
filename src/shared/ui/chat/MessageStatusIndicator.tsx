@@ -15,6 +15,7 @@ export type OwnMessageStatus =
 interface MessageStatusIndicatorProps {
   status: OwnMessageStatus;
   timestamp: string;
+  edited?: boolean;
 }
 
 function SingleCheck({ color }: { color: string }) {
@@ -70,6 +71,7 @@ function ClockGlyph({ color }: { color: string }) {
 export function MessageStatusIndicator({
   status,
   timestamp,
+  edited = false,
 }: MessageStatusIndicatorProps) {
   if (status === 'sending') {
     return (
@@ -84,6 +86,11 @@ export function MessageStatusIndicator({
     return (
       <View style={styles.statusRow} testID='own-status-pending'>
         <Text style={styles.statusTimestamp}>{timestamp}</Text>
+        {edited && (
+          <Text style={styles.editedSuffix} testID='own-edited-suffix'>
+            editado
+          </Text>
+        )}
         <View style={styles.statusPendingGroup}>
           <ClockGlyph color={colors.accent2} />
           <Text style={styles.statusPendingText}>pendente</Text>
@@ -102,6 +109,11 @@ export function MessageStatusIndicator({
   return (
     <View style={styles.statusRow} testID={testID}>
       <Text style={styles.statusTimestamp}>{timestamp}</Text>
+      {edited && (
+        <Text style={styles.editedSuffix} testID='own-edited-suffix'>
+          editado
+        </Text>
+      )}
       {status === 'sent' && <SingleCheck color={colors.faint} />}
       {status === 'read' && <DoubleCheck color={colors.primary} />}
     </View>

@@ -72,6 +72,8 @@ export function OwnBubble({
     setTapTimestampVisible((v) => !v);
   };
 
+  const edited = !!message.editedAt;
+
   const renderFooter = () => {
     if (enhanced) {
       if (!lastOfRun) {
@@ -81,6 +83,14 @@ export function OwnBubble({
             testID={`own-timestamp-${message.id}`}
           >
             {timestamp}
+            {edited && (
+              <Text
+                style={styles.editedSuffix}
+                testID={`own-edited-suffix-${message.id}`}
+              >
+                {' '}editado
+              </Text>
+            )}
           </Text>
         ) : null;
       }
@@ -91,6 +101,7 @@ export function OwnBubble({
         <MessageStatusIndicator
           status={status === 'error' ? null : (status ?? null)}
           timestamp={timestamp}
+          edited={edited}
         />
       );
     }
@@ -98,6 +109,14 @@ export function OwnBubble({
     return tapTimestampVisible ? (
       <Text style={styles.ownTimestamp} testID={`own-timestamp-${message.id}`}>
         {timestamp}
+        {edited && (
+          <Text
+            style={styles.editedSuffix}
+            testID={`own-edited-suffix-${message.id}`}
+          >
+            {' '}editado
+          </Text>
+        )}
       </Text>
     ) : null;
   };
