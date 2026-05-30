@@ -42,7 +42,7 @@ describe('chat bubbles', () => {
 
     fireEvent.press(getByTestId('own-bubble-own-1'));
 
-    expect(getByTestId('own-timestamp-own-1').props.children).toBe(
+    expect(getByTestId('own-timestamp-own-1')).toHaveTextContent(
       formatTime(message.createdAt),
     );
 
@@ -63,7 +63,7 @@ describe('chat bubbles', () => {
 
     fireEvent.press(getByTestId('peer-bubble-peer-1'));
 
-    expect(getByTestId('peer-timestamp-peer-1').props.children).toBe(
+    expect(getByTestId('peer-timestamp-peer-1')).toHaveTextContent(
       formatTime(message.createdAt),
     );
 
@@ -157,5 +157,134 @@ describe('OwnBubble enhanced mode · status indicator', () => {
     expect(queryByTestId('own-status-sending')).toBeNull();
     expect(queryByTestId('own-status-sent')).toBeNull();
     expect(queryByTestId('own-status-read')).toBeNull();
+  });
+});
+
+describe('chat bubbles · editado suffix', () => {
+  it('renders the suffix in the own status row when editedAt is set', () => {
+    const message = baseMessage({
+      id: 'own-1',
+      senderId: 'me',
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByTestId } = render(
+      <OwnBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+        status='sent'
+      />,
+    );
+
+    const suffix = getByTestId('own-edited-suffix');
+    expect(suffix).toBeTruthy();
+    expect(suffix.props.children).toBe('editado');
+    // sibling of the status testID — still in the same row
+    expect(getByTestId('own-status-sent')).toBeTruthy();
+  });
+
+  it('omits the suffix from the own status row when editedAt is null', () => {
+    const message = baseMessage({
+      id: 'own-1',
+      senderId: 'me',
+      editedAt: null,
+    });
+
+    const { queryByTestId } = render(
+      <OwnBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+        status='sent'
+      />,
+    );
+
+    expect(queryByTestId('own-edited-suffix')).toBeNull();
+  });
+
+  it("omits the suffix while status is 'sending' even if editedAt is set", () => {
+    const message = baseMessage({
+      id: 'own-1',
+      senderId: 'me',
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { queryByTestId } = render(
+      <OwnBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+        status='sending'
+      />,
+    );
+
+    expect(queryByTestId('own-status-sending')).toBeTruthy();
+    expect(queryByTestId('own-edited-suffix')).toBeNull();
+  });
+
+  it('reveals the suffix when tapping a legacy own bubble whose editedAt is set', () => {
+    const message = baseMessage({
+      id: 'own-legacy',
+      senderId: 'me',
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByTestId, queryByTestId } = render(<OwnBubble message={message} />);
+
+    expect(queryByTestId('own-edited-suffix-own-legacy')).toBeNull();
+
+    fireEvent.press(getByTestId('own-bubble-own-legacy'));
+
+    expect(getByTestId('own-timestamp-own-legacy')).toBeTruthy();
+    expect(getByTestId('own-edited-suffix-own-legacy')).toBeTruthy();
+  });
+
+  it('renders the suffix on a peer bubble lastOfRun when editedAt is set', () => {
+    const message = baseMessage({
+      id: 'peer-1',
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByTestId } = render(
+      <PeerBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+      />,
+    );
+
+    expect(getByTestId('peer-timestamp-peer-1')).toBeTruthy();
+    expect(getByTestId('peer-edited-suffix-peer-1')).toBeTruthy();
+  });
+
+  it('omits the suffix on a peer bubble lastOfRun when editedAt is null', () => {
+    const message = baseMessage({ id: 'peer-1', editedAt: null });
+
+    const { queryByTestId } = render(
+      <PeerBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+      />,
+    );
+
+    expect(queryByTestId('peer-edited-suffix-peer-1')).toBeNull();
+  });
+
+  it('reveals the suffix when tapping a legacy peer bubble whose editedAt is set', () => {
+    const message = baseMessage({
+      id: 'peer-legacy',
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByTestId, queryByTestId } = render(<PeerBubble message={message} />);
+
+    expect(queryByTestId('peer-edited-suffix-peer-legacy')).toBeNull();
+
+    fireEvent.press(getByTestId('peer-bubble-peer-legacy'));
+
+    expect(getByTestId('peer-timestamp-peer-legacy')).toBeTruthy();
+    expect(getByTestId('peer-edited-suffix-peer-legacy')).toBeTruthy();
   });
 });

@@ -151,6 +151,13 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     paddingLeft: 10,
   },
+  editedSuffix: {
+    fontSize: 9.5,
+    fontFamily: monoFamily,
+    color: colors.faint,
+    fontStyle: 'italic',
+    letterSpacing: 0.4,
+  },
 
   // --- quoted reply block (inside a bubble) ---
   quotedBlock: {
