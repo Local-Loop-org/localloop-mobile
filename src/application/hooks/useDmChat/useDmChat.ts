@@ -16,6 +16,7 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
+import type { ChatMessageWithSendStatus } from '@/shared/chat/sendStatus';
 import {
   applyDmSummaryUpdate,
   DM_CONVERSATIONS_KEY,
@@ -41,6 +42,7 @@ interface DmRequestSentPayload {
 }
 
 type DmRequestAcceptedPayload = DirectMessage;
+type DirectMessageWithSendStatus = ChatMessageWithSendStatus<DirectMessage>;
 
 function upsertIncomingMessage(
   old: DmHistoryInfiniteData | undefined,
@@ -106,11 +108,12 @@ function createOptimisticMessage(
   peerId: string,
   content: string,
   replyTo: ChatMessageReplyTo | null = null,
-): DirectMessage {
+): DirectMessageWithSendStatus {
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
     id: tempId,
     clientMessageId: tempId,
+    sendStatus: 'sending',
     senderId: user.id,
     senderName: user.displayName,
     senderAvatarUrl: user.avatarUrl,
@@ -159,7 +162,7 @@ export function useDmChat(peerId: string) {
     enabled: !!accessToken,
   });
 
-  const messages = useMemo(
+  const messages = useMemo<DirectMessageWithSendStatus[]>(
     () => historyQuery.data?.pages.flatMap((p) => p.data) ?? [],
     [historyQuery.data],
   );

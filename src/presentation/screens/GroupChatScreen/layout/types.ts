@@ -1,4 +1,5 @@
 import type { AnchorType, GroupMessage } from '@localloop/shared-types';
+import type { ChatSendStatus } from '@/shared/chat/sendStatus';
 import type { ChatComposerReplyTo } from '@/shared/ui/chat/ChatComposer';
 import type { GroupActionId } from '@/shared/ui/chat/GroupActionSheet';
 import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
@@ -12,9 +13,10 @@ export interface GroupChatLayoutProps {
   memberCount?: number;
   messages: GroupMessage[];
   /** Per-message send status for own bubbles, keyed by message id.
-   * 'sending' while the optimistic temp is in flight; 'sent' after the server
-   * echo replaces it. Peer messages are absent. */
-  messageStatuses: Record<string, 'sending' | 'sent'>;
+   * 'sending' while the optimistic temp is in flight, 'error' when a later
+   * Cluster E step marks the temp failed, and 'sent' after the server echo
+   * replaces it. Peer messages are absent. */
+  messageStatuses: Record<string, ChatSendStatus>;
   currentUserId: string | null;
   loading: boolean;
   loadingMore: boolean;
