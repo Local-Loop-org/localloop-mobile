@@ -152,4 +152,11 @@ export const dmApi = {
   deleteDirectMessage: async (messageId: string): Promise<void> => {
     await apiClient.delete(`/dm/messages/${messageId}`);
   },
+
+  editDirectMessage: async (
+    messageId: string,
+    body: { content: string },
+  ): Promise<void> => {
+    await apiClient.patch(`/dm/messages/${messageId}`, body);
+  },
 };

@@ -75,6 +75,16 @@ export function PeerBubble({
     setTapTimestampVisible((v) => !v);
   };
 
+  const edited = !!message.editedAt;
+  const editedSuffix = edited ? (
+    <Text
+      style={styles.editedSuffix}
+      testID={`peer-edited-suffix-${message.id}`}
+    >
+      {' '}editado
+    </Text>
+  ) : null;
+
   const renderFooter = () => {
     if (enhanced) {
       if (lastOfRun) {
@@ -84,6 +94,7 @@ export function PeerBubble({
             testID={`peer-timestamp-${message.id}`}
           >
             {timestamp}
+            {editedSuffix}
           </Text>
         );
       }
@@ -93,6 +104,7 @@ export function PeerBubble({
           testID={`peer-timestamp-${message.id}`}
         >
           {timestamp}
+          {editedSuffix}
         </Text>
       ) : null;
     }
@@ -102,6 +114,7 @@ export function PeerBubble({
         testID={`peer-timestamp-${message.id}`}
       >
         {timestamp}
+        {editedSuffix}
       </Text>
     ) : null;
   };

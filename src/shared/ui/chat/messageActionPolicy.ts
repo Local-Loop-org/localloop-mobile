@@ -41,7 +41,7 @@ export function availableMessageActions(
 
   return {
     canReply: true,
-    canEdit: isOwn || isPrivileged,
+    canEdit: isOwn,
     canDelete: isOwn || isPrivileged,
   };
 }

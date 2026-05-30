@@ -13,6 +13,7 @@ import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
+import { EditErrorBanner } from '@/shared/ui/chat/EditErrorBanner';
 import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
 import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
@@ -60,6 +61,9 @@ export default function DmChatLayout({
   archived,
   draft,
   composingReplyTo,
+  composingEdit,
+  editError,
+  onDismissEditError,
   actionSheetOpen,
   messageActionSheet,
   onChangeDraft,
@@ -181,13 +185,22 @@ export default function DmChatLayout({
             onCancel={onCancelRequest}
           />
         ) : (
-          <ChatComposer
-            draft={draft}
-            composingReplyTo={composingReplyTo}
-            onChangeDraft={onChangeDraft}
-            onSend={onSend}
-            sendDisabled={sendDisabled}
-          />
+          <>
+            {editError ? (
+              <EditErrorBanner
+                message={editError}
+                onDismiss={onDismissEditError}
+              />
+            ) : null}
+            <ChatComposer
+              draft={draft}
+              composingReplyTo={composingReplyTo}
+              composingEdit={composingEdit}
+              onChangeDraft={onChangeDraft}
+              onSend={onSend}
+              sendDisabled={sendDisabled}
+            />
+          </>
         )}
 
         {actionSheetOpen ? (

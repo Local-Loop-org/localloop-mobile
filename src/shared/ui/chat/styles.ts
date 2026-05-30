@@ -151,6 +151,13 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     paddingLeft: 10,
   },
+  editedSuffix: {
+    fontSize: 9.5,
+    fontFamily: monoFamily,
+    color: colors.faint,
+    fontStyle: 'italic',
+    letterSpacing: 0.4,
+  },
 
   // --- quoted reply block (inside a bubble) ---
   quotedBlock: {
@@ -246,6 +253,66 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
+  },
+
+  // --- edit preview chip (above composer) ---
+  editChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: colors.line,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  editChipText: {
+    flex: 1,
+    fontFamily: monoFamily,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.primary,
+  },
+  editChipCancel: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // --- inline edit error banner (above composer) ---
+  editErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: 10,
+    marginBottom: 6,
+  },
+  editErrorBannerText: {
+    flex: 1,
+    fontSize: 12.5,
+    lineHeight: 16,
+    color: colors.error,
+  },
+  editErrorBannerDismiss: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // --- status row (sending / sent / read / pending / failed) ---

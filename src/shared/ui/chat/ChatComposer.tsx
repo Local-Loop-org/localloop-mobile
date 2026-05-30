@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
+import { EditPreviewChip } from './EditPreviewChip';
 import { ReplyPreviewChip } from './ReplyPreviewChip';
 import { styles } from './styles';
 
@@ -12,11 +13,17 @@ export interface ChatComposerReplyTo {
   onCancel: () => void;
 }
 
+export interface ChatComposerEditState {
+  onCancel: () => void;
+}
+
 interface ChatComposerProps {
   draft: string;
   placeholder?: string;
   /** When set, shows a `ReplyPreviewChip` above the composer bar. */
   composingReplyTo?: ChatComposerReplyTo | null;
+  /** When set, shows an `EditPreviewChip` above the composer bar. Mutually exclusive with `composingReplyTo` (enforced by the container). */
+  composingEdit?: ChatComposerEditState | null;
   /** Omit to render the input as a non-editable preview (used by mockups). */
   onChangeDraft?: (value: string) => void;
   onSend?: () => void;
@@ -30,6 +37,7 @@ export function ChatComposer({
   draft,
   placeholder = 'Escreva uma mensagem',
   composingReplyTo,
+  composingEdit,
   onChangeDraft,
   onSend,
   onPressAttach,
@@ -37,6 +45,7 @@ export function ChatComposer({
   showMicIconWhenEmpty = true,
 }: ChatComposerProps) {
   const editable = typeof onChangeDraft === 'function';
+  const hasChip = !!(composingReplyTo || composingEdit);
   return (
     <>
       {composingReplyTo && (
@@ -46,11 +55,9 @@ export function ChatComposer({
           onCancel={composingReplyTo.onCancel}
         />
       )}
+      {composingEdit && <EditPreviewChip onCancel={composingEdit.onCancel} />}
       <View
-        style={[
-          styles.composerBar,
-          composingReplyTo && styles.composerBarNoTopBorder,
-        ]}
+        style={[styles.composerBar, hasChip && styles.composerBarNoTopBorder]}
       >
         <Pressable
           style={styles.composerAttachBtn}

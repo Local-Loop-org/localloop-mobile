@@ -242,4 +242,23 @@ describe('dmApi', () => {
       response: { status: 404 },
     });
   });
+
+  it('editDirectMessage PATCHes /dm/messages/:messageId with the new content', async () => {
+    mock.onPatch('/dm/messages/m-1').replyOnce((config) => {
+      expect(JSON.parse(config.data)).toEqual({ content: 'updated' });
+      return [200, { id: 'm-1', content: 'updated' }];
+    });
+    await expect(
+      dmApi.editDirectMessage('m-1', { content: 'updated' }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('editDirectMessage bubbles up non-2xx errors', async () => {
+    mock.onPatch('/dm/messages/m-1').reply(403, { message: 'forbidden' });
+    await expect(
+      dmApi.editDirectMessage('m-1', { content: 'updated' }),
+    ).rejects.toMatchObject({
+      response: { status: 403 },
+    });
+  });
 });

@@ -331,17 +331,19 @@ describe('GroupChatScreen', () => {
       expect(queryByTestId('message-action-delete')).toBeNull();
     });
 
-    it('shows all actions on a peer message when myRole is MODERATOR', () => {
+    it('shows reply + delete on a peer message when myRole is MODERATOR (edit is author-only)', () => {
       mockedUseGroupChat.mockReturnValue({
         ...baseHookState,
         messages: [baseMessage({ id: 'peer-1', senderId: 'u-other' })],
       });
-      const { getByTestId } = renderScreen({ myRole: MemberRole.MODERATOR });
+      const { getByTestId, queryByTestId } = renderScreen({
+        myRole: MemberRole.MODERATOR,
+      });
 
       fireEvent(getByTestId('peer-bubble-peer-1'), 'onLongPress');
 
       expect(getByTestId('message-action-reply')).toBeTruthy();
-      expect(getByTestId('message-action-edit')).toBeTruthy();
+      expect(queryByTestId('message-action-edit')).toBeNull();
       expect(getByTestId('message-action-delete')).toBeTruthy();
     });
 

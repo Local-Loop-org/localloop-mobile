@@ -1,5 +1,8 @@
 import type { AnchorType, GroupMessage } from '@localloop/shared-types';
-import type { ChatComposerReplyTo } from '@/shared/ui/chat/ChatComposer';
+import type {
+  ChatComposerEditState,
+  ChatComposerReplyTo,
+} from '@/shared/ui/chat/ChatComposer';
 import type { GroupActionId } from '@/shared/ui/chat/GroupActionSheet';
 import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
 import type { AvailableMessageActions } from '@/shared/ui/chat/messageActionPolicy';
@@ -23,6 +26,11 @@ export interface GroupChatLayoutProps {
   draft: string;
   /** When set, the composer renders a reply preview chip above the input. */
   composingReplyTo: ChatComposerReplyTo | null;
+  /** When set, the composer renders an edit preview chip above the input. */
+  composingEdit: ChatComposerEditState | null;
+  /** Inline error banner above the composer, dismissable. */
+  editError: string | null;
+  onDismissEditError: () => void;
   /** Whether the bottom action sheet is currently shown. */
   actionSheetOpen: boolean;
   /** The per-message action sheet renders when this is non-null. */

@@ -27,4 +27,11 @@ export const messagesApi = {
   deleteMessage: async (messageId: string): Promise<void> => {
     await apiClient.delete(`/messages/${messageId}`);
   },
+
+  editMessage: async (
+    messageId: string,
+    body: { content: string },
+  ): Promise<void> => {
+    await apiClient.patch(`/messages/${messageId}`, body);
+  },
 };

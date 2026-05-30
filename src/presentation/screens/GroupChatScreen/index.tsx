@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useChatComposerState } from '@/application/hooks/useChatComposerState/useChatComposerState';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import { useDeleteGroupMessage } from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
+import { useEditGroupMessage } from '@/application/hooks/useEditGroupMessage/useEditGroupMessage';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -15,14 +17,6 @@ import {
   availableMessageActions,
   hasAnyAction,
 } from '@/shared/ui/chat/messageActionPolicy';
-import { truncateReplySnippet } from '@/shared/ui/chat/replySnippet';
-
-interface ComposingReplyTarget {
-  id: string;
-  authorId: string;
-  authorName: string;
-  snippet: string;
-}
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -47,14 +41,26 @@ export default function GroupChatScreen({
     loadOlder,
   } = useGroupChat(groupId);
   const deleteMessage = useDeleteGroupMessage();
+  const editMessage = useEditGroupMessage();
 
-  const [draft, setDraft] = useState('');
+  const editMessageAsync = editMessage.mutateAsync;
+  const handleEditMessage = useCallback(
+    ({ messageId, content }: { messageId: string; content: string }) =>
+      editMessageAsync({ groupId, messageId, content }),
+    [editMessageAsync, groupId],
+  );
+
+  const composer = useChatComposerState({
+    messages,
+    currentUserId,
+    onSendNew: sendMessage,
+    onEditMessage: handleEditMessage,
+  });
+
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [messageActionTargetId, setMessageActionTargetId] = useState<
     string | null
   >(null);
-  const [composingReplyTo, setComposingReplyTo] =
-    useState<ComposingReplyTarget | null>(null);
   const conversationKey = groupPushConversationKey(groupId);
 
   useEffect(() => {
@@ -67,24 +73,6 @@ export default function GroupChatScreen({
     );
     return clearActiveConversation;
   }, [conversationKey]);
-
-  const handleSend = () => {
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    sendMessage({
-      content: trimmed,
-      replyTo: composingReplyTo
-        ? {
-            id: composingReplyTo.id,
-            authorId: composingReplyTo.authorId,
-            snippet: composingReplyTo.snippet,
-            isDeleted: false,
-          }
-        : null,
-    });
-    setDraft('');
-    setComposingReplyTo(null);
-  };
 
   const handlePressMessageAvatar = (message: (typeof messages)[number]) => {
     navigation.navigate(StackRoutes.DmChat, {
@@ -151,22 +139,6 @@ export default function GroupChatScreen({
     [messages, currentUserId, myRole],
   );
 
-  const openReplyComposerFor = useCallback(
-    (messageId: string) => {
-      const target = messages.find((m) => m.id === messageId);
-      if (!target) return;
-      const snippet = truncateReplySnippet(target.content);
-      if (!snippet) return;
-      setComposingReplyTo({
-        id: target.id,
-        authorId: target.senderId,
-        authorName: target.senderName,
-        snippet,
-      });
-    },
-    [messages],
-  );
-
   const handleSelectMessageAction = useCallback(
     (action: MessageActionId) => {
       const id = messageActionTargetId;
@@ -177,24 +149,15 @@ export default function GroupChatScreen({
         return;
       }
       if (action === 'reply') {
-        openReplyComposerFor(id);
+        composer.openReplyComposerFor(id);
+        return;
       }
-      // 'edit' wired in C13.
+      if (action === 'edit') {
+        composer.openEditComposerFor(id);
+      }
     },
-    [messageActionTargetId, deleteMessage, groupId, openReplyComposerFor],
+    [messageActionTargetId, deleteMessage, groupId, composer],
   );
-
-  const composerReplyTo = useMemo(() => {
-    if (!composingReplyTo) return null;
-    const isMe = composingReplyTo.authorId === currentUserId;
-    const firstName =
-      composingReplyTo.authorName.split(' ')[0] ?? composingReplyTo.authorName;
-    return {
-      authorLabel: isMe ? 'Você' : firstName,
-      originalText: composingReplyTo.snippet,
-      onCancel: () => setComposingReplyTo(null),
-    };
-  }, [composingReplyTo, currentUserId]);
 
   return (
     <GroupChatLayout
@@ -208,12 +171,15 @@ export default function GroupChatScreen({
       loadingMore={loadingMore}
       hasMore={hasMore}
       errorMessage={error ? ERROR_LABEL[error] : null}
-      draft={draft}
-      composingReplyTo={composerReplyTo}
+      draft={composer.draft}
+      composingReplyTo={composer.composingReplyTo}
+      composingEdit={composer.composingEdit}
+      editError={composer.editError}
+      onDismissEditError={composer.onDismissEditError}
       actionSheetOpen={actionSheetOpen}
       messageActionSheet={messageActionSheet}
-      onChangeDraft={setDraft}
-      onSend={handleSend}
+      onChangeDraft={composer.onChangeDraft}
+      onSend={composer.onSend}
       onLoadOlder={loadOlder}
       onPressMessageAvatar={handlePressMessageAvatar}
       onBack={() => navigation.goBack()}
@@ -222,7 +188,7 @@ export default function GroupChatScreen({
       onCloseActionSheet={() => setActionSheetOpen(false)}
       onSelectAction={handleSelectAction}
       onLongPressMessage={handleLongPressMessage}
-      onSwipeReply={openReplyComposerFor}
+      onSwipeReply={composer.openReplyComposerFor}
       onSelectMessageAction={handleSelectMessageAction}
       onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />

@@ -71,4 +71,23 @@ describe('messagesApi', () => {
       response: { status: 403 },
     });
   });
+
+  it('editMessage PATCHes /messages/:messageId with the new content', async () => {
+    mock.onPatch('/messages/m-1').replyOnce((config) => {
+      expect(JSON.parse(config.data)).toEqual({ content: 'updated' });
+      return [200, { id: 'm-1', content: 'updated' }];
+    });
+    await expect(
+      messagesApi.editMessage('m-1', { content: 'updated' }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('editMessage bubbles up non-2xx errors', async () => {
+    mock.onPatch('/messages/m-1').reply(404, { message: 'not found' });
+    await expect(
+      messagesApi.editMessage('m-1', { content: 'updated' }),
+    ).rejects.toMatchObject({
+      response: { status: 404 },
+    });
+  });
 });
