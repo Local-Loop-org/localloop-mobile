@@ -28,8 +28,16 @@ export default function AuthenticatedStack() {
         name={StackRoutes.GroupMembers}
         component={GroupMembersScreen}
       />
-      <Stack.Screen name={StackRoutes.GroupChat} component={GroupChatScreen} />
-      <Stack.Screen name={StackRoutes.DmChat} component={DmChatScreen} />
+      <Stack.Screen
+        name={StackRoutes.GroupChat}
+        component={GroupChatScreen}
+        options={{ gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name={StackRoutes.DmChat}
+        component={DmChatScreen}
+        options={{ gestureEnabled: false }}
+      />
       <Stack.Screen name={StackRoutes.MyGroups} component={MyGroupsScreen} />
     </Stack.Navigator>
   );

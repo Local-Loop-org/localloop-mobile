@@ -176,7 +176,7 @@ export const styles = StyleSheet.create({
     borderRadius: 2,
   },
   quotedBody: {
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
     gap: 1,
   },
