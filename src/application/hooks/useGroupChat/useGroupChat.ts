@@ -13,6 +13,7 @@ import {
   type GroupMessage,
   type GroupMessageHistoryResponse,
   type MessageDeleted,
+  type MessageEdited,
   type PresenceUpdate,
 } from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
@@ -21,6 +22,7 @@ import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { messagesApi } from '@/infra/api/messages.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
+import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
 import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
   applyGroupSummaryUpdate,
@@ -239,6 +241,19 @@ export function useGroupChat(groupId: string) {
       );
     };
 
+    const handleMessageEdited = (payload: MessageEdited) => {
+      if (payload.groupId !== groupId) return;
+      queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+        chatHistoryKey(groupId),
+        (old) =>
+          applyEditedToGroupMessage(old, {
+            messageId: payload.messageId,
+            content: payload.content,
+            editedAt: payload.editedAt,
+          }),
+      );
+    };
+
     const handleSocketError = (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
@@ -252,6 +267,10 @@ export function useGroupChat(groupId: string) {
     const offDeleted = manager.addListener<MessageDeleted>(
       ChatSocketEvents.MESSAGE_DELETED,
       handleMessageDeleted,
+    );
+    const offEdited = manager.addListener<MessageEdited>(
+      ChatSocketEvents.MESSAGE_EDITED,
+      handleMessageEdited,
     );
     const offPresence = manager.addListener<PresenceUpdate>(
       ChatSocketEvents.PRESENCE_UPDATE,
@@ -276,6 +295,7 @@ export function useGroupChat(groupId: string) {
     return () => {
       offNew();
       offDeleted();
+      offEdited();
       offPresence();
       offError();
       offJoin();

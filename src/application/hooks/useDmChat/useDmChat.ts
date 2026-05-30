@@ -9,6 +9,7 @@ import {
   type ChatMessageReplyTo,
   type DirectMessage,
   type DirectMessageDeleted,
+  type DirectMessageEdited,
   type DirectMessageHistoryResponse,
   type DmSummaryUpdate,
 } from '@localloop/shared-types';
@@ -28,6 +29,7 @@ import {
   type DmHistoryInfiniteData,
 } from '../useDmHistory/dmHistoryQuery';
 import { removeDirectMessageById } from '../useDeleteDirectMessage/useDeleteDirectMessage';
+import { applyEditedToDirectMessage } from '../useEditDirectMessage/useEditDirectMessage';
 
 export type DmChatErrorKind = 'load_failed' | 'socket_error';
 
@@ -230,6 +232,19 @@ export function useDmChat(peerId: string) {
       );
     };
 
+    const handleDirectMessageEdited = (payload: DirectMessageEdited) => {
+      if (payload.senderId !== peerId && payload.recipientId !== peerId) return;
+      queryClient.setQueryData<DmHistoryInfiniteData>(
+        dmHistoryKey(peerId),
+        (old) =>
+          applyEditedToDirectMessage(old, {
+            messageId: payload.messageId,
+            content: payload.content,
+            editedAt: payload.editedAt,
+          }),
+      );
+    };
+
     const handleSocketError = (payload: SocketErrorPayload) => {
       setSocketError('socket_error');
       // eslint-disable-next-line no-console
@@ -243,6 +258,10 @@ export function useDmChat(peerId: string) {
     const offDeleted = manager.addListener<DirectMessageDeleted>(
       ChatSocketEvents.DIRECT_MESSAGE_DELETED,
       handleDirectMessageDeleted,
+    );
+    const offEdited = manager.addListener<DirectMessageEdited>(
+      ChatSocketEvents.DIRECT_MESSAGE_EDITED,
+      handleDirectMessageEdited,
     );
     const offRequestSent = manager.addListener<DmRequestSentPayload>(
       ChatSocketEvents.DM_REQUEST_SENT,
@@ -285,6 +304,7 @@ export function useDmChat(peerId: string) {
     return () => {
       offNew();
       offDeleted();
+      offEdited();
       offRequestSent();
       offRequestAccepted();
       offSummary();

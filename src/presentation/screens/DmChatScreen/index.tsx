@@ -11,6 +11,7 @@ import { truncateReplySnippet } from '@/shared/ui/chat/replySnippet';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useDeleteDirectMessage } from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
+import { useEditDirectMessage } from '@/application/hooks/useEditDirectMessage/useEditDirectMessage';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
@@ -33,6 +34,12 @@ interface ComposingReplyTarget {
   snippet: string;
 }
 
+interface ComposingEditTarget {
+  id: string;
+  originalContent: string;
+  stashedDraft: string;
+}
+
 export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const {
     peerId,
@@ -48,9 +55,13 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   >(null);
   const [composingReplyTo, setComposingReplyTo] =
     useState<ComposingReplyTarget | null>(null);
+  const [composingEdit, setComposingEdit] =
+    useState<ComposingEditTarget | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
   const deleteMessage = useDeleteDirectMessage();
+  const editMessage = useEditDirectMessage();
   const peerStatus = useDmPresence(peerId);
   const { messageStatuses } = useDmReadState(peerId);
   const conversationKey = dmPushConversationKey(peerId);
@@ -79,7 +90,22 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   }, [conversationKey]);
 
   const handleSend = () => {
-    if (draft.trim().length === 0) return;
+    const trimmed = draft.trim();
+    if (trimmed.length === 0) return;
+    if (composingEdit) {
+      const messageId = composingEdit.id;
+      setDraft('');
+      setComposingEdit(null);
+      editMessage.mutate(
+        { peerId, messageId, content: trimmed },
+        {
+          onError: () =>
+            setEditError('Não foi possível editar a mensagem.'),
+          onSuccess: () => setEditError(null),
+        },
+      );
+      return;
+    }
     sendMessage({
       content: draft,
       replyTo: composingReplyTo
@@ -94,6 +120,14 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     setDraft('');
     setComposingReplyTo(null);
   };
+
+  const cancelEdit = useCallback(() => {
+    setComposingEdit((current) => {
+      if (!current) return null;
+      setDraft(current.stashedDraft);
+      return null;
+    });
+  }, []);
 
   const toggleArchived = useCallback(() => {
     const nextArchived = !archived;
@@ -169,6 +203,10 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       if (!target) return;
       const snippet = truncateReplySnippet(target.content);
       if (!snippet) return;
+      setComposingEdit((currentEdit) => {
+        if (currentEdit) setDraft(currentEdit.stashedDraft);
+        return null;
+      });
       setComposingReplyTo({
         id: target.id,
         authorId: target.senderId,
@@ -177,6 +215,22 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       });
     },
     [messages],
+  );
+
+  const openEditComposerFor = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target) return;
+      const content = target.content ?? '';
+      setComposingReplyTo(null);
+      setComposingEdit((currentEdit) => {
+        const stashedDraft = currentEdit ? currentEdit.stashedDraft : draft;
+        return { id: target.id, originalContent: content, stashedDraft };
+      });
+      setDraft(content);
+      setEditError(null);
+    },
+    [messages, draft],
   );
 
   const handleSelectMessageAction = useCallback(
@@ -190,10 +244,19 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       }
       if (action === 'reply') {
         openReplyComposerFor(id);
+        return;
       }
-      // 'edit' wired in C13.
+      if (action === 'edit') {
+        openEditComposerFor(id);
+      }
     },
-    [messageActionTargetId, deleteMessage, peerId, openReplyComposerFor],
+    [
+      messageActionTargetId,
+      deleteMessage,
+      peerId,
+      openReplyComposerFor,
+      openEditComposerFor,
+    ],
   );
 
   const composerReplyTo = useMemo(() => {
@@ -207,6 +270,13 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       onCancel: () => setComposingReplyTo(null),
     };
   }, [composingReplyTo, currentUserId]);
+
+  const composerEdit = useMemo(
+    () => (composingEdit ? { onCancel: cancelEdit } : null),
+    [composingEdit, cancelEdit],
+  );
+
+  const handleDismissEditError = useCallback(() => setEditError(null), []);
 
   return (
     <DmChatLayout
@@ -224,6 +294,9 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       archived={archived}
       draft={draft}
       composingReplyTo={composerReplyTo}
+      composingEdit={composerEdit}
+      editError={editError}
+      onDismissEditError={handleDismissEditError}
       actionSheetOpen={actionSheetOpen}
       onChangeDraft={setDraft}
       onSend={handleSend}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
 import { useDeleteGroupMessage } from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
+import { useEditGroupMessage } from '@/application/hooks/useEditGroupMessage/useEditGroupMessage';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -22,6 +23,12 @@ interface ComposingReplyTarget {
   authorId: string;
   authorName: string;
   snippet: string;
+}
+
+interface ComposingEditTarget {
+  id: string;
+  originalContent: string;
+  stashedDraft: string;
 }
 
 const ERROR_LABEL: Record<string, string> = {
@@ -47,6 +54,7 @@ export default function GroupChatScreen({
     loadOlder,
   } = useGroupChat(groupId);
   const deleteMessage = useDeleteGroupMessage();
+  const editMessage = useEditGroupMessage();
 
   const [draft, setDraft] = useState('');
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -55,6 +63,9 @@ export default function GroupChatScreen({
   >(null);
   const [composingReplyTo, setComposingReplyTo] =
     useState<ComposingReplyTarget | null>(null);
+  const [composingEdit, setComposingEdit] =
+    useState<ComposingEditTarget | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const conversationKey = groupPushConversationKey(groupId);
 
   useEffect(() => {
@@ -71,6 +82,20 @@ export default function GroupChatScreen({
   const handleSend = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
+    if (composingEdit) {
+      const messageId = composingEdit.id;
+      setDraft('');
+      setComposingEdit(null);
+      editMessage.mutate(
+        { groupId, messageId, content: trimmed },
+        {
+          onError: () =>
+            setEditError('Não foi possível editar a mensagem.'),
+          onSuccess: () => setEditError(null),
+        },
+      );
+      return;
+    }
     sendMessage({
       content: trimmed,
       replyTo: composingReplyTo
@@ -85,6 +110,14 @@ export default function GroupChatScreen({
     setDraft('');
     setComposingReplyTo(null);
   };
+
+  const cancelEdit = useCallback(() => {
+    setComposingEdit((current) => {
+      if (!current) return null;
+      setDraft(current.stashedDraft);
+      return null;
+    });
+  }, []);
 
   const handlePressMessageAvatar = (message: (typeof messages)[number]) => {
     navigation.navigate(StackRoutes.DmChat, {
@@ -157,6 +190,11 @@ export default function GroupChatScreen({
       if (!target) return;
       const snippet = truncateReplySnippet(target.content);
       if (!snippet) return;
+      // Mutex with edit: if an edit is open, restore its stashed draft first.
+      setComposingEdit((currentEdit) => {
+        if (currentEdit) setDraft(currentEdit.stashedDraft);
+        return null;
+      });
       setComposingReplyTo({
         id: target.id,
         authorId: target.senderId,
@@ -165,6 +203,24 @@ export default function GroupChatScreen({
       });
     },
     [messages],
+  );
+
+  const openEditComposerFor = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target) return;
+      const content = target.content ?? '';
+      // Mutex with reply: drop any open reply chip.
+      setComposingReplyTo(null);
+      setComposingEdit((currentEdit) => {
+        // Switching between edits: keep the original stash, not the prior message's content.
+        const stashedDraft = currentEdit ? currentEdit.stashedDraft : draft;
+        return { id: target.id, originalContent: content, stashedDraft };
+      });
+      setDraft(content);
+      setEditError(null);
+    },
+    [messages, draft],
   );
 
   const handleSelectMessageAction = useCallback(
@@ -178,10 +234,19 @@ export default function GroupChatScreen({
       }
       if (action === 'reply') {
         openReplyComposerFor(id);
+        return;
       }
-      // 'edit' wired in C13.
+      if (action === 'edit') {
+        openEditComposerFor(id);
+      }
     },
-    [messageActionTargetId, deleteMessage, groupId, openReplyComposerFor],
+    [
+      messageActionTargetId,
+      deleteMessage,
+      groupId,
+      openReplyComposerFor,
+      openEditComposerFor,
+    ],
   );
 
   const composerReplyTo = useMemo(() => {
@@ -195,6 +260,13 @@ export default function GroupChatScreen({
       onCancel: () => setComposingReplyTo(null),
     };
   }, [composingReplyTo, currentUserId]);
+
+  const composerEdit = useMemo(
+    () => (composingEdit ? { onCancel: cancelEdit } : null),
+    [composingEdit, cancelEdit],
+  );
+
+  const handleDismissEditError = useCallback(() => setEditError(null), []);
 
   return (
     <GroupChatLayout
@@ -210,6 +282,9 @@ export default function GroupChatScreen({
       errorMessage={error ? ERROR_LABEL[error] : null}
       draft={draft}
       composingReplyTo={composerReplyTo}
+      composingEdit={composerEdit}
+      editError={editError}
+      onDismissEditError={handleDismissEditError}
       actionSheetOpen={actionSheetOpen}
       messageActionSheet={messageActionSheet}
       onChangeDraft={setDraft}

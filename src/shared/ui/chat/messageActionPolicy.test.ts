@@ -109,12 +109,12 @@ const cases: Case[] = [
 
   // ── Group, MODERATOR ──
   {
-    name: 'Group MODERATOR peer → reply + edit + delete',
+    name: 'Group MODERATOR peer → reply + delete (edit is author-only)',
     message: { senderId: OTHER },
     conversation: 'group',
     currentUserId: ME,
     myRole: MemberRole.MODERATOR,
-    expected: { canReply: true, canEdit: true, canDelete: true },
+    expected: { canReply: true, canEdit: false, canDelete: true },
   },
   {
     name: 'Group MODERATOR own → reply + edit + delete',
@@ -135,12 +135,12 @@ const cases: Case[] = [
 
   // ── Group, OWNER ──
   {
-    name: 'Group OWNER peer → reply + edit + delete',
+    name: 'Group OWNER peer → reply + delete (edit is author-only)',
     message: { senderId: OTHER },
     conversation: 'group',
     currentUserId: ME,
     myRole: MemberRole.OWNER,
-    expected: { canReply: true, canEdit: true, canDelete: true },
+    expected: { canReply: true, canEdit: false, canDelete: true },
   },
 
   // ── Edge: no role known (route param null) on a peer message ──

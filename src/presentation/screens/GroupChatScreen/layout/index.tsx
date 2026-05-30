@@ -13,6 +13,7 @@ import { Icon } from '@/shared/icons';
 import { colors } from '@/shared/theme';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
+import { EditErrorBanner } from '@/shared/ui/chat/EditErrorBanner';
 import { GroupActionSheet } from '@/shared/ui/chat/GroupActionSheet';
 import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import AnchorIcon from '../components/AnchorIcon';
@@ -33,6 +34,9 @@ export default function GroupChatLayout({
   errorMessage,
   draft,
   composingReplyTo,
+  composingEdit,
+  editError,
+  onDismissEditError,
   actionSheetOpen,
   messageActionSheet,
   onChangeDraft,
@@ -144,9 +148,14 @@ export default function GroupChatLayout({
           />
         )}
 
+        {editError ? (
+          <EditErrorBanner message={editError} onDismiss={onDismissEditError} />
+        ) : null}
+
         <ChatComposer
           draft={draft}
           composingReplyTo={composingReplyTo}
+          composingEdit={composingEdit}
           onChangeDraft={onChangeDraft}
           onSend={onSend}
           sendDisabled={sendDisabled}
