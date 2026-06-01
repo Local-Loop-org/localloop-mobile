@@ -71,6 +71,7 @@ const baseHookState = {
   hasMore: false,
   currentUserId: 'me',
   sendMessage: jest.fn(),
+  retrySendMessage: jest.fn(),
   loadOlder: jest.fn(),
 };
 

@@ -59,6 +59,9 @@ export interface DmChatLayoutProps {
   /** Horizontal swipe on a chat bubble — opens the reply composer for that
    * message, same flow as the action-sheet "Responder" entry. */
   onSwipeReply: (messageId: string) => void;
+  /** Tap on the retry affordance of a failed own bubble — re-fires the
+   * send mutation with the temp's original clientMessageId + content. */
+  onPressRetry: (messageId: string) => void;
   /** Dispatched when the user taps an item in the per-message action sheet. */
   onSelectMessageAction: (action: MessageActionId) => void;
   /** Dispatched when the per-message action sheet is dismissed. */

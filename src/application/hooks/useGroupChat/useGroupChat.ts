@@ -14,6 +14,7 @@ import {
 import {
   createSendTimeoutTracker,
   markTempAsError,
+  markTempAsSending,
 } from '@/shared/chat/sendStatusTracker';
 import {
   ChatSocketEvents,
@@ -363,6 +364,44 @@ export function useGroupChat(groupId: string) {
     [groupId, currentUser, queryClient, manager, trackerRef],
   );
 
+  const retrySendMessage = useCallback(
+    (messageId: string) => {
+      const cache =
+        queryClient.getQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+          chatHistoryKey(groupId),
+        );
+      const temp = cache?.pages
+        .flatMap((p) => p.data)
+        .find((m) => m.id === messageId);
+      if (!temp) return;
+      if (!temp.id.startsWith('temp-')) return;
+      if (getLocalSendStatus(temp) !== 'error') return;
+
+      const clientMessageId = temp.clientMessageId ?? temp.id;
+      queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+        chatHistoryKey(groupId),
+        (old) => markTempAsSending(old, clientMessageId),
+      );
+
+      manager.emit(ChatSocketEvents.SEND_MESSAGE, {
+        groupId,
+        content: temp.content ?? '',
+        storageKey: null,
+        mediaType: temp.mediaType ?? null,
+        clientMessageId,
+        replyToMessageId: temp.replyTo?.id ?? null,
+      });
+
+      trackerRef.track(clientMessageId, (cid) => {
+        queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
+          chatHistoryKey(groupId),
+          (old) => markTempAsError(old, cid),
+        );
+      });
+    },
+    [groupId, queryClient, manager, trackerRef],
+  );
+
   const loadOlder = useCallback(() => {
     if (!historyQuery.hasNextPage || historyQuery.isFetchingNextPage) return;
     historyQuery.fetchNextPage();
@@ -379,6 +418,7 @@ export function useGroupChat(groupId: string) {
     hasMore: historyQuery.hasNextPage ?? false,
     currentUserId,
     sendMessage,
+    retrySendMessage,
     loadOlder,
   };
 }

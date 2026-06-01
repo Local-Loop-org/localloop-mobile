@@ -898,4 +898,207 @@ describe('useGroupChat', () => {
       expect(readCache(client)).toBe(cacheBefore);
     });
   });
+
+  describe('retrySendMessage (E5)', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    type GroupCache = {
+      pages: Array<{ data: GroupMessageWithSendStatus[] }>;
+    };
+    const groupKey = ['chat', 'history', 'g-1'] as const;
+    const readCache = (client: QueryClient): GroupCache | undefined =>
+      client.getQueryData<GroupCache>(groupKey);
+    const firstMessage = (
+      client: QueryClient,
+    ): GroupMessageWithSendStatus | undefined =>
+      readCache(client)?.pages[0]?.data[0];
+
+    it("flips an errored temp back to 'sending' and re-emits send_message with the same clientMessageId", async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({
+          content: 'hello world',
+          replyTo: {
+            id: 'parent-1',
+            authorId: 'u-other',
+            snippet: 'original',
+            isDeleted: false,
+          },
+        });
+      });
+      const temp = firstMessage(client);
+      const tempId = temp!.id;
+      const tempClientId = temp!.clientMessageId!;
+      expect(tempClientId).toBeTruthy();
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+      (handle.manager.emit as jest.Mock).mockClear();
+
+      act(() => {
+        result.current.retrySendMessage(tempId);
+      });
+
+      expect(firstMessage(client)?.id).toBe(tempId);
+      expect(firstMessage(client)?.sendStatus).toBe('sending');
+      expect(handle.manager.emit).toHaveBeenCalledTimes(1);
+      expect(handle.manager.emit).toHaveBeenCalledWith(
+        ChatSocketEvents.SEND_MESSAGE,
+        {
+          groupId: 'g-1',
+          content: 'hello world',
+          storageKey: null,
+          mediaType: null,
+          clientMessageId: tempClientId,
+          replyToMessageId: 'parent-1',
+        },
+      );
+    });
+
+    it("re-arms the timeout so a failed retry flips back to 'error'", async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'hi' });
+      });
+      const tempId = firstMessage(client)!.id;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+
+      act(() => {
+        result.current.retrySendMessage(tempId);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('sending');
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+    });
+
+    it('lets the server echo replace the retried temp via clientMessageId', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'late' });
+      });
+      const temp = firstMessage(client)!;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+
+      act(() => {
+        result.current.retrySendMessage(temp.id);
+      });
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_MESSAGE,
+          baseMessage({
+            id: 'server-late',
+            clientMessageId: temp.clientMessageId,
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'late',
+          }),
+        );
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+      expect(firstMessage(client)?.id).toBe('server-late');
+    });
+
+    it('is a no-op when the message id is not in the cache', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      (handle.manager.emit as jest.Mock).mockClear();
+      act(() => {
+        result.current.retrySendMessage('temp-does-not-exist');
+      });
+      expect(handle.manager.emit).not.toHaveBeenCalled();
+    });
+
+    it('is a no-op when the matched message is not a temp', async () => {
+      mockedGetHistory.mockResolvedValueOnce({
+        data: [baseMessage({ id: 'm-server', senderId: 'me' })],
+        next_cursor: null,
+      });
+      attachAckCapture(handle);
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      (handle.manager.emit as jest.Mock).mockClear();
+      act(() => {
+        result.current.retrySendMessage('m-server');
+      });
+      expect(handle.manager.emit).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op when the temp's sendStatus is not 'error'", async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'pending' });
+      });
+      const tempId = firstMessage(client)!.id;
+      expect(firstMessage(client)?.sendStatus).toBe('sending');
+
+      (handle.manager.emit as jest.Mock).mockClear();
+      act(() => {
+        result.current.retrySendMessage(tempId);
+      });
+      expect(handle.manager.emit).not.toHaveBeenCalled();
+    });
+  });
 });

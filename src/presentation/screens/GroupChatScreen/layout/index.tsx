@@ -50,6 +50,7 @@ export default function GroupChatLayout({
   onSelectAction,
   onLongPressMessage,
   onSwipeReply,
+  onPressRetry,
   onSelectMessageAction,
   onCloseMessageActionSheet,
 }: GroupChatLayoutProps) {
@@ -125,6 +126,7 @@ export default function GroupChatLayout({
             showPeerSenderName
             onLongPressMessage={onLongPressMessage}
             onSwipeReply={onSwipeReply}
+            onPressRetry={onPressRetry}
             onPressPeerAvatar={(senderId) => {
               const m = messages.find((msg) => msg.senderId === senderId);
               if (m) onPressMessageAvatar(m);

@@ -4,15 +4,20 @@ import {
   SEND_TIMEOUT_MS,
   createSendTimeoutTracker,
   markTempAsError,
+  markTempAsSending,
 } from './sendStatusTracker';
-import { getLocalSendStatus } from './sendStatus';
+import { getLocalSendStatus, type ChatMessageWithSendStatus } from './sendStatus';
+
+type GroupMessageWithSendStatus = ChatMessageWithSendStatus<GroupMessage>;
 
 interface Page {
-  data: GroupMessage[];
+  data: GroupMessageWithSendStatus[];
   next_cursor: string | null;
 }
 
-function makeMessage(overrides: Partial<GroupMessage>): GroupMessage {
+function makeMessage(
+  overrides: Partial<GroupMessageWithSendStatus>,
+): GroupMessageWithSendStatus {
   return {
     id: 'm-1',
     clientMessageId: null,
@@ -30,7 +35,9 @@ function makeMessage(overrides: Partial<GroupMessage>): GroupMessage {
   };
 }
 
-function makeCache(messages: GroupMessage[]): InfiniteData<Page> {
+function makeCache(
+  messages: GroupMessageWithSendStatus[],
+): InfiniteData<Page> {
   return {
     pages: [{ data: messages, next_cursor: null }],
     pageParams: [undefined],
@@ -80,7 +87,7 @@ describe('markTempAsError', () => {
   });
 
   it('returns undefined when the cache is undefined', () => {
-    expect(markTempAsError<GroupMessage, Page>(undefined, 'temp-x')).toBeUndefined();
+    expect(markTempAsError<GroupMessageWithSendStatus, Page>(undefined, 'temp-x')).toBeUndefined();
   });
 
   it('searches every page, not just the first', () => {
@@ -99,6 +106,79 @@ describe('markTempAsError', () => {
     const next = markTempAsError(cache, 'temp-old');
 
     expect(getLocalSendStatus(next!.pages[1].data[0])).toBe('error');
+  });
+});
+
+describe('markTempAsSending', () => {
+  it("flips an errored temp back to 'sending' and leaves siblings untouched", () => {
+    const temp = makeMessage({
+      id: 'temp-1',
+      clientMessageId: 'temp-1',
+      sendStatus: 'error',
+    });
+    const persisted = makeMessage({ id: 'm-99', content: 'older' });
+    const cache = makeCache([temp, persisted]);
+
+    const next = markTempAsSending(cache, 'temp-1');
+
+    expect(next).not.toBe(cache);
+    const [tempAfter, persistedAfter] = next!.pages[0].data;
+    expect(getLocalSendStatus(tempAfter)).toBe('sending');
+    expect(tempAfter.content).toBe('hello');
+    expect(persistedAfter).toBe(persisted);
+  });
+
+  it('preserves array order so the bubble stays pinned at its position', () => {
+    const a = makeMessage({
+      id: 'temp-a',
+      clientMessageId: 'temp-a',
+      sendStatus: 'error',
+    });
+    const b = makeMessage({ id: 'm-b' });
+    const c = makeMessage({ id: 'm-c' });
+    const cache = makeCache([a, b, c]);
+
+    const next = markTempAsSending(cache, 'temp-a');
+
+    expect(next!.pages[0].data.map((m) => m.id)).toEqual([
+      'temp-a',
+      'm-b',
+      'm-c',
+    ]);
+  });
+
+  it('returns the same cache reference when no matching temp exists', () => {
+    const persisted = makeMessage({ id: 'm-1', clientMessageId: 'temp-gone' });
+    const cache = makeCache([persisted]);
+
+    const next = markTempAsSending(cache, 'temp-gone');
+
+    expect(next).toBe(cache);
+  });
+
+  it('returns undefined when the cache is undefined', () => {
+    expect(
+      markTempAsSending<GroupMessageWithSendStatus, Page>(undefined, 'temp-x'),
+    ).toBeUndefined();
+  });
+
+  it('searches every page, not just the first', () => {
+    const oldTemp = makeMessage({
+      id: 'temp-old',
+      clientMessageId: 'temp-old',
+      sendStatus: 'error',
+    });
+    const cache: InfiniteData<Page> = {
+      pages: [
+        { data: [makeMessage({ id: 'm-new' })], next_cursor: 'cursor' },
+        { data: [oldTemp], next_cursor: null },
+      ],
+      pageParams: [undefined, 'cursor'],
+    };
+
+    const next = markTempAsSending(cache, 'temp-old');
+
+    expect(getLocalSendStatus(next!.pages[1].data[0])).toBe('sending');
   });
 });
 
