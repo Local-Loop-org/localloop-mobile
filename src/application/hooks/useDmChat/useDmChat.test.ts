@@ -369,4 +369,217 @@ describe('useDmChat', () => {
     );
     expect(result.current.awaitingApproval).toBe(false);
   });
+
+  describe('send failure detection (E3)', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    type DmMessageWithSendStatus = DirectMessage & {
+      sendStatus?: 'sending' | 'sent' | 'error';
+    };
+    type DmCache = { pages: Array<{ data: DmMessageWithSendStatus[] }> };
+    const dmKey = ['dm', 'history', 'peer-1'] as const;
+    const readCache = (client: QueryClient): DmCache | undefined =>
+      client.getQueryData<DmCache>(dmKey);
+    const firstMessage = (
+      client: QueryClient,
+    ): DmMessageWithSendStatus | undefined =>
+      readCache(client)?.pages[0]?.data[0];
+
+    const emptyHistory = {
+      data: [],
+      lastReadAt: null,
+      peerLastReadAt: null,
+      next_cursor: null,
+    };
+
+    it('marks the temp as error after SEND_TIMEOUT_MS without a server echo', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'oi' });
+      });
+
+      const temp = firstMessage(client);
+      expect(temp?.sendStatus).toBe('sending');
+      expect(temp?.id.startsWith('temp-')).toBe(true);
+      const tempId = temp!.id;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+
+      const after = firstMessage(client);
+      expect(after?.id).toBe(tempId);
+      expect(after?.sendStatus).toBe('error');
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+    });
+
+    it('clears the send timer when the server echo arrives before timeout', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'oi' });
+      });
+      const tempClientId = firstMessage(client)?.clientMessageId;
+      expect(tempClientId).toBeTruthy();
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_DIRECT_MESSAGE,
+          baseMessage({
+            id: 'server-1',
+            clientMessageId: tempClientId,
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'oi',
+          }),
+        );
+      });
+
+      expect(firstMessage(client)?.id).toBe('server-1');
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+      expect(firstMessage(client)?.id).toBe('server-1');
+      expect(firstMessage(client)?.sendStatus).toBeUndefined();
+    });
+
+    it('replaces an errored temp when a late server echo arrives', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'late' });
+      });
+      const tempClientId = firstMessage(client)?.clientMessageId;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_DIRECT_MESSAGE,
+          baseMessage({
+            id: 'server-late',
+            clientMessageId: tempClientId,
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'late',
+          }),
+        );
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+      expect(firstMessage(client)?.id).toBe('server-late');
+    });
+
+    it('does not error a temp after DM_REQUEST_SENT strips it', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'oi' });
+      });
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+
+      act(() => {
+        handle.fire(ChatSocketEvents.DM_REQUEST_SENT, { requestId: 'req-1' });
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(0);
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(0);
+    });
+
+    it('does not error a temp after NEW_DIRECT_MESSAGE type=request strips it', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'oi' });
+      });
+
+      act(() => {
+        handle.fire(ChatSocketEvents.NEW_DIRECT_MESSAGE, {
+          ...baseMessage({ id: 'req-msg' }),
+          type: 'request',
+        });
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(0);
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(0);
+    });
+
+    it('does not mutate cache from a fired timer after the hook unmounts', async () => {
+      mockedGetDmHistory.mockResolvedValueOnce(emptyHistory);
+      const client = makeClient();
+
+      const { result, unmount } = renderHook(() => useDmChat('peer-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'bye' });
+      });
+
+      const cacheBefore = readCache(client);
+      unmount();
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)).toBe(cacheBefore);
+    });
+  });
 });
