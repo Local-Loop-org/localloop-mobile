@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -18,6 +18,10 @@ import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import type { ChatMessageWithSendStatus } from '@/shared/chat/sendStatus';
+import {
+  createSendTimeoutTracker,
+  markTempAsError,
+} from '@/shared/chat/sendStatusTracker';
 import {
   applyDmSummaryUpdate,
   DM_CONVERSATIONS_KEY,
@@ -149,6 +153,7 @@ export function useDmChat(peerId: string) {
 
   const [socketError, setSocketError] = useState<DmChatErrorKind | null>(null);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
+  const trackerRef = useRef(createSendTimeoutTracker()).current;
 
   const historyQuery = useInfiniteQuery<
     DirectMessageHistoryResponse,
@@ -184,12 +189,16 @@ export function useDmChat(peerId: string) {
 
     const handleNewMessage = (payload: DirectMessage & { type?: string }) => {
       if (payload.type === 'request') {
+        trackerRef.clearAll();
         queryClient.setQueryData<DmHistoryInfiniteData>(
           dmHistoryKey(peerId),
           removeTempMessages,
         );
         setAwaitingApproval(true);
         return;
+      }
+      if (payload.clientMessageId) {
+        trackerRef.clear(payload.clientMessageId);
       }
       markPushMessageSeen(payload.id);
       queryClient.setQueryData<DmHistoryInfiniteData>(
@@ -202,6 +211,7 @@ export function useDmChat(peerId: string) {
     };
 
     const handleRequestSent = (_payload: DmRequestSentPayload) => {
+      trackerRef.clearAll();
       queryClient.setQueryData<DmHistoryInfiniteData>(
         dmHistoryKey(peerId),
         removeTempMessages,
@@ -314,6 +324,7 @@ export function useDmChat(peerId: string) {
       offError();
       offJoin();
       offInbox();
+      trackerRef.clearAll();
     };
   }, [
     peerId,
@@ -338,16 +349,24 @@ export function useDmChat(peerId: string) {
         (old) => prependTempMessage(old, temp),
       );
 
+      const clientMessageId = temp.clientMessageId ?? temp.id;
       manager.emit(ChatSocketEvents.SEND_DM, {
         recipientId: peerId,
         content: trimmed,
         mediaUrl: null,
         mediaType: null,
-        clientMessageId: temp.clientMessageId,
+        clientMessageId,
         replyToMessageId: replyTo?.id ?? null,
       });
+
+      trackerRef.track(clientMessageId, (cid) => {
+        queryClient.setQueryData<DmHistoryInfiniteData>(
+          dmHistoryKey(peerId),
+          (old) => markTempAsError(old, cid),
+        );
+      });
     },
-    [peerId, currentUser, queryClient, manager],
+    [peerId, currentUser, queryClient, manager, trackerRef],
   );
 
   const loadOlder = useCallback(() => {

@@ -747,4 +747,155 @@ describe('useGroupChat', () => {
       ),
     );
   });
+
+  describe('send failure detection (E3)', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    type GroupCache = {
+      pages: Array<{ data: GroupMessageWithSendStatus[] }>;
+    };
+    const groupKey = ['chat', 'history', 'g-1'] as const;
+    const readCache = (client: QueryClient): GroupCache | undefined =>
+      client.getQueryData<GroupCache>(groupKey);
+    const firstMessage = (
+      client: QueryClient,
+    ): GroupMessageWithSendStatus | undefined =>
+      readCache(client)?.pages[0]?.data[0];
+
+    it('marks the temp as error after SEND_TIMEOUT_MS without a server echo', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'hello world' });
+      });
+
+      const temp = firstMessage(client);
+      expect(temp?.sendStatus).toBe('sending');
+      expect(temp?.id.startsWith('temp-')).toBe(true);
+      const tempId = temp!.id;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+
+      const after = firstMessage(client);
+      expect(after?.id).toBe(tempId);
+      expect(after?.sendStatus).toBe('error');
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+    });
+
+    it('clears the send timer when the server echo arrives before timeout', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'hi' });
+      });
+      const tempClientId = firstMessage(client)?.clientMessageId;
+      expect(tempClientId).toBeTruthy();
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_MESSAGE,
+          baseMessage({
+            id: 'server-1',
+            clientMessageId: tempClientId,
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'hi',
+          }),
+        );
+      });
+
+      expect(firstMessage(client)?.id).toBe('server-1');
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+      expect(firstMessage(client)?.id).toBe('server-1');
+      expect(firstMessage(client)?.sendStatus).toBeUndefined();
+    });
+
+    it('replaces an errored temp when a late server echo arrives', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'late' });
+      });
+      const tempClientId = firstMessage(client)?.clientMessageId;
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(firstMessage(client)?.sendStatus).toBe('error');
+
+      act(() => {
+        handle.fire(
+          ChatSocketEvents.NEW_MESSAGE,
+          baseMessage({
+            id: 'server-late',
+            clientMessageId: tempClientId,
+            senderId: 'me',
+            senderName: 'Me',
+            content: 'late',
+          }),
+        );
+      });
+
+      expect(readCache(client)?.pages[0]?.data).toHaveLength(1);
+      expect(firstMessage(client)?.id).toBe('server-late');
+    });
+
+    it('does not mutate cache from a fired timer after the hook unmounts', async () => {
+      mockedGetHistory.mockResolvedValueOnce({ data: [], next_cursor: null });
+      attachAckCapture(handle);
+      const client = makeClient();
+
+      const { result, unmount } = renderHook(() => useGroupChat('g-1'), {
+        wrapper: makeWrapper(client),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      jest.useFakeTimers();
+      act(() => {
+        result.current.sendMessage({ content: 'bye' });
+      });
+
+      const cacheBefore = readCache(client);
+      unmount();
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(readCache(client)).toBe(cacheBefore);
+    });
+  });
 });
