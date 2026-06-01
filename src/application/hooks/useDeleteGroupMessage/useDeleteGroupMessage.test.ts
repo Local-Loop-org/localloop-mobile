@@ -12,7 +12,7 @@ import type {
 import { messagesApi } from '@/infra/api/messages.api';
 import { chatHistoryKey } from '../useGroupChat/useGroupChat';
 import {
-  removeGroupMessageById,
+  markGroupMessageDeleted,
   useDeleteGroupMessage,
 } from './useDeleteGroupMessage';
 
@@ -65,7 +65,7 @@ function seedHistory(client: QueryClient, groupId: string, ids: string[]) {
   client.setQueryData(chatHistoryKey(groupId), cache);
 }
 
-describe('removeGroupMessageById', () => {
+describe('markGroupMessageDeleted', () => {
   it('returns the same reference when the id is absent', () => {
     const cache: InfiniteData<GroupMessageHistoryResponse> = {
       pageParams: [undefined],
@@ -73,29 +73,45 @@ describe('removeGroupMessageById', () => {
         { data: [buildMessage('a'), buildMessage('b')], next_cursor: null },
       ],
     };
-    expect(removeGroupMessageById(cache, 'missing')).toBe(cache);
+    expect(markGroupMessageDeleted(cache, 'missing')).toBe(cache);
   });
 
-  it('removes the message from the matching page', () => {
+  it('marks the matching message as deleted in place and blanks its content', () => {
     const cache: InfiniteData<GroupMessageHistoryResponse> = {
       pageParams: [undefined],
       pages: [
         { data: [buildMessage('a'), buildMessage('b')], next_cursor: null },
       ],
     };
-    const next = removeGroupMessageById(cache, 'a');
-    expect(next?.pages[0]?.data.map((m) => m.id)).toEqual(['b']);
+    const next = markGroupMessageDeleted(cache, 'a');
+    expect(next?.pages[0]?.data.map((m) => m.id)).toEqual(['a', 'b']);
+    const target = next?.pages[0]?.data.find((m) => m.id === 'a');
+    expect(target?.isDeleted).toBe(true);
+    expect(target?.content).toBe('');
+  });
+
+  it('is idempotent on an already-deleted row', () => {
+    const deletedRow: GroupMessage = {
+      ...buildMessage('a'),
+      isDeleted: true,
+      content: '',
+    };
+    const cache: InfiniteData<GroupMessageHistoryResponse> = {
+      pageParams: [undefined],
+      pages: [{ data: [deletedRow, buildMessage('b')], next_cursor: null }],
+    };
+    expect(markGroupMessageDeleted(cache, 'a')).toBe(cache);
   });
 
   it('returns undefined when given undefined', () => {
-    expect(removeGroupMessageById(undefined, 'a')).toBeUndefined();
+    expect(markGroupMessageDeleted(undefined, 'a')).toBeUndefined();
   });
 });
 
 describe('useDeleteGroupMessage', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('optimistically removes the message and confirms on success', async () => {
+  it('optimistically marks the message as deleted in place and confirms on success', async () => {
     mockedDelete.mockResolvedValueOnce(undefined);
     const { client, wrapper } = makeWrapper();
     seedHistory(client, 'g-1', ['m-1', 'm-2', 'm-3']);
@@ -108,7 +124,14 @@ describe('useDeleteGroupMessage', () => {
     const cache = client.getQueryData<
       InfiniteData<GroupMessageHistoryResponse>
     >(chatHistoryKey('g-1'));
-    expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual(['m-1', 'm-3']);
+    expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual([
+      'm-1',
+      'm-2',
+      'm-3',
+    ]);
+    const target = cache?.pages[0]?.data.find((m) => m.id === 'm-2');
+    expect(target?.isDeleted).toBe(true);
+    expect(target?.content).toBe('');
     expect(mockedDelete).toHaveBeenCalledWith('m-2');
     client.clear();
   });
@@ -127,6 +150,12 @@ describe('useDeleteGroupMessage', () => {
       InfiniteData<GroupMessageHistoryResponse>
     >(chatHistoryKey('g-1'));
     expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual(['m-1', 'm-2']);
+    expect(cache?.pages[0]?.data.find((m) => m.id === 'm-2')?.isDeleted).toBe(
+      false,
+    );
+    expect(cache?.pages[0]?.data.find((m) => m.id === 'm-2')?.content).toBe(
+      'm-2',
+    );
     client.clear();
   });
 

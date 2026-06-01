@@ -362,7 +362,7 @@ describe('GroupChatScreen', () => {
       expect(queryByTestId('message-action-sheet')).toBeNull();
     });
 
-    it('does not open the sheet for an already-deleted message', () => {
+    it('renders a deleted message as a tombstone with no long-pressable surface', () => {
       mockedUseGroupChat.mockReturnValue({
         ...baseHookState,
         messages: [
@@ -371,8 +371,8 @@ describe('GroupChatScreen', () => {
       });
       const { getByTestId, queryByTestId } = renderScreen();
 
-      fireEvent(getByTestId('own-bubble-m-1'), 'onLongPress');
-
+      expect(getByTestId('own-tombstone-m-1')).toBeTruthy();
+      expect(queryByTestId('own-bubble-m-1')).toBeNull();
       expect(queryByTestId('message-action-sheet')).toBeNull();
     });
 

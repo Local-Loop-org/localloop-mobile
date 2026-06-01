@@ -12,7 +12,7 @@ import type {
 import { dmApi } from '@/infra/api/dm.api';
 import { dmHistoryKey } from '../useDmHistory/dmHistoryQuery';
 import {
-  removeDirectMessageById,
+  markDirectMessageDeleted,
   useDeleteDirectMessage,
 } from './useDeleteDirectMessage';
 
@@ -68,7 +68,7 @@ function seedHistory(client: QueryClient, peerId: string, ids: string[]) {
   client.setQueryData(dmHistoryKey(peerId), cache);
 }
 
-describe('removeDirectMessageById', () => {
+describe('markDirectMessageDeleted', () => {
   it('returns the same reference when the id is absent', () => {
     const cache: InfiniteData<DirectMessageHistoryResponse> = {
       pageParams: [undefined],
@@ -81,10 +81,10 @@ describe('removeDirectMessageById', () => {
         },
       ],
     };
-    expect(removeDirectMessageById(cache, 'missing')).toBe(cache);
+    expect(markDirectMessageDeleted(cache, 'missing')).toBe(cache);
   });
 
-  it('removes the message from the matching page', () => {
+  it('marks the matching message as deleted in place and blanks its content', () => {
     const cache: InfiniteData<DirectMessageHistoryResponse> = {
       pageParams: [undefined],
       pages: [
@@ -96,15 +96,38 @@ describe('removeDirectMessageById', () => {
         },
       ],
     };
-    const next = removeDirectMessageById(cache, 'a');
-    expect(next?.pages[0]?.data.map((m) => m.id)).toEqual(['b']);
+    const next = markDirectMessageDeleted(cache, 'a');
+    expect(next?.pages[0]?.data.map((m) => m.id)).toEqual(['a', 'b']);
+    const target = next?.pages[0]?.data.find((m) => m.id === 'a');
+    expect(target?.isDeleted).toBe(true);
+    expect(target?.content).toBe('');
+  });
+
+  it('is idempotent on an already-deleted row', () => {
+    const deletedRow: DirectMessage = {
+      ...buildMessage('a'),
+      isDeleted: true,
+      content: '',
+    };
+    const cache: InfiniteData<DirectMessageHistoryResponse> = {
+      pageParams: [undefined],
+      pages: [
+        {
+          data: [deletedRow, buildMessage('b')],
+          lastReadAt: null,
+          peerLastReadAt: null,
+          next_cursor: null,
+        },
+      ],
+    };
+    expect(markDirectMessageDeleted(cache, 'a')).toBe(cache);
   });
 });
 
 describe('useDeleteDirectMessage', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('optimistically removes the message and confirms on success', async () => {
+  it('optimistically marks the message as deleted in place and confirms on success', async () => {
     mockedDelete.mockResolvedValueOnce(undefined);
     const { client, wrapper } = makeWrapper();
     seedHistory(client, 'peer-1', ['dm-1', 'dm-2', 'dm-3']);
@@ -117,7 +140,14 @@ describe('useDeleteDirectMessage', () => {
     const cache = client.getQueryData<
       InfiniteData<DirectMessageHistoryResponse>
     >(dmHistoryKey('peer-1'));
-    expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual(['dm-1', 'dm-3']);
+    expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual([
+      'dm-1',
+      'dm-2',
+      'dm-3',
+    ]);
+    const target = cache?.pages[0]?.data.find((m) => m.id === 'dm-2');
+    expect(target?.isDeleted).toBe(true);
+    expect(target?.content).toBe('');
     expect(mockedDelete).toHaveBeenCalledWith('dm-2');
     client.clear();
   });
@@ -136,6 +166,12 @@ describe('useDeleteDirectMessage', () => {
       InfiniteData<DirectMessageHistoryResponse>
     >(dmHistoryKey('peer-1'));
     expect(cache?.pages[0]?.data.map((m) => m.id)).toEqual(['dm-1', 'dm-2']);
+    expect(cache?.pages[0]?.data.find((m) => m.id === 'dm-2')?.isDeleted).toBe(
+      false,
+    );
+    expect(cache?.pages[0]?.data.find((m) => m.id === 'dm-2')?.content).toBe(
+      'dm-2',
+    );
     client.clear();
   });
 });

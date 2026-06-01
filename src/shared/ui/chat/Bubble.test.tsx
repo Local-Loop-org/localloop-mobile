@@ -309,3 +309,76 @@ describe('chat bubbles · editado suffix', () => {
     expect(getByTestId('peer-edited-suffix-peer-legacy')).toBeTruthy();
   });
 });
+
+describe('chat bubbles · tombstone (isDeleted)', () => {
+  it('renders an own tombstone with no status/reply/edited slots and keeps the timestamp on lastOfRun', () => {
+    const message = baseMessage({
+      id: 'own-del',
+      senderId: 'me',
+      content: '',
+      isDeleted: true,
+      replyTo: {
+        id: 'parent-1',
+        authorId: 'u-other',
+        snippet: 'old quote',
+        isDeleted: false,
+      },
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByText, queryByText, queryByTestId, getByTestId } = render(
+      <OwnBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+        status='sent'
+        replyTo={{ author: 'Alice', text: 'old quote' }}
+      />,
+    );
+
+    expect(getByText('Mensagem apagada')).toBeTruthy();
+    expect(getByTestId('own-tombstone-own-del')).toBeTruthy();
+    expect(getByTestId('own-timestamp-own-del')).toBeTruthy();
+    expect(queryByText('old quote')).toBeNull();
+    expect(queryByTestId('own-status-sent')).toBeNull();
+    expect(queryByTestId('own-status-sending')).toBeNull();
+    expect(queryByTestId('own-status-read')).toBeNull();
+    expect(queryByTestId('own-failed-warning')).toBeNull();
+    expect(queryByTestId('own-edited-suffix-own-del')).toBeNull();
+    expect(queryByTestId('own-bubble-own-del')).toBeNull();
+  });
+
+  it('renders a peer tombstone, keeps sender name on firstOfRun, drops reply/edited slots', () => {
+    const message = baseMessage({
+      id: 'peer-del',
+      senderName: 'Alice',
+      content: '',
+      isDeleted: true,
+      replyTo: {
+        id: 'parent-1',
+        authorId: 'me',
+        snippet: 'old quote',
+        isDeleted: false,
+      },
+      editedAt: '2026-05-30T10:05:00.000Z',
+    });
+
+    const { getByText, queryByText, queryByTestId, getByTestId } = render(
+      <PeerBubble
+        message={message}
+        previousMessage={null}
+        nextMessage={null}
+        showSenderName
+        replyTo={{ author: 'Você', text: 'old quote' }}
+      />,
+    );
+
+    expect(getByText('Mensagem apagada')).toBeTruthy();
+    expect(getByText('Alice')).toBeTruthy();
+    expect(getByTestId('peer-tombstone-peer-del')).toBeTruthy();
+    expect(getByTestId('peer-timestamp-peer-del')).toBeTruthy();
+    expect(queryByText('old quote')).toBeNull();
+    expect(queryByTestId('peer-edited-suffix-peer-del')).toBeNull();
+    expect(queryByTestId('peer-bubble-peer-del')).toBeNull();
+  });
+});

@@ -11,19 +11,26 @@ import { chatHistoryKey } from '../useGroupChat/useGroupChat';
 export type GroupHistoryCache = InfiniteData<GroupMessageHistoryResponse>;
 
 /**
- * Idempotent: removes the message from every page if present, leaves the cache
- * unchanged otherwise. Shared with the `MESSAGE_DELETED` WS handler in
- * `useGroupChat` so both code paths converge on the same cache update.
+ * Idempotent: flips the matching message's `isDeleted` to true and blanks its
+ * `content` so the bubble can render as a tombstone in place; returns the
+ * same reference when the message is missing or already marked. Shared with
+ * the `MESSAGE_DELETED` WS handler in `useGroupChat` so both code paths
+ * converge on the same cache update.
  */
-export function removeGroupMessageById(
+export function markGroupMessageDeleted(
   old: GroupHistoryCache | undefined,
   messageId: string,
 ): GroupHistoryCache | undefined {
   if (!old) return old;
   let changed = false;
   const pages = old.pages.map((page) => {
-    const next = page.data.filter((m) => m.id !== messageId);
-    if (next.length === page.data.length) return page;
+    let pageChanged = false;
+    const next = page.data.map((m) => {
+      if (m.id !== messageId || m.isDeleted) return m;
+      pageChanged = true;
+      return { ...m, isDeleted: true, content: '' };
+    });
+    if (!pageChanged) return page;
     changed = true;
     return { ...page, data: next };
   });
@@ -57,7 +64,7 @@ export function useDeleteGroupMessage(): UseMutationResult<
         chatHistoryKey(groupId),
       );
       queryClient.setQueryData<GroupHistoryCache>(chatHistoryKey(groupId), (old) =>
-        removeGroupMessageById(old, messageId),
+        markGroupMessageDeleted(old, messageId),
       );
       return { previous, groupId };
     },

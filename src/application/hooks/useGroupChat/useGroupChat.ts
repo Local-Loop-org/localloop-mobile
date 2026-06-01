@@ -1,26 +1,11 @@
 // src/application/hooks/useGroupChat/useGroupChat.ts
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  InfiniteData,
-  useInfiniteQuery,
-  useIsMutating,
-  useQueryClient,
-} from '@tanstack/react-query';
-import {
-  ChatSocketEvents,
-  type ChatMessageReplyTo,
-  type GroupMessage,
-  type GroupMessageHistoryResponse,
-  type MessageDeleted,
-  type MessageEdited,
-  type PresenceUpdate,
-} from '@localloop/shared-types';
 import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
-import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
+import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import { messagesApi } from '@/infra/api/messages.api';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import {
   getLocalSendStatus,
   type ChatMessageWithSendStatus,
@@ -30,9 +15,24 @@ import {
   createSendTimeoutTracker,
   markTempAsError,
 } from '@/shared/chat/sendStatusTracker';
-import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
+import {
+  ChatSocketEvents,
+  type ChatMessageReplyTo,
+  type GroupMessage,
+  type GroupMessageHistoryResponse,
+  type MessageDeleted,
+  type MessageEdited,
+  type PresenceUpdate,
+} from '@localloop/shared-types';
+import {
+  InfiniteData,
+  useInfiniteQuery,
+  useIsMutating,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { markGroupMessageDeleted } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
-import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
   applyGroupSummaryUpdate,
   markMyGroupReadInCaches,
@@ -255,7 +255,7 @@ export function useGroupChat(groupId: string) {
       if (payload.groupId !== groupId) return;
       queryClient.setQueryData<InfiniteData<GroupMessageHistoryResponse>>(
         chatHistoryKey(groupId),
-        (old) => removeGroupMessageById(old, payload.messageId),
+        (old) => markGroupMessageDeleted(old, payload.messageId),
       );
     };
 

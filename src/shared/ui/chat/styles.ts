@@ -159,6 +159,22 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
 
+  // --- tombstone bubble (rendered when message.isDeleted is true) ---
+  tombstoneBubble: {
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  tombstoneText: {
+    color: colors.dim,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+
   // --- quoted reply block (inside a bubble) ---
   quotedBlock: {
     flexDirection: 'row',
