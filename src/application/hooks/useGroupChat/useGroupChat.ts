@@ -1,12 +1,20 @@
 // src/application/hooks/useGroupChat/useGroupChat.ts
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuthStore } from '@/application/stores/auth.store';
+import type { User } from '@/domain/user.entity';
+import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
+import { messagesApi } from '@/infra/api/messages.api';
+import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
+import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import {
-  InfiniteData,
-  useInfiniteQuery,
-  useIsMutating,
-  useQueryClient,
-} from '@tanstack/react-query';
+  getLocalSendStatus,
+  type ChatMessageWithSendStatus,
+  type ChatSendStatus,
+} from '@/shared/chat/sendStatus';
+import {
+  createSendTimeoutTracker,
+  markTempAsError,
+} from '@/shared/chat/sendStatusTracker';
 import {
   ChatSocketEvents,
   type ChatMessageReplyTo,
@@ -16,24 +24,15 @@ import {
   type MessageEdited,
   type PresenceUpdate,
 } from '@localloop/shared-types';
-import { useAuthStore } from '@/application/stores/auth.store';
-import type { User } from '@/domain/user.entity';
-import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
-import { messagesApi } from '@/infra/api/messages.api';
-import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
 import {
-  getLocalSendStatus,
-  type ChatMessageWithSendStatus,
-  type ChatSendStatus,
-} from '@/shared/chat/sendStatus';
+  InfiniteData,
+  useInfiniteQuery,
+  useIsMutating,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { markGroupMessageDeleted } from '../useDeleteGroupMessage/useDeleteGroupMessage';
-import {
-  createSendTimeoutTracker,
-  markTempAsError,
-} from '@/shared/chat/sendStatusTracker';
-import { removeGroupMessageById } from '../useDeleteGroupMessage/useDeleteGroupMessage';
 import { applyEditedToGroupMessage } from '../useEditGroupMessage/useEditGroupMessage';
-import type { GroupSummaryUpdate } from '@/infra/api/groups.api';
 import {
   applyGroupSummaryUpdate,
   markMyGroupReadInCaches,
