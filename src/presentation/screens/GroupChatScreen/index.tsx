@@ -38,6 +38,7 @@ export default function GroupChatScreen({
     onlineCount,
     currentUserId,
     sendMessage,
+    retrySendMessage,
     loadOlder,
   } = useGroupChat(groupId);
   const deleteMessage = useDeleteGroupMessage();
@@ -189,6 +190,7 @@ export default function GroupChatScreen({
       onSelectAction={handleSelectAction}
       onLongPressMessage={handleLongPressMessage}
       onSwipeReply={composer.openReplyComposerFor}
+      onPressRetry={retrySendMessage}
       onSelectMessageAction={handleSelectMessageAction}
       onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />

@@ -57,6 +57,7 @@ const baseProps: DmChatLayoutProps = {
   messageActionSheet: null,
   onLongPressMessage: jest.fn(),
   onSwipeReply: jest.fn(),
+  onPressRetry: jest.fn(),
   onSelectMessageAction: jest.fn(),
   onCloseMessageActionSheet: jest.fn(),
 };

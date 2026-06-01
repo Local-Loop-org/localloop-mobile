@@ -17,10 +17,14 @@ import { useAuthStore } from '@/application/stores/auth.store';
 import type { User } from '@/domain/user.entity';
 import { useChatSocketManager } from '@/infra/socket/ChatSocketProvider';
 import { markPushMessageSeen } from '@/infra/notifications/push-notifications';
-import type { ChatMessageWithSendStatus } from '@/shared/chat/sendStatus';
+import {
+  getLocalSendStatus,
+  type ChatMessageWithSendStatus,
+} from '@/shared/chat/sendStatus';
 import {
   createSendTimeoutTracker,
   markTempAsError,
+  markTempAsSending,
 } from '@/shared/chat/sendStatusTracker';
 import {
   applyDmSummaryUpdate,
@@ -369,6 +373,43 @@ export function useDmChat(peerId: string) {
     [peerId, currentUser, queryClient, manager, trackerRef],
   );
 
+  const retrySendMessage = useCallback(
+    (messageId: string) => {
+      const cache = queryClient.getQueryData<DmHistoryInfiniteData>(
+        dmHistoryKey(peerId),
+      );
+      const temp = cache?.pages
+        .flatMap((p) => p.data)
+        .find((m) => m.id === messageId);
+      if (!temp) return;
+      if (!temp.id.startsWith('temp-')) return;
+      if (getLocalSendStatus(temp) !== 'error') return;
+
+      const clientMessageId = temp.clientMessageId ?? temp.id;
+      queryClient.setQueryData<DmHistoryInfiniteData>(
+        dmHistoryKey(peerId),
+        (old) => markTempAsSending(old, clientMessageId),
+      );
+
+      manager.emit(ChatSocketEvents.SEND_DM, {
+        recipientId: peerId,
+        content: temp.content ?? '',
+        mediaUrl: temp.mediaUrl ?? null,
+        mediaType: temp.mediaType ?? null,
+        clientMessageId,
+        replyToMessageId: temp.replyTo?.id ?? null,
+      });
+
+      trackerRef.track(clientMessageId, (cid) => {
+        queryClient.setQueryData<DmHistoryInfiniteData>(
+          dmHistoryKey(peerId),
+          (old) => markTempAsError(old, cid),
+        );
+      });
+    },
+    [peerId, queryClient, manager, trackerRef],
+  );
+
   const loadOlder = useCallback(() => {
     if (!historyQuery.hasNextPage || historyQuery.isFetchingNextPage) return;
     historyQuery.fetchNextPage();
@@ -384,6 +425,7 @@ export function useDmChat(peerId: string) {
     currentUserId: currentUser?.id ?? null,
     awaitingApproval,
     sendMessage,
+    retrySendMessage,
     loadOlder,
   };
 }

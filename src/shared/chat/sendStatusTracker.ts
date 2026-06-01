@@ -1,6 +1,9 @@
 import type { InfiniteData } from '@tanstack/react-query';
 import type { ChatMessage } from '@localloop/shared-types';
-import type { ChatMessageWithSendStatus } from './sendStatus';
+import type {
+  ChatMessageWithSendStatus,
+  ChatSendStatus,
+} from './sendStatus';
 
 export const SEND_TIMEOUT_MS = 15_000;
 
@@ -8,12 +11,13 @@ interface PageWithMessages<TMessage extends ChatMessage> {
   data: TMessage[];
 }
 
-export function markTempAsError<
+function setTempSendStatus<
   TMessage extends ChatMessage,
   TPage extends PageWithMessages<TMessage>,
 >(
   old: InfiniteData<TPage> | undefined,
   clientMessageId: string,
+  status: ChatSendStatus,
 ): InfiniteData<TPage> | undefined {
   if (!old) return old;
   let changed = false;
@@ -30,13 +34,33 @@ export function markTempAsError<
       changed = true;
       const withStatus: ChatMessageWithSendStatus<TMessage> = {
         ...message,
-        sendStatus: 'error',
+        sendStatus: status,
       };
       return withStatus as TMessage;
     });
     return pageChanged ? { ...page, data } : page;
   });
   return changed ? { ...old, pages } : old;
+}
+
+export function markTempAsError<
+  TMessage extends ChatMessage,
+  TPage extends PageWithMessages<TMessage>,
+>(
+  old: InfiniteData<TPage> | undefined,
+  clientMessageId: string,
+): InfiniteData<TPage> | undefined {
+  return setTempSendStatus(old, clientMessageId, 'error');
+}
+
+export function markTempAsSending<
+  TMessage extends ChatMessage,
+  TPage extends PageWithMessages<TMessage>,
+>(
+  old: InfiniteData<TPage> | undefined,
+  clientMessageId: string,
+): InfiniteData<TPage> | undefined {
+  return setTempSendStatus(old, clientMessageId, 'sending');
 }
 
 export interface SendTimeoutTracker {

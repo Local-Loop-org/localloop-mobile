@@ -78,6 +78,7 @@ export default function DmChatLayout({
   moreDisabled,
   onLongPressMessage,
   onSwipeReply,
+  onPressRetry,
   onSelectMessageAction,
   onCloseMessageActionSheet,
 }: DmChatLayoutProps) {
@@ -160,6 +161,7 @@ export default function DmChatLayout({
             showTypingBubble={isTyping}
             onLongPressMessage={onLongPressMessage}
             onSwipeReply={onSwipeReply}
+            onPressRetry={onPressRetry}
             onEndReached={hasMore ? onLoadOlder : undefined}
             onEndReachedThreshold={0.2}
             ListFooterComponent={

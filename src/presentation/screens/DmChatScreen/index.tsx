@@ -56,6 +56,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     currentUserId,
     awaitingApproval,
     sendMessage,
+    retrySendMessage,
     loadOlder,
   } = useDmChat(peerId);
 
@@ -209,6 +210,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       messageActionSheet={messageActionSheet}
       onLongPressMessage={handleLongPressMessage}
       onSwipeReply={composer.openReplyComposerFor}
+      onPressRetry={retrySendMessage}
       onSelectMessageAction={handleSelectMessageAction}
       onCloseMessageActionSheet={() => setMessageActionTargetId(null)}
     />
