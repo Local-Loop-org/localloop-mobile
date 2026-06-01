@@ -6,7 +6,7 @@ import { colors } from '@/shared/theme';
 import type { AvailableMessageActions } from './messageActionPolicy';
 import { styles } from './styles';
 
-export type MessageActionId = 'reply' | 'edit' | 'delete';
+export type MessageActionId = 'reply' | 'edit' | 'delete' | 'discard';
 
 interface MessageActionSheetProps {
   /** Truncated message content shown in the header. Pass an empty string for
@@ -48,6 +48,14 @@ const DELETE_ITEM: ActionItem = {
   danger: true,
 };
 
+const DISCARD_ITEM: ActionItem = {
+  id: 'discard',
+  label: 'Descartar envio',
+  sub: 'Remover esta mensagem que falhou',
+  icon: 'trash',
+  danger: true,
+};
+
 const PREVIEW_MAX = 80;
 
 function truncatePreview(text: string): string {
@@ -66,6 +74,7 @@ export function MessageActionSheet({
   if (available.canReply) items.push(REPLY_ITEM);
   if (available.canEdit) items.push(EDIT_ITEM);
   if (available.canDelete) items.push(DELETE_ITEM);
+  if (available.canDiscard) items.push(DISCARD_ITEM);
 
   // Defensive: the screen should not open the sheet when no actions are
   // available; if it does, render nothing rather than an empty card.
