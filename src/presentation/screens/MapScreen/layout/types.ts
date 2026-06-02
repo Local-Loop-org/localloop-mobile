@@ -15,6 +15,6 @@ export interface MapLayoutProps {
   onRecenter: () => void;
   onCreate: () => void;
   onMyGroups: () => void;
-  /** TODO(wire): join + navigate. Optional until the data layer is wired. */
-  onPressJoin?: (pin: MapPinData) => void;
+  /** Tapping the selected-pin card. TODO(wire): join + navigate. Optional until wired. */
+  onPressGroup?: (id: string) => void;
 }

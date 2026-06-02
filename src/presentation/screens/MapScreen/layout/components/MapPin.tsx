@@ -56,7 +56,7 @@ export function MapPin({ pin, selected, dimmed, withLabel, onSelect }: MapPinPro
           color={selected ? colors.background : colors.text}
           strokeWidth={2.1}
         />
-        {pin.liveCount > 0 ? <View style={styles.liveDot} /> : null}
+        {(pin.liveCount ?? 0) > 0 ? <View style={styles.liveDot} /> : null}
       </View>
 
       {withLabel ? (

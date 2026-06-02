@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
+import { GroupStatusBadge } from '@/shared/ui/nearbyGroup';
 import type { HomeNearbyGroup } from '../types';
 import { styles } from './styles';
-import { StatusBadge } from './StatusBadge';
 
 interface Props {
   group: HomeNearbyGroup;
@@ -45,7 +45,7 @@ export function DiscoverCard({ group, onPress }: Props) {
         <Text style={styles.cardMeta} numberOfLines={1}>
           {formatDistance(group.distanceMeters)} · {group.memberCount} MEM
         </Text>
-        <StatusBadge group={group} />
+        <GroupStatusBadge group={group} />
       </View>
     </TouchableOpacity>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { AnchorType } from '@localloop/shared-types';
 import { FilterChip, type ChipSpec } from '@/shared/ui/FilterChip';
-import { spacing } from '@/shared/theme';
+import { colors, spacing } from '@/shared/theme';
 import type { AnchorFilter, MapPinData } from '../../types';
 
 interface MapCategoryChipsProps {
@@ -28,11 +28,14 @@ export function MapCategoryChips({ pins, filter, onChange }: MapCategoryChipsPro
 
   const specs: ChipSpec<AnchorFilter>[] = [
     { id: 'all', label: 'Todos', count: pins.length },
+    // Category chips show only the (coloured) anchor icon + count — the label
+    // is kept for accessibility but hidden visually, matching the M6 design.
     ...CATEGORIES.map((c) => ({
       id: c.id,
       label: c.label,
       icon: c.icon,
       count: countFor(c.id),
+      hideLabel: true,
     })),
   ];
 
@@ -48,6 +51,7 @@ export function MapCategoryChips({ pins, filter, onChange }: MapCategoryChipsPro
           spec={spec}
           active={filter === spec.id}
           onPress={onChange}
+          iconColor={colors.primary}
         />
       ))}
     </ScrollView>

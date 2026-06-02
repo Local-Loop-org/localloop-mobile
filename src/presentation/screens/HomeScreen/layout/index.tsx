@@ -19,7 +19,7 @@ import { HomeHeader } from './HomeHeader';
 import { DiscoverDivider } from './DiscoverDivider';
 import { SectionLabel } from './SectionLabel';
 import { DiscoverCard } from './DiscoverCard';
-import { DiscoverRow } from './DiscoverRow';
+import { NearbyGroupRow } from '@/shared/ui/nearbyGroup';
 
 type Variant = 'horizontal' | 'vertical';
 
@@ -143,7 +143,7 @@ export default function HomeLayout({
                   ) : (
                     <View style={styles.verticalList}>
                       {items.map((g) => (
-                        <DiscoverRow
+                        <NearbyGroupRow
                           key={g.id}
                           group={g}
                           onPress={onPressGroup}

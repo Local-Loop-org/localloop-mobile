@@ -38,9 +38,12 @@ export function MapRadiusControl({ value, onChange }: MapRadiusControlProps) {
         accessibilityValue={{ text: formatRadiusKm(displayValue) }}
         {...panHandlers}
       >
-        <View style={styles.track} />
+        <View style={styles.track} pointerEvents="none" />
         {trackWidth > 0 ? (
-          <View style={[styles.fill, { width: trackWidth * fillPct }]} />
+          <View
+            style={[styles.fill, { width: trackWidth * fillPct }]}
+            pointerEvents="none"
+          />
         ) : null}
         {trackWidth > 0 ? (
           <View

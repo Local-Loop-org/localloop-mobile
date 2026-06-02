@@ -54,17 +54,19 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
     >
       <View style={styles.trackArea} onLayout={onTrackLayout} {...panHandlers}>
-        <View style={styles.track} />
+        <View style={styles.track} pointerEvents="none" />
         {trackWidth > 0 ? (
           <LinearGradient
             colors={[colors.primary, colors.secondary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={[styles.fill, { width: filledWidth }]}
+            pointerEvents="none"
           />
         ) : null}
         {trackWidth > 0 ? (
           <View
+            pointerEvents="none"
             style={[
               styles.thumb,
               { left: clamp(thumbX, 0, trackWidth - THUMB_SIZE) },

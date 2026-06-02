@@ -9,26 +9,30 @@ const PINS: MapPinData[] = [
   {
     id: 'agua-verde',
     name: 'Água verde',
+    description: null,
     anchorType: AnchorType.NEIGHBORHOOD,
     anchorLabel: 'Bairro',
-    distanceLabel: 'aqui',
-    memberCount: 12,
-    liveCount: 4,
+    distanceMeters: 0,
     privacy: GroupPrivacy.OPEN,
-    lastMessage: 'Caminhada às 18h?',
+    memberCount: 12,
+    myRole: null,
+    memberStatus: null,
+    liveCount: 4,
     x: 0.39,
     y: 0.37,
   },
   {
     id: 'ibira',
     name: 'Lago Ibirá',
+    description: null,
     anchorType: AnchorType.ESTABLISHMENT,
     anchorLabel: 'Estabelecimento',
-    distanceLabel: '120m',
-    memberCount: 24,
-    liveCount: 9,
+    distanceMeters: 120,
     privacy: GroupPrivacy.APPROVAL_REQUIRED,
-    lastMessage: 'Pedala amanhã 7h',
+    memberCount: 24,
+    myRole: null,
+    memberStatus: null,
+    liveCount: 9,
     x: 0.68,
     y: 0.49,
   },
@@ -50,7 +54,7 @@ function renderLayout(overrides: Partial<MapLayoutProps> = {}) {
     onRecenter: jest.fn(),
     onCreate: jest.fn(),
     onMyGroups: jest.fn(),
-    onPressJoin: jest.fn(),
+    onPressGroup: jest.fn(),
     ...overrides,
   };
   return { props, ...render(<MapLayout {...props} />) };
@@ -77,13 +81,13 @@ describe('MapLayout', () => {
     expect(props.onChangeFilter).toHaveBeenCalledWith(AnchorType.ESTABLISHMENT);
   });
 
-  it('shows the selected-pin card only when a pin is selected', () => {
-    const { queryByTestId } = renderLayout({ selectedId: null });
-    expect(queryByTestId('map-selected-card')).toBeNull();
+  it('shows the selected-pin card (discovery row) only when a pin is selected', () => {
+    const { queryByText } = renderLayout({ selectedId: null });
+    expect(queryByText('Lago Ibirá')).toBeNull();
 
-    const { getByTestId, getByText } = renderLayout({ selectedId: 'ibira' });
-    expect(getByTestId('map-selected-card')).toBeTruthy();
+    const { getByText } = renderLayout({ selectedId: 'ibira' });
     expect(getByText('Lago Ibirá')).toBeTruthy();
-    expect(getByText('Pedir')).toBeTruthy();
+    // Approval-required + non-member → "Solicitar" via the shared status badge.
+    expect(getByText('Solicitar')).toBeTruthy();
   });
 });

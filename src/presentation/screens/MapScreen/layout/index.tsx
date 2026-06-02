@@ -2,11 +2,13 @@ import React from 'react';
 import { View } from 'react-native';
 import { SearchInput } from '@/shared/ui/SearchInput';
 import { RadiusMapPreview } from '@/shared/ui/radius';
+import { NearbyGroupRow } from '@/shared/ui/nearbyGroup';
 import { MapPin } from './components/MapPin';
+import { MapRadiusRing } from './components/MapRadiusRing';
+import { MapUserLocation } from './components/MapUserLocation';
 import { MapCategoryChips } from './components/MapCategoryChips';
 import { MapRadiusControl } from './components/MapRadiusControl';
 import { MapActionRail } from './components/MapActionRail';
-import { SelectedPinCard } from './components/SelectedPinCard';
 import { CARD_BOTTOM_OFFSET, RAIL_TOP_OFFSET, styles } from './styles';
 import type { MapLayoutProps } from './types';
 
@@ -25,16 +27,24 @@ export default function MapLayout({
   onRecenter,
   onCreate,
   onMyGroups,
-  onPressJoin,
+  onPressGroup,
 }: MapLayoutProps) {
   const selectedPin = pins.find((p) => p.id === selectedId) ?? null;
   const isFiltered = filter !== 'all';
 
   return (
     <View style={styles.root}>
-      {/* Placeholder map background + dashed radius ring + "you are here".
-          Replace with a real map provider when one is wired in. */}
-      <RadiusMapPreview variant="fill" showBadge={false} radiusKm={radiusKm} />
+      {/* Placeholder map backdrop (grid/streets). Replace with a real map
+          provider when one is wired in. Its own ring/dot are off — the Map
+          renders correctly-sized, animated overlays instead. */}
+      <RadiusMapPreview
+        variant="fill"
+        showBadge={false}
+        showOverlay={false}
+        radiusKm={radiusKm}
+      />
+      <MapRadiusRing radiusKm={radiusKm} />
+      <MapUserLocation />
 
       {pins.map((pin) => (
         <MapPin
@@ -68,8 +78,13 @@ export default function MapLayout({
       </View>
 
       {selectedPin ? (
-        <View style={[styles.cardWrap, { bottom: bottomInset + CARD_BOTTOM_OFFSET }]}>
-          <SelectedPinCard pin={selectedPin} onPressJoin={onPressJoin} />
+        <View
+          style={[styles.cardWrap, { bottom: bottomInset + CARD_BOTTOM_OFFSET }]}
+        >
+          <NearbyGroupRow
+            group={selectedPin}
+            onPress={(id) => onPressGroup?.(id)}
+          />
         </View>
       ) : null}
     </View>

@@ -1,6 +1,8 @@
 import { StyleSheet } from 'react-native';
 import { colors, spacing } from '@/shared/theme';
 
+const CARD_RADIUS = 14;
+
 /** Vertical gap from the top of the floating control stack to the action rail. */
 export const RAIL_TOP_OFFSET = 138;
 /**
@@ -13,7 +15,9 @@ export const CARD_BOTTOM_OFFSET = 96;
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    // Match the basemap tone so the screen reads as full-bleed map even
+    // behind the floating tab bar / before the SVG paints.
+    backgroundColor: colors.surface,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -37,5 +41,12 @@ export const styles = StyleSheet.create({
     left: spacing.md - 2,
     right: spacing.md - 2,
     zIndex: 30,
+    borderRadius: CARD_RADIUS,
+    backgroundColor: colors.surface,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
   },
 });

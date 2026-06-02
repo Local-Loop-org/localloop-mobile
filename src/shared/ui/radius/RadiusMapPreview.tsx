@@ -21,12 +21,19 @@ interface RadiusMapPreviewProps {
   variant?: RadiusMapVariant;
   /** Show the radius badge overlay (default true; Map hides it). */
   showBadge?: boolean;
+  /**
+   * Draw the centered radius ring + "you are here" dot on the basemap
+   * (default true). The Map screen sets this false and renders its own
+   * correctly-sized, animated overlays instead of scaling these up.
+   */
+  showOverlay?: boolean;
 }
 
 export function RadiusMapPreview({
   radiusKm,
   variant = 'preview',
   showBadge = true,
+  showOverlay = true,
 }: RadiusMapPreviewProps) {
   const cx = MAP_WIDTH / 2;
   const cy = MAP_HEIGHT / 2;
@@ -93,27 +100,31 @@ export function RadiusMapPreview({
           strokeOpacity={0.18}
           strokeDasharray="2 3"
         />
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={ringR}
-          fill={colors.primary}
-          fillOpacity={0.10}
-        />
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={ringR}
-          stroke={colors.primary}
-          strokeWidth={1.4}
-          strokeDasharray="3 3"
-          strokeOpacity={0.85}
-          fill="none"
-        />
-        <Circle cx={cx} cy={cy} r={34} fill={colors.secondary} fillOpacity={0.18} />
-        <Circle cx={cx} cy={cy} r={20} fill={colors.secondary} fillOpacity={0.32} />
-        <Circle cx={cx} cy={cy} r={9} fill={colors.secondary} />
-        <Circle cx={cx} cy={cy} r={3} fill={colors.background} />
+        {showOverlay ? (
+          <>
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={ringR}
+              fill={colors.primary}
+              fillOpacity={0.10}
+            />
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={ringR}
+              stroke={colors.primary}
+              strokeWidth={1.4}
+              strokeDasharray="3 3"
+              strokeOpacity={0.85}
+              fill="none"
+            />
+            <Circle cx={cx} cy={cy} r={34} fill={colors.secondary} fillOpacity={0.18} />
+            <Circle cx={cx} cy={cy} r={20} fill={colors.secondary} fillOpacity={0.32} />
+            <Circle cx={cx} cy={cy} r={9} fill={colors.secondary} />
+            <Circle cx={cx} cy={cy} r={3} fill={colors.background} />
+          </>
+        ) : null}
       </Svg>
 
       {showBadge ? (
