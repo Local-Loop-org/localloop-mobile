@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Card } from '../atoms/Card';
 import { SectionLabel } from '../atoms/SectionLabel';
-import { RadiusMapPreview } from '../components/RadiusMapPreview';
+import { RadiusMapPreview } from '@/shared/ui/radius';
 import { RadiusSlider } from '../components/RadiusSlider';
 
 interface VisibilitySectionProps {
