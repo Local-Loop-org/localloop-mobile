@@ -1,11 +1,10 @@
 import React from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { colors } from '@/shared/theme';
 
 const BASE_PX = 30;
 const SLOPE_PX_PER_KM = 22;
-const MAX_FRACTION = 0.34;
 const STROKE = 1.5;
 
 interface MapRadiusRingProps {
@@ -13,14 +12,13 @@ interface MapRadiusRingProps {
 }
 
 /**
- * Centered dashed radius ring, sized in real pixels (small, like the design)
- * rather than scaled up with the basemap. Placeholder scale until a real map
- * provider gives true metres-per-pixel.
+ * Centered dashed radius ring. Sized relative to the map (not the screen), so
+ * it grows without bound and may overflow the viewport — it's clipped to the
+ * map area and will scale with the map's zoom once a real provider is wired in.
+ * `SLOPE_PX_PER_KM` is a placeholder scale until then.
  */
 export function MapRadiusRing({ radiusKm }: MapRadiusRingProps) {
-  const { width, height } = useWindowDimensions();
-  const cap = Math.min(width, height) * MAX_FRACTION;
-  const r = Math.min(BASE_PX + radiusKm * SLOPE_PX_PER_KM, cap || BASE_PX);
+  const r = BASE_PX + radiusKm * SLOPE_PX_PER_KM;
   const size = (r + STROKE) * 2;
   const c = size / 2;
 
