@@ -23,6 +23,14 @@ jest.mock('@/application/hooks/useDmReadState/useDmReadState', () => ({
   useDmReadState: jest.fn(),
 }));
 
+jest.mock('@/application/hooks/useDmTyping/useDmTyping', () => ({
+  useDmTyping: jest.fn(() => ({
+    peerTyping: false,
+    notifyTyping: jest.fn(),
+    notifyStopTyping: jest.fn(),
+  })),
+}));
+
 jest.mock(
   '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation',
   () => ({

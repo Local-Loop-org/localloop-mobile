@@ -14,6 +14,7 @@ import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useEditDirectMessage } from '@/application/hooks/useEditDirectMessage/useEditDirectMessage';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
+import { useDmTyping } from '@/application/hooks/useDmTyping/useDmTyping';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
 import { dmPushConversationKey } from '@/infra/notifications/chat-push-data';
@@ -43,7 +44,10 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const unarchiveDm = useUnarchiveDmConversation();
   const deleteMessage = useDeleteDirectMessage();
   const editMessage = useEditDirectMessage();
-  const peerStatus = useDmPresence(peerId);
+  const presence = useDmPresence(peerId);
+  const { peerTyping, notifyTyping, notifyStopTyping } = useDmTyping(peerId);
+  // Typing takes precedence over online in the header subtitle + bubble.
+  const peerStatus = peerTyping ? ({ kind: 'typing' } as const) : presence;
   const { messageStatuses } = useDmReadState(peerId);
   const conversationKey = dmPushConversationKey(peerId);
 
@@ -73,6 +77,20 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     onSendNew: sendMessage,
     onEditMessage: handleEditMessage,
   });
+
+  const { onChangeDraft, onSend } = composer;
+  const handleChangeDraft = useCallback(
+    (value: string) => {
+      onChangeDraft(value);
+      if (value.length > 0) notifyTyping();
+      else notifyStopTyping();
+    },
+    [onChangeDraft, notifyTyping, notifyStopTyping],
+  );
+  const handleSend = useCallback(() => {
+    onSend();
+    notifyStopTyping();
+  }, [onSend, notifyStopTyping]);
 
   useEffect(() => {
     const clearActiveConversation = setActivePushConversation(conversationKey);
@@ -193,8 +211,8 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       editError={composer.editError}
       onDismissEditError={composer.onDismissEditError}
       actionSheetOpen={actionSheetOpen}
-      onChangeDraft={composer.onChangeDraft}
-      onSend={composer.onSend}
+      onChangeDraft={handleChangeDraft}
+      onSend={handleSend}
       onLoadOlder={loadOlder}
       onBack={() => navigation.goBack()}
       onPressHeader={() => {
