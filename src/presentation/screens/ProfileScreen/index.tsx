@@ -15,13 +15,13 @@ import { useDmExceptions } from '@/application/hooks/useDmExceptions/useDmExcept
 import { useRemoveDmException } from '@/application/hooks/useRemoveDmException/useRemoveDmException';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
 import { useUpdateUserProfile } from '@/application/hooks/useUpdateUserProfile/useUpdateUserProfile';
+import { useTheme } from '@/shared/theme/useTheme';
 import ProfileLayout from './layout';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import type {
   DmException,
   DmExceptionPickCandidate,
   LanguageCode,
-  ThemeMode,
 } from './types';
 
 const COMING_SOON = 'Em breve';
@@ -54,8 +54,11 @@ export default function ProfileScreen() {
   const removeDmExceptionMutation = useRemoveDmException();
   const addDmExceptionMutation = useAddDmException();
 
-  // Local-only state: backend support deferred for theming and i18n.
-  const [theme, setTheme] = useState<ThemeMode>('dark');
+  // Theme preference is persisted via the theme store (secure-store). Light/Dark
+  // repaints render-time surfaces now; full-screen repaint lands with the Phase-2
+  // style-file migration.
+  const { mode: theme, setMode: setTheme } = useTheme();
+  // Local-only state: backend support deferred for i18n.
   const [language, setLanguage] = useState<LanguageCode>('pt');
 
   const dmExceptions = useMemo(

@@ -14,6 +14,28 @@ jest.mock('expo-secure-store', () => {
   };
 });
 
+jest.mock('expo-font', () => ({
+  useFonts: () => [true, null],
+  loadAsync: jest.fn(async () => undefined),
+  isLoaded: () => true,
+}));
+
+jest.mock('@expo-google-fonts/space-grotesk', () => ({
+  useFonts: () => [true, null],
+  SpaceGrotesk_400Regular: 'SpaceGrotesk_400Regular',
+  SpaceGrotesk_500Medium: 'SpaceGrotesk_500Medium',
+  SpaceGrotesk_600SemiBold: 'SpaceGrotesk_600SemiBold',
+  SpaceGrotesk_700Bold: 'SpaceGrotesk_700Bold',
+}));
+
+jest.mock('@expo-google-fonts/jetbrains-mono', () => ({
+  useFonts: () => [true, null],
+  JetBrainsMono_400Regular: 'JetBrainsMono_400Regular',
+  JetBrainsMono_500Medium: 'JetBrainsMono_500Medium',
+  JetBrainsMono_600SemiBold: 'JetBrainsMono_600SemiBold',
+  JetBrainsMono_700Bold: 'JetBrainsMono_700Bold',
+}));
+
 jest.mock('expo-web-browser', () => ({
   maybeCompleteAuthSession: jest.fn(),
   openAuthSessionAsync: jest.fn(),

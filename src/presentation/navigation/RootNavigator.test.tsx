@@ -7,11 +7,21 @@ import { PushPermissionStatus } from '@localloop/shared-types';
 
 jest.mock('@react-navigation/native', () => {
   const ReactLib = require('react');
+  const navColors = {
+    background: '#000',
+    card: '#000',
+    text: '#fff',
+    border: '#000',
+    primary: '#000',
+    notification: '#000',
+  };
   return {
     createNavigationContainerRef: () => ({
       isReady: jest.fn(() => true),
       navigate: jest.fn(),
     }),
+    DarkTheme: { dark: true, colors: navColors },
+    DefaultTheme: { dark: false, colors: navColors },
     NavigationContainer: ({ children }: { children: React.ReactNode }) =>
       ReactLib.createElement(ReactLib.Fragment, null, children),
   };

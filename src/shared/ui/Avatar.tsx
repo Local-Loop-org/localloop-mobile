@@ -1,7 +1,9 @@
 import React from 'react';
 import { Image, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import type { ThemeColors } from '@/shared/theme';
 
 interface AvatarProps {
   name: string | null | undefined;
@@ -15,7 +17,11 @@ function initial(name: string | null | undefined): string {
   return trimmed.length > 0 ? trimmed[0].toUpperCase() : '?';
 }
 
+// Reference conversion (Phase-2 template): a shared/ui component reads the live
+// palette via useTheme()/useThemedStyles() so it repaints instantly on toggle.
 export default function Avatar({ name, uri, size }: AvatarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const radius = size / 2;
   const fontSize = Math.round(size * 0.38);
 
@@ -43,13 +49,14 @@ export default function Avatar({ name, uri, size }: AvatarProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  fallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  letter: {
-    color: colors.white,
-    fontWeight: '700',
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    fallback: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    letter: {
+      color: c.white,
+      fontWeight: '700',
+    },
+  });

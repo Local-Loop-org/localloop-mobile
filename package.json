@@ -12,6 +12,8 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@localloop/geo-utils": "^1.2.0",
     "@localloop/shared-types": "^2.10.0",
     "@react-navigation/bottom-tabs": "^7.15.5",
@@ -23,6 +25,7 @@
     "date-fns": "^4.1.0",
     "expo": "~55.0.7",
     "expo-constants": "~55.0.16",
+    "expo-font": "~55.0.8",
     "expo-linear-gradient": "~55.0.9",
     "expo-linking": "^55.0.8",
     "expo-location": "~55.1.3",
