@@ -5,7 +5,8 @@ import { formatTime } from '@/shared/format/chat';
 import type { ChatMessage } from '@localloop/shared-types';
 import { QuotedReply } from './QuotedReply';
 import { SwipeableBubble } from './SwipeableBubble';
-import { styles, layoutDimensions } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { layoutDimensions, createStyles } from './styles';
 
 interface PeerBubbleProps {
   message: ChatMessage;
@@ -35,6 +36,7 @@ export function PeerBubble({
   onSwipeReply,
   onLongPress,
 }: PeerBubbleProps) {
+  const styles = useThemedStyles(createStyles);
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
   const firstOfRun =

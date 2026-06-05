@@ -6,7 +6,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon } from '@/shared/icons';
 
 interface HeaderBarProps {
@@ -28,6 +30,8 @@ export function HeaderBar({
   onSave,
   onCancel,
 }: HeaderBarProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const renderRight = () => {
     if (!canEdit) {
       return <View style={styles.spacer} />;
@@ -89,7 +93,8 @@ export function HeaderBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',

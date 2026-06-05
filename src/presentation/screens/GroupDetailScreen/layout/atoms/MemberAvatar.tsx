@@ -1,7 +1,9 @@
 import React from 'react';
 import { Image, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { initialsFor } from '@/shared/format/initials';
 
 interface MemberAvatarProps {
@@ -11,6 +13,8 @@ interface MemberAvatarProps {
 }
 
 export function MemberAvatar({ displayName, avatarUrl, size = 28 }: MemberAvatarProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const radius = size / 2;
   if (avatarUrl) {
     return (
@@ -37,7 +41,8 @@ export function MemberAvatar({ displayName, avatarUrl, size = 28 }: MemberAvatar
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   image: {},
   avatar: {
     alignItems: 'center',

@@ -1,8 +1,9 @@
 import React, { useMemo, useRef } from 'react';
 import { Animated, PanResponder, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ReplyGlyph } from './ReplyGlyph';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 const SWIPE_THRESHOLD = 56;
 const SWIPE_MAX = 92;
@@ -22,6 +23,8 @@ export function SwipeableBubble({
   onSwipeReply,
   children,
 }: SwipeableBubbleProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const translateX = useRef(new Animated.Value(0)).current;
   const currentDx = useRef(0);
   const firedRef = useRef(false);

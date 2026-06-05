@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 
 const BASE_PX = 30;
 const SLOPE_PX_PER_KM = 22;
@@ -18,6 +18,7 @@ interface MapRadiusRingProps {
  * `SLOPE_PX_PER_KM` is a placeholder scale until then.
  */
 export function MapRadiusRing({ radiusKm }: MapRadiusRingProps) {
+  const { colors } = useTheme();
   const r = BASE_PX + radiusKm * SLOPE_PX_PER_KM;
   const size = (r + STROKE) * 2;
   const c = size / 2;

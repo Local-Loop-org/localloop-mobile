@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MemberRole } from '@localloop/shared-types';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { Card } from '@/presentation/screens/CreateGroupScreen/layout/atoms/Card';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
@@ -26,6 +27,7 @@ export function MembersSection({
   onPromoteMember,
   onDemoteMember,
 }: MembersSectionProps) {
+  const styles = useThemedStyles(createStyles);
   const canManage =
     myRole === MemberRole.OWNER || myRole === MemberRole.MODERATOR;
 
@@ -69,7 +71,8 @@ export function MembersSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   viewAll: {
     fontFamily: fonts.mono,
     fontSize: 10,

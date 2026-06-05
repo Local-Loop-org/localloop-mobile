@@ -4,7 +4,8 @@ import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
 import { GroupStatusBadge } from '@/shared/ui/nearbyGroup';
 import type { HomeNearbyGroup } from '../types';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   group: HomeNearbyGroup;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function DiscoverCard({ group, onPress }: Props) {
+  const styles = useThemedStyles(createStyles);
   const live = group.liveCount ?? 0;
 
   return (

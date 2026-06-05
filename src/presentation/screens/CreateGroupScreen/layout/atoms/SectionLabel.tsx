@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface SectionLabelProps {
   label: string;
@@ -10,6 +11,7 @@ interface SectionLabelProps {
 }
 
 export function SectionLabel({ label, hint, action }: SectionLabelProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
@@ -22,7 +24,8 @@ export function SectionLabel({ label, hint, action }: SectionLabelProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     paddingTop: 20,
     paddingBottom: 8,

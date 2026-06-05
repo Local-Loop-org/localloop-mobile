@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ChatMessage, DirectMessageStatus } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { formatTime } from '@/shared/format/chat';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import { QuotedReply } from './QuotedReply';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { FailedMessageRow } from './FailedMessageRow';
@@ -44,6 +45,8 @@ export function OwnBubble({
   onSwipeReply,
   onLongPress,
 }: OwnBubbleProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const enhanced =
     previousMessage !== undefined || nextMessage !== undefined;
   const firstOfRun =

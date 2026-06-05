@@ -10,7 +10,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MemberRole } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { GradientButton } from '@/presentation/screens/CreateGroupScreen/layout/atoms/GradientButton';
 import { LocationSection } from '@/presentation/screens/CreateGroupScreen/layout/sections/LocationSection';
 import { VisibilitySection } from '@/presentation/screens/CreateGroupScreen/layout/sections/VisibilitySection';
@@ -22,7 +23,7 @@ import { MembersSection } from './sections/MembersSection';
 import { AboutStatsSection } from './sections/AboutStatsSection';
 import { PermissionsSummarySection } from './sections/PermissionsSummarySection';
 import { DangerSection } from './sections/DangerSection';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { GroupDetailLayoutProps, JoinButtonState } from './types';
 import type { RolePillRole } from './atoms/RolePill';
 
@@ -78,6 +79,8 @@ export default function GroupDetailLayout({
   onSaveEdit,
   onDraftChange,
 }: GroupDetailLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 const monoFamily = Platform.select({
   ios: 'Menlo',
@@ -33,6 +35,8 @@ export function FilterChip<TId extends string = string>({
   onPress,
   iconColor,
 }: FilterChipProps<TId>) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={() => onPress(spec.id)}
@@ -75,53 +79,54 @@ export function FilterChip<TId extends string = string>({
   );
 }
 
-const styles = StyleSheet.create({
-  chip: {
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chipIconLeading: {
-    paddingLeft: 9,
-    paddingRight: 11,
-  },
-  chipActive: {
-    borderColor: colors.text,
-    backgroundColor: colors.text,
-  },
-  chipLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-    color: colors.dim,
-  },
-  chipLabelActive: {
-    color: colors.background,
-  },
-  chipCount: {
-    fontSize: 10,
-    fontFamily: monoFamily,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    color: colors.faint,
-  },
-  chipCountActive: {
-    color: colors.background,
-    opacity: 0.7,
-  },
-  chipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-  },
-  chipDotActive: {
-    backgroundColor: colors.background,
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    chip: {
+      paddingVertical: 7,
+      paddingHorizontal: 12,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.line,
+      backgroundColor: c.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    chipIconLeading: {
+      paddingLeft: 9,
+      paddingRight: 11,
+    },
+    chipActive: {
+      borderColor: c.text,
+      backgroundColor: c.text,
+    },
+    chipLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      letterSpacing: -0.1,
+      color: c.dim,
+    },
+    chipLabelActive: {
+      color: c.background,
+    },
+    chipCount: {
+      fontSize: 10,
+      fontFamily: monoFamily,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+      color: c.faint,
+    },
+    chipCountActive: {
+      color: c.background,
+      opacity: 0.7,
+    },
+    chipDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: c.primary,
+    },
+    chipDotActive: {
+      backgroundColor: c.background,
+    },
+  });

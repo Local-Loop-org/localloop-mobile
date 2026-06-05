@@ -3,8 +3,9 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import type { NearbyGroup } from '@localloop/shared-types';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { GroupStatusBadge } from './GroupStatusBadge';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export type NearbyGroupRowData = NearbyGroup & { liveCount?: number };
 
@@ -15,6 +16,7 @@ interface Props {
 
 /** Horizontal nearby-group row: anchor badge + name + meta + status action. */
 export function NearbyGroupRow({ group, onPress }: Props) {
+  const styles = useThemedStyles(createStyles);
   const live = group.liveCount ?? 0;
 
   return (

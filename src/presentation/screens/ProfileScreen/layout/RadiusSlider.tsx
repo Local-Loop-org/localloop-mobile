@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { useRadiusSlider } from '@/shared/ui/radius';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface Props {
   value: number;
@@ -23,6 +24,8 @@ function formatKm(km: number): string {
 }
 
 export default function RadiusSlider({ value, onCommit }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { onTrackLayout, panHandlers, displayValue, fillPct, trackWidth } =
     useRadiusSlider({
       value,
@@ -37,7 +40,7 @@ export default function RadiusSlider({ value, onCommit }: Props) {
   return (
     <>
       <View style={styles.radiusHeader}>
-        <View style={[styles.rowIconBubble, { backgroundColor: 'rgba(0,209,255,0.1)' }]}>
+        <View style={[styles.rowIconBubble, { backgroundColor: colors.primarySoft }]}>
           <Icon name='radar' size={14} color={colors.primary} strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>

@@ -2,7 +2,8 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { AnchorType } from '@localloop/shared-types';
 import { FilterChip, type ChipSpec } from '@/shared/ui/FilterChip';
-import { colors, spacing } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 import type { AnchorFilter, MapPinData } from '../../types';
 
 interface MapCategoryChipsProps {
@@ -23,6 +24,7 @@ const CATEGORIES: ReadonlyArray<{
 ];
 
 export function MapCategoryChips({ pins, filter, onChange }: MapCategoryChipsProps) {
+  const { colors } = useTheme();
   const countFor = (id: AnchorType) =>
     pins.filter((p) => p.anchorType === id).length;
 

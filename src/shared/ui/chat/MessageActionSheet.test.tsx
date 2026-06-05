@@ -7,7 +7,7 @@ describe('MessageActionSheet', () => {
     const { queryByTestId } = render(
       <MessageActionSheet
         messagePreview='Olá'
-        available={{ canReply: true, canEdit: false, canDelete: false }}
+        available={{ canReply: true, canEdit: false, canDelete: false, canDiscard: false }}
         onClose={jest.fn()}
         onSelect={jest.fn()}
       />,
@@ -16,13 +16,14 @@ describe('MessageActionSheet', () => {
     expect(queryByTestId('message-action-reply')).toBeTruthy();
     expect(queryByTestId('message-action-edit')).toBeNull();
     expect(queryByTestId('message-action-delete')).toBeNull();
+    expect(queryByTestId('message-action-discard')).toBeNull();
   });
 
   it('renders all three rows when policy allows everything', () => {
     const { getByTestId } = render(
       <MessageActionSheet
         messagePreview='Olá'
-        available={{ canReply: true, canEdit: true, canDelete: true }}
+        available={{ canReply: true, canEdit: true, canDelete: true, canDiscard: false }}
         onClose={jest.fn()}
         onSelect={jest.fn()}
       />,
@@ -33,11 +34,27 @@ describe('MessageActionSheet', () => {
     expect(getByTestId('message-action-delete')).toBeTruthy();
   });
 
+  it('renders only the discard row when policy allows discard only', () => {
+    const { getByTestId, queryByTestId } = render(
+      <MessageActionSheet
+        messagePreview='Olá'
+        available={{ canReply: false, canEdit: false, canDelete: false, canDiscard: true }}
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+      />,
+    );
+
+    expect(getByTestId('message-action-discard')).toBeTruthy();
+    expect(queryByTestId('message-action-reply')).toBeNull();
+    expect(queryByTestId('message-action-edit')).toBeNull();
+    expect(queryByTestId('message-action-delete')).toBeNull();
+  });
+
   it('returns null when no actions are available', () => {
     const { queryByTestId } = render(
       <MessageActionSheet
         messagePreview='Olá'
-        available={{ canReply: false, canEdit: false, canDelete: false }}
+        available={{ canReply: false, canEdit: false, canDelete: false, canDiscard: false }}
         onClose={jest.fn()}
         onSelect={jest.fn()}
       />,
@@ -51,7 +68,7 @@ describe('MessageActionSheet', () => {
     const { getByTestId } = render(
       <MessageActionSheet
         messagePreview='Olá'
-        available={{ canReply: true, canEdit: true, canDelete: true }}
+        available={{ canReply: true, canEdit: true, canDelete: true, canDiscard: true }}
         onClose={jest.fn()}
         onSelect={onSelect}
       />,
@@ -62,6 +79,9 @@ describe('MessageActionSheet', () => {
 
     fireEvent.press(getByTestId('message-action-reply'));
     expect(onSelect).toHaveBeenCalledWith('reply');
+
+    fireEvent.press(getByTestId('message-action-discard'));
+    expect(onSelect).toHaveBeenCalledWith('discard');
   });
 
   it('fires onClose when the backdrop is tapped', () => {
@@ -69,7 +89,7 @@ describe('MessageActionSheet', () => {
     const { getByTestId } = render(
       <MessageActionSheet
         messagePreview='Olá'
-        available={{ canReply: true, canEdit: false, canDelete: false }}
+        available={{ canReply: true, canEdit: false, canDelete: false, canDiscard: false }}
         onClose={onClose}
         onSelect={jest.fn()}
       />,
@@ -84,7 +104,7 @@ describe('MessageActionSheet', () => {
     const { getByTestId } = render(
       <MessageActionSheet
         messagePreview={long}
-        available={{ canReply: true, canEdit: false, canDelete: false }}
+        available={{ canReply: true, canEdit: false, canDelete: false, canDiscard: false }}
         onClose={jest.fn()}
         onSelect={jest.fn()}
       />,
@@ -100,7 +120,7 @@ describe('MessageActionSheet', () => {
     const { getByTestId } = render(
       <MessageActionSheet
         messagePreview=''
-        available={{ canReply: true, canEdit: false, canDelete: false }}
+        available={{ canReply: true, canEdit: false, canDelete: false, canDiscard: false }}
         onClose={jest.fn()}
         onSelect={jest.fn()}
       />,

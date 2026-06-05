@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 
 interface FailedMessageWarningProps {
   size?: number;
@@ -12,6 +12,7 @@ export function FailedMessageWarning({
   size = 16,
   onPress,
 }: FailedMessageWarningProps) {
+  const { colors } = useTheme();
   const padding = 4;
   return (
     <Pressable
@@ -29,8 +30,8 @@ export function FailedMessageWarning({
     >
       <Svg width={size} height={size} viewBox='0 0 16 16' fill='none'>
         <Circle cx={8} cy={8} r={7} fill={colors.error} />
-        <Rect x={7.15} y={3.6} width={1.7} height={5.2} rx={0.85} fill='#fff' />
-        <Circle cx={8} cy={11.4} r={1} fill='#fff' />
+        <Rect x={7.15} y={3.6} width={1.7} height={5.2} rx={0.85} fill={colors.white} />
+        <Circle cx={8} cy={11.4} r={1} fill={colors.white} />
       </Svg>
     </Pressable>
   );

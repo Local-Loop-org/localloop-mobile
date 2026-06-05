@@ -2,7 +2,7 @@
   "expo": {
     "name": "Local Loop",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "1.1.1",
     "scheme": "localloop",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,7 +29,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store", "expo-notifications"],
+    "plugins": ["expo-secure-store", "expo-notifications", "expo-font"],
     "extra": {
       "eas": {
         "projectId": "25b5459b-1840-4a06-8112-0f620ea509ee"

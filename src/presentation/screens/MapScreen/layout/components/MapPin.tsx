@@ -2,7 +2,9 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Icon } from '@/shared/icons';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
-import { colors } from '@/shared/theme';
+import { type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import type { MapPinData } from '../../types';
 
 const SIZE = 26;
@@ -17,6 +19,8 @@ interface MapPinProps {
 }
 
 export function MapPin({ pin, selected, dimmed, withLabel, onSelect }: MapPinProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const square = selected ? SIZE_SELECTED : SIZE;
 
   return (
@@ -70,47 +74,48 @@ export function MapPin({ pin, selected, dimmed, withLabel, onSelect }: MapPinPro
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  marker: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  liveDot: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: colors.success,
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-  label: {
-    maxWidth: 110,
-    paddingVertical: 2,
-    paddingHorizontal: 7,
-    borderRadius: 6,
-    backgroundColor: 'rgba(15,15,15,0.85)',
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  labelText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-    color: colors.text,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    wrap: {
+      position: 'absolute',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    marker: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      shadowColor: '#000',
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+    },
+    liveDot: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      backgroundColor: colors.success,
+      borderWidth: 2,
+      borderColor: colors.background,
+    },
+    label: {
+      maxWidth: 110,
+      paddingVertical: 2,
+      paddingHorizontal: 7,
+      borderRadius: 6,
+      backgroundColor: colors.surfaceOverlay,
+      borderWidth: 1,
+      borderColor: colors.line,
+    },
+    labelText: {
+      fontSize: 10.5,
+      fontWeight: '600',
+      letterSpacing: -0.1,
+      color: colors.text,
+    },
+  });

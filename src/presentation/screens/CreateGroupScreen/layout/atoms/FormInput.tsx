@@ -6,7 +6,9 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface FormInputProps extends Omit<TextInputProps, 'style'> {
@@ -22,6 +24,8 @@ export function FormInput({
   value,
   ...rest
 }: FormInputProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (readOnly) {
     return (
       <View style={[styles.wrap, styles.readOnlyWrap]}>
@@ -71,7 +75,8 @@ export function FormInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   wrap: {
     position: 'relative',
   },

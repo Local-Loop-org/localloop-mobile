@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import DmChatLayout from './layout';
 import type { DmActionId } from '@/shared/ui/chat/DmActionSheet';
 import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
@@ -7,13 +8,23 @@ import {
   availableMessageActions,
   hasAnyAction,
 } from '@/shared/ui/chat/messageActionPolicy';
+import { getLocalSendStatus } from '@/shared/chat/sendStatus';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useChatComposerState } from '@/application/hooks/useChatComposerState/useChatComposerState';
-import { useDeleteDirectMessage } from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
+import {
+  removeDirectMessageById,
+  useDeleteDirectMessage,
+} from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
+import {
+  dmHistoryKey,
+  type DmHistoryInfiniteData,
+} from '@/application/hooks/useDmHistory/dmHistoryQuery';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useEditDirectMessage } from '@/application/hooks/useEditDirectMessage/useEditDirectMessage';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
+import { useDmSummaryActivity } from '@/application/hooks/useDmSummaryActivity/useDmSummaryActivity';
+import { useDmTyping } from '@/application/hooks/useDmTyping/useDmTyping';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
 import { dmPushConversationKey } from '@/infra/notifications/chat-push-data';
@@ -39,11 +50,22 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const [messageActionTargetId, setMessageActionTargetId] = useState<
     string | null
   >(null);
+  const queryClient = useQueryClient();
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
   const deleteMessage = useDeleteDirectMessage();
   const editMessage = useEditDirectMessage();
-  const peerStatus = useDmPresence(peerId);
+  const presence = useDmPresence(peerId);
+  const { peerTyping, notifyTyping, notifyStopTyping } = useDmTyping(peerId);
+  const summaryLastActivityAt = useDmSummaryActivity(peerId);
+  // Typing takes precedence over online, which takes precedence over offline summary activity.
+  const peerStatus = peerTyping
+    ? ({ kind: 'typing' } as const)
+    : presence
+      ? presence
+      : summaryLastActivityAt
+        ? ({ kind: 'lastSeen', at: summaryLastActivityAt } as const)
+        : null;
   const { messageStatuses } = useDmReadState(peerId);
   const conversationKey = dmPushConversationKey(peerId);
 
@@ -73,6 +95,20 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
     onSendNew: sendMessage,
     onEditMessage: handleEditMessage,
   });
+
+  const { onChangeDraft, onSend } = composer;
+  const handleChangeDraft = useCallback(
+    (value: string) => {
+      onChangeDraft(value);
+      if (value.length > 0) notifyTyping();
+      else notifyStopTyping();
+    },
+    [onChangeDraft, notifyTyping, notifyStopTyping],
+  );
+  const handleSend = useCallback(() => {
+    onSend();
+    notifyStopTyping();
+  }, [onSend, notifyStopTyping]);
 
   useEffect(() => {
     const clearActiveConversation = setActivePushConversation(conversationKey);
@@ -130,6 +166,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       message: targetMessage,
       currentUserId,
       conversation: 'dm',
+      sendStatus: getLocalSendStatus(targetMessage),
     });
     if (!hasAnyAction(available)) return null;
     return {
@@ -146,6 +183,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         message: msg,
         currentUserId,
         conversation: 'dm',
+        sendStatus: getLocalSendStatus(msg),
       });
       if (!hasAnyAction(available)) return;
       setMessageActionTargetId(messageId);
@@ -162,6 +200,13 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         deleteMessage.mutate({ peerId, messageId: id });
         return;
       }
+      if (action === 'discard') {
+        queryClient.setQueryData<DmHistoryInfiniteData>(
+          dmHistoryKey(peerId),
+          (old) => removeDirectMessageById(old, id),
+        );
+        return;
+      }
       if (action === 'reply') {
         composer.openReplyComposerFor(id);
         return;
@@ -170,7 +215,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         composer.openEditComposerFor(id);
       }
     },
-    [messageActionTargetId, deleteMessage, peerId, composer],
+    [messageActionTargetId, deleteMessage, queryClient, peerId, composer],
   );
 
   return (
@@ -193,8 +238,8 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       editError={composer.editError}
       onDismissEditError={composer.onDismissEditError}
       actionSheetOpen={actionSheetOpen}
-      onChangeDraft={composer.onChangeDraft}
-      onSend={composer.onSend}
+      onChangeDraft={handleChangeDraft}
+      onSend={handleSend}
       onLoadOlder={loadOlder}
       onBack={() => navigation.goBack()}
       onPressHeader={() => {

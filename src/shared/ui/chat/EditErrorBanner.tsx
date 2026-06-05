@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface EditErrorBannerProps {
   message: string;
@@ -10,6 +11,8 @@ interface EditErrorBannerProps {
 }
 
 export function EditErrorBanner({ message, onDismiss }: EditErrorBannerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.editErrorBanner} testID='edit-error-banner'>
       <Text style={styles.editErrorBannerText} numberOfLines={2}>

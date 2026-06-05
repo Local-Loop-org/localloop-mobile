@@ -1,10 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   flex: {
     flex: 1,

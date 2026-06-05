@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon } from '@/shared/icons';
 import { formatRadiusKm, radiusToRingPx } from './radiusGeometry';
 
@@ -35,6 +37,8 @@ export function RadiusMapPreview({
   showBadge = true,
   showOverlay = true,
 }: RadiusMapPreviewProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const cx = MAP_WIDTH / 2;
   const cy = MAP_HEIGHT / 2;
   const ringR = radiusToRingPx(radiusKm, {
@@ -139,7 +143,8 @@ export function RadiusMapPreview({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   frame: {
     width: '100%',
     aspectRatio: MAP_WIDTH / MAP_HEIGHT,
@@ -163,7 +168,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(15,15,15,0.82)',
+    backgroundColor: colors.surfaceOverlay,
     borderColor: colors.primary,
     borderWidth: 1,
   },

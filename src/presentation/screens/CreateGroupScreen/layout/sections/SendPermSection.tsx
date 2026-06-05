@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 import { Card } from '../atoms/Card';
 import { SectionLabel } from '../atoms/SectionLabel';
@@ -16,6 +18,8 @@ interface StackHeaderProps {
 }
 
 function StackHeader({ icon, label, meta }: StackHeaderProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.stackHeader}>
       <Icon name={icon} size={13} color={colors.dim} strokeWidth={2} />
@@ -41,6 +45,7 @@ export function SendPermSection({
   onSendMediaPermChange,
   readOnly,
 }: SendPermSectionProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <SectionLabel label="QUEM PODE ENVIAR" />
@@ -65,7 +70,8 @@ export function SendPermSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   body: {
     padding: 10,
   },

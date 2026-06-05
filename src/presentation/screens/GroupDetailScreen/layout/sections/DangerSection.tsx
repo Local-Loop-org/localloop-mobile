@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MemberRole } from '@localloop/shared-types';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { DangerButton } from '../atoms/DangerButton';
 
 interface DangerSectionProps {
@@ -27,6 +28,7 @@ export function DangerSection({
   onLeave,
   onDelete,
 }: DangerSectionProps) {
+  const styles = useThemedStyles(createStyles);
   if (role === null) return null;
 
   const isOwner = role === MemberRole.OWNER;
@@ -64,7 +66,8 @@ export function DangerSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   wrap: {
     marginTop: 22,
     gap: 8,

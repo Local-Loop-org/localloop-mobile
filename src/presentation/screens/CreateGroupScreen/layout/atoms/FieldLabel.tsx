@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface FieldLabelProps {
   label: string;
@@ -8,6 +9,7 @@ interface FieldLabelProps {
 }
 
 export function FieldLabel({ label, hint }: FieldLabelProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
@@ -16,7 +18,8 @@ export function FieldLabel({ label, hint }: FieldLabelProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'baseline',

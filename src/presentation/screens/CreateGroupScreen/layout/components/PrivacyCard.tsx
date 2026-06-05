@@ -1,7 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GroupPrivacy } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface PrivacyOption {
@@ -40,6 +42,8 @@ export function PrivacyCard({
   onPress,
   readOnly,
 }: PrivacyCardProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const Inner = (
     <>
       <View style={styles.iconWrap}>
@@ -85,7 +89,8 @@ export function PrivacyCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -97,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardActive: {
-    backgroundColor: 'rgba(0,209,255,0.10)',
+    backgroundColor: colors.primarySoft,
     borderColor: colors.primary,
   },
   cardReadOnly: {

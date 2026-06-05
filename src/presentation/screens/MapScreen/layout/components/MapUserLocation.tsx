@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
-import { colors } from '@/shared/theme';
+import { type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 const DOT = 16;
 
 /** Centered "you are here" marker with a slow pulsing halo. */
 export function MapUserLocation() {
+  const styles = useThemedStyles(createStyles);
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -32,25 +34,26 @@ export function MapUserLocation() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  halo: {
-    position: 'absolute',
-    width: DOT,
-    height: DOT,
-    borderRadius: DOT / 2,
-    backgroundColor: colors.secondary,
-  },
-  dot: {
-    width: DOT,
-    height: DOT,
-    borderRadius: DOT / 2,
-    backgroundColor: colors.secondary,
-    borderWidth: 2.5,
-    borderColor: colors.background,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    center: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    halo: {
+      position: 'absolute',
+      width: DOT,
+      height: DOT,
+      borderRadius: DOT / 2,
+      backgroundColor: colors.secondary,
+    },
+    dot: {
+      width: DOT,
+      height: DOT,
+      borderRadius: DOT / 2,
+      backgroundColor: colors.secondary,
+      borderWidth: 2.5,
+      borderColor: colors.background,
+    },
+  });

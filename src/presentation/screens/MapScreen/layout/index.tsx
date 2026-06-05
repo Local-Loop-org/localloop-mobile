@@ -9,7 +9,8 @@ import { MapUserLocation } from './components/MapUserLocation';
 import { MapCategoryChips } from './components/MapCategoryChips';
 import { MapRadiusControl } from './components/MapRadiusControl';
 import { MapActionRail } from './components/MapActionRail';
-import { CARD_BOTTOM_OFFSET, RAIL_TOP_OFFSET, styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { CARD_BOTTOM_OFFSET, RAIL_TOP_OFFSET, createStyles } from './styles';
 import type { MapLayoutProps } from './types';
 
 export default function MapLayout({
@@ -29,6 +30,7 @@ export default function MapLayout({
   onMyGroups,
   onPressGroup,
 }: MapLayoutProps) {
+  const styles = useThemedStyles(createStyles);
   const selectedPin = pins.find((p) => p.id === selectedId) ?? null;
   const isFiltered = filter !== 'all';
 

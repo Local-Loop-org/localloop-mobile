@@ -9,12 +9,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { FilterChip } from '@/shared/ui/FilterChip';
 import { SearchInput } from '@/shared/ui/SearchInput';
 import { DmRow } from './DmRow';
 import { RequestRow } from './RequestRow';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { InboxLayoutProps } from './types';
 
 export default function InboxLayout({
@@ -38,6 +39,8 @@ export default function InboxLayout({
   onLoadMore,
   requestActionsDisabled,
 }: InboxLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const showingRequests = activeFilter === 'requests';
   const footer = loadingMore ? (
     <View style={styles.loadingMore}>

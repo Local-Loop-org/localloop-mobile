@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
 
 const CARD_RADIUS = 14;
 
@@ -12,41 +12,42 @@ export const RAIL_TOP_OFFSET = 138;
  */
 export const CARD_BOTTOM_OFFSET = 96;
 
-export const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    // Match the basemap tone so the screen reads as full-bleed map even
-    // behind the floating tab bar / before the SVG paints.
-    backgroundColor: colors.surface,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  topStack: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 30,
-  },
-  radiusRow: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  rail: {
-    position: 'absolute',
-    right: spacing.md - 2,
-    zIndex: 20,
-  },
-  cardWrap: {
-    position: 'absolute',
-    left: spacing.md - 2,
-    right: spacing.md - 2,
-    zIndex: 30,
-    borderRadius: CARD_RADIUS,
-    backgroundColor: colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-  },
-});
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      // Match the basemap tone so the screen reads as full-bleed map even
+      // behind the floating tab bar / before the SVG paints.
+      backgroundColor: c.surface,
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    topStack: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      zIndex: 30,
+    },
+    radiusRow: {
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.md,
+    },
+    rail: {
+      position: 'absolute',
+      right: spacing.md - 2,
+      zIndex: 20,
+    },
+    cardWrap: {
+      position: 'absolute',
+      left: spacing.md - 2,
+      right: spacing.md - 2,
+      zIndex: 30,
+      borderRadius: CARD_RADIUS,
+      backgroundColor: c.surface,
+      shadowColor: '#000',
+      shadowOpacity: 0.5,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 12,
+    },
+  });

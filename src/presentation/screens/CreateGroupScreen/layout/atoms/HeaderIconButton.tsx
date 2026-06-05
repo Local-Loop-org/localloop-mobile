@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface HeaderIconButtonProps {
@@ -16,6 +18,8 @@ export function HeaderIconButton({
   accessibilityLabel,
   testID,
 }: HeaderIconButtonProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -29,7 +33,8 @@ export function HeaderIconButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   btn: {
     width: 36,
     height: 36,

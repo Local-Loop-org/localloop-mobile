@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 
 export type MemberStatusKind = 'active' | 'pending' | 'banned';
 
@@ -10,7 +11,6 @@ interface StatusPillProps {
 
 interface PillSpec {
   label: string;
-  color: string;
   bg: string;
   border: string;
 }
@@ -18,25 +18,26 @@ interface PillSpec {
 const SPECS: Record<MemberStatusKind, PillSpec> = {
   active: {
     label: 'ATIVO',
-    color: colors.success,
     bg: 'rgba(0,230,118,0.18)',
     border: 'rgba(0,230,118,0.50)',
   },
   pending: {
     label: 'PENDENTE',
-    color: colors.warning,
     bg: 'rgba(240,162,74,0.18)',
     border: 'rgba(240,162,74,0.50)',
   },
   banned: {
     label: 'BANIDO',
-    color: colors.error,
     bg: 'rgba(255,75,75,0.18)',
     border: 'rgba(255,75,75,0.50)',
   },
 };
 
+const textColorFor = (kind: MemberStatusKind, c: ThemeColors): string =>
+  kind === 'active' ? c.success : kind === 'pending' ? c.warning : c.error;
+
 export function StatusPill({ kind }: StatusPillProps) {
+  const { colors } = useTheme();
   const spec = SPECS[kind];
   return (
     <View
@@ -46,7 +47,9 @@ export function StatusPill({ kind }: StatusPillProps) {
       ]}
       testID={`status-pill-${kind}`}
     >
-      <Text style={[styles.label, { color: spec.color }]}>{spec.label}</Text>
+      <Text style={[styles.label, { color: textColorFor(kind, colors) }]}>
+        {spec.label}
+      </Text>
     </View>
   );
 }

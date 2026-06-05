@@ -1,7 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { useRadiusSlider } from '@/shared/ui/radius';
 
 const MIN_KM = 0.2;
@@ -27,6 +29,8 @@ function formatTick(value: number): string {
 }
 
 export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { onTrackLayout, panHandlers, displayValue, fillPct, trackWidth } =
     useRadiusSlider({
       value,
@@ -98,47 +102,48 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  trackArea: {
-    height: 28,
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  track: {
-    height: TRACK_HEIGHT,
-    backgroundColor: colors.surface2,
-    borderRadius: TRACK_HEIGHT / 2,
-  },
-  fill: {
-    position: 'absolute',
-    left: 0,
-    height: TRACK_HEIGHT,
-    top: (28 - TRACK_HEIGHT) / 2,
-    borderRadius: TRACK_HEIGHT / 2,
-  },
-  thumb: {
-    position: 'absolute',
-    top: (28 - THUMB_SIZE) / 2,
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    backgroundColor: colors.text,
-    borderColor: colors.background,
-    borderWidth: 3,
-  },
-  ticks: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-    paddingHorizontal: 2,
-  },
-  tickText: {
-    fontFamily: fonts.mono,
-    fontSize: 9.5,
-    color: colors.faint,
-    letterSpacing: 0.6,
-  },
-  tickTextActive: {
-    color: colors.primary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    trackArea: {
+      height: 28,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    track: {
+      height: TRACK_HEIGHT,
+      backgroundColor: colors.surface2,
+      borderRadius: TRACK_HEIGHT / 2,
+    },
+    fill: {
+      position: 'absolute',
+      left: 0,
+      height: TRACK_HEIGHT,
+      top: (28 - TRACK_HEIGHT) / 2,
+      borderRadius: TRACK_HEIGHT / 2,
+    },
+    thumb: {
+      position: 'absolute',
+      top: (28 - THUMB_SIZE) / 2,
+      width: THUMB_SIZE,
+      height: THUMB_SIZE,
+      borderRadius: THUMB_SIZE / 2,
+      backgroundColor: colors.text,
+      borderColor: colors.background,
+      borderWidth: 3,
+    },
+    ticks: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 6,
+      paddingHorizontal: 2,
+    },
+    tickText: {
+      fontFamily: fonts.mono,
+      fontSize: 9.5,
+      color: colors.faint,
+      letterSpacing: 0.6,
+    },
+    tickTextActive: {
+      color: colors.primary,
+    },
+  });

@@ -2,10 +2,11 @@ import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { DmPermission } from '@localloop/shared-types';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import Avatar from '@/shared/ui/Avatar';
 import type { DmException, DmExceptionPickCandidate } from '../types';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface Props {
   value: DmPermission;
@@ -78,6 +79,8 @@ export default function DMPicker({
   onAddException,
   onLoadMoreCandidates,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.dmList}>
       {OPTIONS.map((opt) => {
@@ -188,6 +191,8 @@ function ExceptionsBlock({
   onAdd,
   onLoadMoreCandidates,
 }: ExceptionsBlockProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.dmExceptionsBlock}>
       <View style={styles.dmExceptionsHeader}>
@@ -286,6 +291,8 @@ function CandidatesDrawer({
   onAdd,
   onLoadMore,
 }: CandidatesDrawerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.dmPickerDrawer}>
       <View style={styles.dmExceptionsHeader}>

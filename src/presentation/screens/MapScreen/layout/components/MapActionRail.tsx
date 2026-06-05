@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface RailButton {
   icon: IconName;
@@ -21,6 +23,8 @@ export function MapActionRail({
   onCreate,
   onMyGroups,
 }: MapActionRailProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const buttons: RailButton[] = [
     { icon: 'compass', label: 'Centralizar', onPress: onRecenter },
     { icon: 'plus', label: 'Criar grupo', onPress: onCreate },
@@ -50,23 +54,24 @@ export function MapActionRail({
   );
 }
 
-const styles = StyleSheet.create({
-  rail: {
-    gap: 8,
-  },
-  btn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    rail: {
+      gap: 8,
+    },
+    btn: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.line,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+  });

@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles, TAB_BAR_BASE_BOTTOM_PADDING } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles, TAB_BAR_BASE_BOTTOM_PADDING } from './styles';
 import { TabRoutes, type TabRoute } from '@/presentation/navigation/routes';
 
 export type TabId = TabRoute;
@@ -29,6 +30,8 @@ interface Props {
 }
 
 export function BottomTabBar({ active, onPress, bottomInset = 0 }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: TAB_BAR_BASE_BOTTOM_PADDING + bottomInset }]}>
       <View style={styles.tabBar}>
@@ -37,7 +40,7 @@ export function BottomTabBar({ active, onPress, bottomInset = 0 }: Props) {
           const isActive = tab.id === active;
           const labelColor = isActive ? colors.text : colors.textSecondary;
           const iconColor = isNew
-            ? colors.black
+            ? colors.accentInk
             : isActive
               ? colors.text
               : colors.textSecondary;

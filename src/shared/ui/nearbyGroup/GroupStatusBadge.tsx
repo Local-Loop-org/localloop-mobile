@@ -5,7 +5,8 @@ import {
   MemberStatus,
   type NearbyGroup,
 } from '@localloop/shared-types';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   group: Pick<NearbyGroup, 'memberStatus' | 'privacy'>;
@@ -13,6 +14,8 @@ interface Props {
 
 /** Membership/privacy-aware action label for a nearby group row. */
 export function GroupStatusBadge({ group }: Props) {
+  const styles = useThemedStyles(createStyles);
+
   if (group.memberStatus === MemberStatus.ACTIVE)
     return (
       <View style={styles.cardMemberBtn}>

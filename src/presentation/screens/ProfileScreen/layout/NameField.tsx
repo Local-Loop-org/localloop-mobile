@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   value: string;
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function NameField({ value, onChange }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 

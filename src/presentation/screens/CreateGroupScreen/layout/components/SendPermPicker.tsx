@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 export type SendPermValue = 'all' | 'within_radius' | 'admins_only';
@@ -48,6 +50,8 @@ export function SendPermPicker({
   testIdPrefix,
   readOnly,
 }: SendPermPickerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (readOnly) {
     const option =
       SEND_PERM_OPTIONS.find((o) => o.value === value) ?? SEND_PERM_OPTIONS[0];
@@ -125,7 +129,8 @@ export function SendPermPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   list: {
     flexDirection: 'column',
     gap: 5,
@@ -142,7 +147,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   rowActive: {
-    backgroundColor: 'rgba(0,209,255,0.12)',
+    backgroundColor: colors.primarySoft,
     borderColor: colors.primary,
   },
   iconWrap: {

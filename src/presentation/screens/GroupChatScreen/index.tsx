@@ -1,7 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useChatComposerState } from '@/application/hooks/useChatComposerState/useChatComposerState';
-import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
-import { useDeleteGroupMessage } from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
+import {
+  chatHistoryKey,
+  useGroupChat,
+} from '@/application/hooks/useGroupChat/useGroupChat';
+import {
+  removeGroupMessageById,
+  useDeleteGroupMessage,
+  type GroupHistoryCache,
+} from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
 import { useEditGroupMessage } from '@/application/hooks/useEditGroupMessage/useEditGroupMessage';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
@@ -17,6 +25,7 @@ import {
   availableMessageActions,
   hasAnyAction,
 } from '@/shared/ui/chat/messageActionPolicy';
+import { getLocalSendStatus } from '@/shared/chat/sendStatus';
 
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
@@ -41,6 +50,7 @@ export default function GroupChatScreen({
     retrySendMessage,
     loadOlder,
   } = useGroupChat(groupId);
+  const queryClient = useQueryClient();
   const deleteMessage = useDeleteGroupMessage();
   const editMessage = useEditGroupMessage();
 
@@ -116,6 +126,7 @@ export default function GroupChatScreen({
       currentUserId,
       conversation: 'group',
       myRole,
+      sendStatus: getLocalSendStatus(targetMessage),
     });
     if (!hasAnyAction(available)) return null;
     return {
@@ -133,6 +144,7 @@ export default function GroupChatScreen({
         currentUserId,
         conversation: 'group',
         myRole,
+        sendStatus: getLocalSendStatus(msg),
       });
       if (!hasAnyAction(available)) return;
       setMessageActionTargetId(messageId);
@@ -149,6 +161,13 @@ export default function GroupChatScreen({
         deleteMessage.mutate({ groupId, messageId: id });
         return;
       }
+      if (action === 'discard') {
+        queryClient.setQueryData<GroupHistoryCache>(
+          chatHistoryKey(groupId),
+          (old) => removeGroupMessageById(old, id),
+        );
+        return;
+      }
       if (action === 'reply') {
         composer.openReplyComposerFor(id);
         return;
@@ -157,7 +176,7 @@ export default function GroupChatScreen({
         composer.openEditComposerFor(id);
       }
     },
-    [messageActionTargetId, deleteMessage, groupId, composer],
+    [messageActionTargetId, deleteMessage, queryClient, groupId, composer],
   );
 
   return (
