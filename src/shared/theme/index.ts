@@ -5,12 +5,12 @@
 // ("LocalLoop — Design System", v1.0). Two parity palettes share one duotone
 // logic (cyan → violet) and one green "live" signal.
 //
-// IMPORTANT (theming rollout): React Native bakes StyleSheet.create() values at
-// module load, so the static `colors`/`typography` exports below still feed
-// every un-migrated screen and render in DARK (the design's default mode —
-// "light is parity, not the default"). The live Light/Dark toggle repaints a
-// screen only once it reads colors at render time via `useTheme()` /
-// `useThemedStyles()` (Phase 2). See docs/theming.md.
+// Theming (Phase 2 complete): React Native bakes StyleSheet.create() values at
+// module load, so there is no static `colors`/`typography` export — every screen
+// reads the active palette at render time via `useTheme()` / `useThemedStyles()`
+// (and `createTypography(colors)` for type), so the Light/Dark toggle repaints
+// instantly. Dark is the design default ("light is parity, not the default").
+// See docs/theming.md.
 
 import { Platform } from 'react-native';
 
@@ -113,13 +113,6 @@ export const lightColors: ThemeColors = {
   switchTrackOff: '#D4D4DE', // Switch / segmented "off" track
 };
 
-/**
- * Backward-compat default palette. Every un-migrated module imports this and is
- * baked at load time → the app adopts the design's DARK palette immediately.
- * Phase 2 migrates consumers to `useTheme()` and finally removes this export.
- */
-export const colors = darkColors;
-
 /* ─── Fonts ─────────────────────────────────────────────────────────────── */
 //
 // Space Grotesk for everything human (names, messages, headings); JetBrains
@@ -170,10 +163,10 @@ export const radius = {
 
 /* ─── Typography ────────────────────────────────────────────────────────── */
 //
-// Factory so color (and, in Phase 2, the whole scale) can be themed. The
-// backward-compat `typography` export bakes the dark palette — existing keys
+// Factory so color (and the whole scale) is themed at render time. Existing keys
 // (h1/h2/body/caption) keep their current sizes/weights so no screen shifts;
-// design additions (display/label/monoCaps) are new keys.
+// design additions (display/label/monoCaps) are new keys. Consumers call
+// `createTypography(useTheme().colors)` — there is no dark-baked default export.
 
 export const createTypography = (c: ThemeColors) => ({
   display: {
@@ -222,5 +215,3 @@ export const createTypography = (c: ThemeColors) => ({
     color: c.faint,
   },
 });
-
-export const typography = createTypography(darkColors);
