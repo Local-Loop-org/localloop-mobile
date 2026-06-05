@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Icon } from '@/shared/icons';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface SearchInputProps {
   value: string;
@@ -18,6 +20,8 @@ export function SearchInput({
   accessibilityLabel,
   testID,
 }: SearchInputProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
       <View style={styles.pill}>
@@ -38,27 +42,28 @@ export function SearchInput({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  input: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    padding: 0,
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: {
+      paddingTop: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: 9,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.line,
+    },
+    input: {
+      flex: 1,
+      fontSize: 13,
+      color: c.text,
+      padding: 0,
+    },
+  });

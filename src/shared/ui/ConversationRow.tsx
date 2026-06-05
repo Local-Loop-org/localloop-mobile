@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface ConversationRowProps {
   leftSlot: ReactNode;
@@ -39,6 +40,7 @@ export function ConversationRow({
   testID,
   liveTestID,
 }: ConversationRowProps) {
+  const styles = useThemedStyles(createStyles);
   const hasUnread = unreadCount > 0;
 
   return (
@@ -82,81 +84,82 @@ export function ConversationRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    position: 'relative',
-  },
-  liveDot: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.success,
-    borderWidth: 2.5,
-    borderColor: colors.background,
-  },
-  body: {
-    flex: 1,
-    minWidth: 0,
-  },
-  topLine: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: 3,
-    gap: 8,
-  },
-  title: {
-    flex: 1,
-    fontSize: 14.5,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  lastAt: {
-    fontSize: 10.5,
-    fontFamily: monoFamily,
-    color: colors.faint,
-    letterSpacing: 0.4,
-  },
-  lastAtUnread: {
-    color: colors.primary,
-  },
-  bottomLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  preview: {
-    flex: 1,
-    fontSize: 12.5,
-    color: colors.dim,
-  },
-  previewUnread: {
-    color: colors.text,
-    fontWeight: '500',
-  },
-  unreadBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-  },
-  unreadBadgeText: {
-    fontSize: 10.5,
-    fontFamily: monoFamily,
-    fontWeight: '700',
-    color: colors.black,
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      paddingVertical: 10,
+      paddingHorizontal: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    iconWrap: {
+      width: 48,
+      height: 48,
+      position: 'relative',
+    },
+    liveDot: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: c.success,
+      borderWidth: 2.5,
+      borderColor: c.background,
+    },
+    body: {
+      flex: 1,
+      minWidth: 0,
+    },
+    topLine: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      marginBottom: 3,
+      gap: 8,
+    },
+    title: {
+      flex: 1,
+      fontSize: 14.5,
+      fontWeight: '700',
+      color: c.text,
+    },
+    lastAt: {
+      fontSize: 10.5,
+      fontFamily: monoFamily,
+      color: c.faint,
+      letterSpacing: 0.4,
+    },
+    lastAtUnread: {
+      color: c.primary,
+    },
+    bottomLine: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    preview: {
+      flex: 1,
+      fontSize: 12.5,
+      color: c.dim,
+    },
+    previewUnread: {
+      color: c.text,
+      fontWeight: '500',
+    },
+    unreadBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 10,
+      backgroundColor: c.primary,
+    },
+    unreadBadgeText: {
+      fontSize: 10.5,
+      fontFamily: monoFamily,
+      fontWeight: '700',
+      color: c.black,
+    },
+  });
