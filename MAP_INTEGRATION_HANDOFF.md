@@ -22,6 +22,7 @@ Everything shipped so far is documented in PR #36 and the plan at `~/.claude/pla
 - **No `typecheck`/`lint` npm scripts and no ESLint config exist.** Quality gates are: `npx tsc --noEmit` and `npx jest`. Keep both green.
 - **Screen pattern** (mandatory): container `index.tsx` holds state/hooks; `layout/` is pure (no hooks/store reads); components under `layout/components/`.
 - Prefer absolute imports (`@/...`); when moving a file, update callers in the same diff (no re-export shims).
+- **Theming (Light/Dark) is now live** — `main` was merged in. There is **no static `colors`/`typography` export**. New components must theme styles via `const styles = useThemedStyles(createStyles)` where `createStyles = (c: ThemeColors) => StyleSheet.create({...})`, and read inline colors via `const { colors } = useTheme()` (`@/shared/theme/useTheme`). All Map files already follow this. New tokens live in `darkColors`/`lightColors` in `src/shared/theme/index.ts`.
 
 ---
 
