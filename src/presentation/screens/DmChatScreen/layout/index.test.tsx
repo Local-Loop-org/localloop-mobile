@@ -110,7 +110,7 @@ describe('DmChatLayout', () => {
     const { getByText, queryByTestId } = renderLayout({
       peerStatus: {
         kind: 'lastSeen',
-        at: '2026-06-05T04:02:06.222Z',
+        at: '2026-06-05T01:02:06.222',
       },
     });
 
