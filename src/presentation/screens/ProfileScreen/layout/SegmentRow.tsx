@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Option<T> {
   id: T;
@@ -24,9 +25,11 @@ export default function SegmentRow<T extends string | number | boolean>({
   value,
   onChange,
 }: Props<T>) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.segmentRow}>
-      <View style={[styles.rowIconBubble, { backgroundColor: 'rgba(0,209,255,0.1)' }]}>
+      <View style={[styles.rowIconBubble, { backgroundColor: colors.primarySoft }]}>
         <Icon name={icon} size={14} color={colors.primary} strokeWidth={2} />
       </View>
       <Text style={styles.rowTitle}>{title}</Text>

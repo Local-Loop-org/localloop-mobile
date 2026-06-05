@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { StatusPill, type MemberStatusKind } from './StatusPill';
 
 interface StatusSectionHeaderProps {
@@ -9,6 +10,7 @@ interface StatusSectionHeaderProps {
 }
 
 export function StatusSectionHeader({ kind, count }: StatusSectionHeaderProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
       <StatusPill kind={kind} />
@@ -18,7 +20,8 @@ export function StatusSectionHeader({ kind, count }: StatusSectionHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

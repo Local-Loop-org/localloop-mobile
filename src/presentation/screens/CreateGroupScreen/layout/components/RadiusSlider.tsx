@@ -8,7 +8,9 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 const MIN_KM = 0.2;
 const MAX_KM = 25;
@@ -37,6 +39,8 @@ function formatTick(value: number): string {
 }
 
 export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [trackWidth, setTrackWidth] = useState(0);
   const widthRef = useRef(0);
   const onChangeRef = useRef(onChange);
@@ -148,7 +152,8 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   trackArea: {
     height: 28,
     justifyContent: 'center',

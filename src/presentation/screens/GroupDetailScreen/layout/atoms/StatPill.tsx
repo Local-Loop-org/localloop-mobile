@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface StatPillProps {
@@ -11,6 +13,8 @@ interface StatPillProps {
 }
 
 export function StatPill({ icon, label, value, testID }: StatPillProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.pill} testID={testID}>
       <View style={styles.head}>
@@ -24,7 +28,8 @@ export function StatPill({ icon, label, value, testID }: StatPillProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   pill: {
     flex: 1,
     paddingVertical: 10,

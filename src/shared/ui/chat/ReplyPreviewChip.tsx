@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ReplyGlyph } from './ReplyGlyph';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface ReplyPreviewChipProps {
   authorLabel: string;
@@ -17,6 +18,8 @@ export function ReplyPreviewChip({
   originalText,
   onCancel,
 }: ReplyPreviewChipProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.replyChip} testID='reply-preview-chip'>
       <LinearGradient

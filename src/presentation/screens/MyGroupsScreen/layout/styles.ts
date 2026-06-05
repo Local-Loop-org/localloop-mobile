@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
 
 const monoFamily = Platform.select({
   ios: 'Menlo',
@@ -7,10 +7,11 @@ const monoFamily = Platform.select({
   default: 'monospace',
 });
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
 
   // Header
@@ -36,19 +37,19 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.5,
     lineHeight: 22,
   },
   headerSubtitle: {
     fontSize: 10.5,
     fontFamily: monoFamily,
-    color: colors.dim,
+    color: c.dim,
     letterSpacing: 1.4,
     marginTop: 3,
   },
   headerSubtitleAccent: {
-    color: colors.primary,
+    color: c.primary,
   },
   headerActions: {
     flexDirection: 'row',
@@ -58,9 +59,9 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -97,7 +98,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: colors.dim,
+    color: c.dim,
     textAlign: 'center',
   },
 });

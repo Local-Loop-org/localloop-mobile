@@ -2,15 +2,19 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 const GLOW_SIZE = 180;
 
 export function HeroCard() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.outer}>
       <LinearGradient
-        colors={['rgba(0,209,255,0.15)', 'rgba(112,0,255,0.15)']}
+        colors={[colors.duotoneSoftFrom, colors.duotoneSoftTo]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.bg}
@@ -46,12 +50,13 @@ export function HeroCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   outer: {
     marginTop: 4,
     borderRadius: 22,
     overflow: 'hidden',
-    borderColor: 'rgba(0,209,255,0.20)',
+    borderColor: colors.anchorTileBorder,
     borderWidth: 1,
   },
   bg: {

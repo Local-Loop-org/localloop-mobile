@@ -7,7 +7,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon } from '@/shared/icons';
 import { Card } from '@/presentation/screens/CreateGroupScreen/layout/atoms/Card';
 import { MemberRow } from '@/presentation/screens/GroupDetailScreen/layout/components/MemberRow';
@@ -17,7 +18,7 @@ import { SearchInput } from '@/shared/ui/SearchInput';
 import { StatusSectionHeader } from './components/StatusSectionHeader';
 import { BannedMemberRow } from './components/BannedMemberRow';
 import { EmptyState } from './components/EmptyState';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { GroupMembersLayoutProps, FilterChipKey } from './types';
 
 function filterByName<T extends { displayName: string }>(
@@ -57,6 +58,8 @@ export default function GroupMembersLayout({
   onReject,
   onBack,
 }: GroupMembersLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const filteredActive = useMemo(
     () => filterByName(activeMembers, query),
     [activeMembers, query],

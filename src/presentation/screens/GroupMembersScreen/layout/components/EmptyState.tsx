@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface EmptyStateProps {
@@ -9,6 +11,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, label }: EmptyStateProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.wrapper}>
       <View style={styles.iconDisc}>
@@ -19,7 +23,8 @@ export function EmptyState({ icon, label }: EmptyStateProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   wrapper: {
     paddingVertical: 28,
     paddingHorizontal: 16,

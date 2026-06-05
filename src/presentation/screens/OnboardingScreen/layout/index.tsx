@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { colors, typography } from '@/shared/theme';
-import { styles } from './styles';
+import { createTypography } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 import { OnboardingLayoutProps } from './types';
 
 export default function OnboardingLayout({
@@ -12,6 +14,9 @@ export default function OnboardingLayout({
   onRequestLocation,
   onFinish,
 }: OnboardingLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const typography = createTypography(colors);
   return (
     <View style={styles.container}>
       <Text style={typography.h2}>Boas-vindas!</Text>
@@ -43,7 +48,7 @@ export default function OnboardingLayout({
         disabled={isLoading}
       >
         {isLoading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.finishBtnText}>Começar a Explorar</Text>
         )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { HeaderIconButton } from '../atoms/HeaderIconButton';
 
 interface HeaderBarProps {
@@ -8,6 +9,7 @@ interface HeaderBarProps {
 }
 
 export function HeaderBar({ onClose }: HeaderBarProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
       <HeaderIconButton
@@ -22,7 +24,8 @@ export function HeaderBar({ onClose }: HeaderBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     paddingHorizontal: 16,
     paddingTop: 8,

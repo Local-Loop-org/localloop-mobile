@@ -6,7 +6,7 @@ import {
   Text,
   type PressableProps,
 } from 'react-native';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 import { Icon, type IconName } from '@/shared/icons';
 
 type DangerVariant = 'outlined' | 'filled';
@@ -32,18 +32,15 @@ export function DangerButton({
   testID,
   accessibilityLabel,
 }: DangerButtonProps) {
+  const { colors } = useTheme();
   const isFilled = variant === 'filled';
   const fg = disabled ? colors.faint : colors.error;
   const bg = disabled
     ? 'transparent'
     : isFilled
-      ? 'rgba(255,75,75,0.10)'
+      ? colors.dangerSoft
       : 'transparent';
-  const border = disabled
-    ? colors.line
-    : isFilled
-      ? 'rgba(255,75,75,0.42)'
-      : 'rgba(255,75,75,0.36)';
+  const border = disabled ? colors.line : colors.dangerBorder;
 
   return (
     <Pressable

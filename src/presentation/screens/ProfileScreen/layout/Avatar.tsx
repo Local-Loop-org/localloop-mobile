@@ -1,7 +1,9 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface Props {
   name: string;
@@ -18,6 +20,8 @@ function initials(name: string): string {
 }
 
 export default function Avatar({ name, uri, size }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const radius = size / 2;
 
   if (uri) {
@@ -50,17 +54,18 @@ export default function Avatar({ name, uri, size }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    overflow: 'hidden',
-  },
-  fill: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  letters: {
-    color: colors.white,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: {
+      overflow: 'hidden',
+    },
+    fill: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    letters: {
+      color: c.white,
+      fontWeight: '700',
+      letterSpacing: -0.5,
+    },
+  });

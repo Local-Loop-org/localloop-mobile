@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { MemberAvatar } from './MemberAvatar';
 
 interface StackMember {
@@ -22,6 +24,8 @@ interface MemberStackProps {
  * (e.g. the MEMBROS placeholder line) without an extra wrapper view.
  */
 export function MemberStack({ members, max = 5, size = 32 }: MemberStackProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (members.length === 0) return null;
 
   const shown = members.slice(0, max);
@@ -72,7 +76,8 @@ export function MemberStack({ members, max = 5, size = 32 }: MemberStackProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

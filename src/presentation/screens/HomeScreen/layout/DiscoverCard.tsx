@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { AnchorIconBadge } from '@/shared/icons';
 import { formatDistance } from '@/shared/format/distance';
 import type { HomeNearbyGroup } from '../types';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 import { StatusBadge } from './StatusBadge';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function DiscoverCard({ group, onPress }: Props) {
+  const styles = useThemedStyles(createStyles);
   const live = group.liveCount ?? 0;
 
   return (

@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '@/shared/icons';
 import type { IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import type { AvailableMessageActions } from './messageActionPolicy';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export type MessageActionId = 'reply' | 'edit' | 'delete' | 'discard';
 
@@ -70,6 +71,8 @@ export function MessageActionSheet({
   onClose,
   onSelect,
 }: MessageActionSheetProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const items: ActionItem[] = [];
   if (available.canReply) items.push(REPLY_ITEM);
   if (available.canEdit) items.push(EDIT_ITEM);

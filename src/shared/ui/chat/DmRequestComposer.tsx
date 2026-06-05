@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface DmRequestComposerProps {
   peerFirstName: string;
@@ -28,6 +29,8 @@ export function DmRequestComposer({
   peerFirstName,
   onCancel,
 }: DmRequestComposerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.requestComposer} testID='dm-request-composer'>
       <View style={styles.requestComposerInner}>

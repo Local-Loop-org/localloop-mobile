@@ -1,7 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AnchorType } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, anchorIconName } from '@/shared/icons';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
 
@@ -25,6 +27,8 @@ export function PlaceTypeChips({
   onChange,
   readOnly,
 }: PlaceTypeChipsProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (readOnly) {
     return (
       <View style={styles.row}>
@@ -76,7 +80,8 @@ export function PlaceTypeChips({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -98,8 +103,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   chipReadOnly: {
-    backgroundColor: 'rgba(0,209,255,0.10)',
-    borderColor: 'rgba(0,209,255,0.45)',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryBorder,
   },
   label: {
     fontSize: 12.5,

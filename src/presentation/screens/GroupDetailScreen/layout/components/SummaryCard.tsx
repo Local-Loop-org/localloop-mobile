@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface SummaryCardProps {
@@ -19,6 +21,8 @@ export function SummaryCard({
   subtitle,
   testID,
 }: SummaryCardProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.card} testID={testID}>
       <View style={styles.iconWrap}>
@@ -35,7 +39,8 @@ export function SummaryCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -50,8 +55,8 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: 'rgba(0,209,255,0.12)',
-    borderColor: 'rgba(0,209,255,0.45)',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryBorder,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

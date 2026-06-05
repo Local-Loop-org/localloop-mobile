@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon } from '@/shared/icons';
 
 export interface BannedMember {
@@ -26,6 +28,8 @@ export function BannedMemberRow({
   isUnbanning,
   onUnban,
 }: BannedMemberRowProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View testID={`banned-row-${member.userId}`}>
       <View style={styles.row}>
@@ -58,7 +62,8 @@ export function BannedMemberRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

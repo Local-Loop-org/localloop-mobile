@@ -9,7 +9,8 @@ import { OwnBubble, type OwnBubbleStatus } from './OwnBubble';
 import { PeerBubble } from './PeerBubble';
 import { DaySeparatorItem } from './DaySeparatorItem';
 import { TypingBubble } from './TypingBubble';
-import { styles as chatStyles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 export interface ChatThreadProps {
   messages: ChatMessage[];
@@ -55,6 +56,7 @@ export function ChatThread({
   ListEmptyComponent,
   contentContainerStyle,
 }: ChatThreadProps) {
+  const chatStyles = useThemedStyles(createStyles);
   const items = useMemo(() => buildChatListItems(messages), [messages]);
 
   const messageById = useMemo(() => {

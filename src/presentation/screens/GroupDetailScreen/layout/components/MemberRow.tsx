@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MemberRole } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { Icon } from '@/shared/icons';
 import { MemberAvatar } from '../atoms/MemberAvatar';
@@ -29,6 +31,8 @@ export function MemberRow({
   onPromote,
   onDemote,
 }: MemberRowProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const showActions = canManage && member.role !== MemberRole.OWNER;
   // Demote is owner-only (matches API auth) and only applies to moderator rows.
@@ -148,7 +152,8 @@ export function MemberRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,7 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,75,75,0.33)',
+    borderColor: colors.dangerBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

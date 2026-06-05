@@ -1,14 +1,17 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface EditPreviewChipProps {
   onCancel: () => void;
 }
 
 export function EditPreviewChip({ onCancel }: EditPreviewChipProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.editChip} testID='edit-preview-chip'>
       <Icon name='edit' size={12} color={colors.primary} strokeWidth={2} />

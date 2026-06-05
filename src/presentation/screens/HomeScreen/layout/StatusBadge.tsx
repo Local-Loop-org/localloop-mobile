@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { MemberStatus, GroupPrivacy } from '@localloop/shared-types';
 import type { NearbyGroup } from '@/infra/api/groups.api';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   group: NearbyGroup;
 }
 
 export function StatusBadge({ group }: Props) {
+  const styles = useThemedStyles(createStyles);
   if (group.memberStatus === MemberStatus.ACTIVE)
     return (
       <View style={styles.cardMemberBtn}>

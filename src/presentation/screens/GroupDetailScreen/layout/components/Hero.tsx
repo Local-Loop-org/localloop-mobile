@@ -9,7 +9,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { AnchorType } from '@localloop/shared-types';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { GroupAvatar } from '../atoms/GroupAvatar';
@@ -48,6 +50,8 @@ export function Hero({
   onNameChange,
   onDescriptionChange,
 }: HeroProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const stack = members.map((m) => ({
     id: m.userId,
     displayName: m.displayName,
@@ -56,7 +60,7 @@ export function Hero({
 
   return (
     <LinearGradient
-      colors={['rgba(0,217,255,0.15)', 'rgba(176,108,255,0.15)']}
+      colors={[colors.duotoneSoftFrom, colors.duotoneSoftTo]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.card}
@@ -76,8 +80,8 @@ export function Hero({
             fx="50%"
             fy="50%"
           >
-            <Stop offset="0%" stopColor="#B06CFF" stopOpacity={0.20} />
-            <Stop offset="70%" stopColor="#B06CFF" stopOpacity={0} />
+            <Stop offset="0%" stopColor={colors.accent2} stopOpacity={0.20} />
+            <Stop offset="70%" stopColor={colors.accent2} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Circle
@@ -155,13 +159,14 @@ export function Hero({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: 22,
     padding: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,217,255,0.20)',
+    borderColor: colors.anchorTileBorder,
     marginTop: 4,
   },
   glow: {
@@ -220,7 +225,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: colors.line,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -248,8 +253,8 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(0,209,255,0.14)',
-    borderColor: 'rgba(0,209,255,0.40)',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryBorder,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

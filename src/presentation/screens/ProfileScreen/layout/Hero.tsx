@@ -3,10 +3,11 @@ import { Pressable, Text, View } from 'react-native';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import Avatar from './Avatar';
 import NameField from './NameField';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface Props {
   displayName: string;
@@ -30,6 +31,8 @@ export default function Hero({
   onChangeName,
   onChangeAvatar,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const meta = formatMembership(createdAt);
 
   return (

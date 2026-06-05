@@ -8,12 +8,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnchorType } from '@localloop/shared-types';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ANCHOR_SECTION_LABELS } from '@/shared/anchor/labels';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import { MyGroupRow } from '@/shared/ui/MyGroupRow';
 import type { HomeNearbyGroup } from '../types';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { HomeLayoutProps } from './types';
 import { HomeHeader } from './HomeHeader';
 import { DiscoverDivider } from './DiscoverDivider';
@@ -60,6 +61,8 @@ export default function HomeLayout({
   onPressMyGroup,
   onPressViewAllMyGroups,
 }: HomeLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const showInitialLoader = loading && groups.length === 0 && !errorMessage;
   const showEmpty = !loading && !errorMessage && groups.length === 0;
   const buckets = bucketByAnchor(groups);

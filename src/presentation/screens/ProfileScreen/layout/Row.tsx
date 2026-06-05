@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   icon: IconName;
@@ -23,8 +24,10 @@ export default function Row({
   chevron = true,
   onPress,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const tint = danger ? colors.error : colors.primary;
-  const bubbleBg = danger ? 'rgba(255,75,75,0.12)' : 'rgba(0,209,255,0.1)';
+  const bubbleBg = danger ? colors.dangerSoft : colors.primarySoft;
 
   const content = (
     <View style={styles.row}>

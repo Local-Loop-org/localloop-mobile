@@ -9,7 +9,8 @@ import { VisibilitySection } from './sections/VisibilitySection';
 import { PrivacySection } from './sections/PrivacySection';
 import { SendPermSection } from './sections/SendPermSection';
 import { FooterBar } from './sections/FooterBar';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 import type { CreateGroupLayoutProps } from './types';
 
 export default function CreateGroupLayout({
@@ -35,6 +36,7 @@ export default function CreateGroupLayout({
   onSubmit,
   onClose,
 }: CreateGroupLayoutProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <KeyboardAvoidingView

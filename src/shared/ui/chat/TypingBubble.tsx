@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 function pulseAnim(delay: number) {
   const value = new Animated.Value(0);
@@ -23,6 +24,7 @@ function pulseAnim(delay: number) {
 }
 
 export function TypingBubble() {
+  const styles = useThemedStyles(createStyles);
   const dotsRef = useRef<{ value: Animated.Value; loop: Animated.CompositeAnimation }[] | null>(
     null,
   );
