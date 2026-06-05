@@ -1,8 +1,9 @@
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 export type OwnMessageStatus =
   | 'sending'
@@ -73,6 +74,8 @@ export function MessageStatusIndicator({
   timestamp,
   edited = false,
 }: MessageStatusIndicatorProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   if (status === 'sending') {
     return (
       <View style={styles.statusRow} testID='own-status-sending'>

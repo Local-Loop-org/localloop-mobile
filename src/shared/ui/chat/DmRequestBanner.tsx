@@ -1,8 +1,9 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface DmRequestBannerProps {
   peerFirstName: string;
@@ -24,6 +25,8 @@ function ClockTile({ color }: { color: string }) {
 }
 
 export function DmRequestBanner({ peerFirstName }: DmRequestBannerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.requestBanner} testID='dm-request-banner'>
       <View style={styles.requestBannerIconTile}>

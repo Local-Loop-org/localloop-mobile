@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, anchorIconName } from '@/shared/icons';
 import type { IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import type { AnchorType } from '@localloop/shared-types';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export type GroupActionId =
   | 'details'
@@ -76,6 +77,8 @@ export function GroupActionSheet({
   onClose,
   onSelect,
 }: GroupActionSheetProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const items = buildItems();
 
   return (

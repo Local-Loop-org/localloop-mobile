@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { AnchorType } from '@localloop/shared-types';
 import { Icon, anchorIconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 
 interface AnchorIconProps {
   type: AnchorType;
@@ -10,6 +10,7 @@ interface AnchorIconProps {
 }
 
 export default function AnchorIcon({ type, size }: AnchorIconProps) {
+  const { colors } = useTheme();
   return (
     <View
       style={{

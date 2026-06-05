@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ReplyGlyph } from './ReplyGlyph';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface QuotedReplyProps {
   originalAuthor: string;
@@ -17,6 +18,8 @@ export function QuotedReply({
   me,
   onPress,
 }: QuotedReplyProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const railColor = me ? 'rgba(255,255,255,0.85)' : colors.primary;
   const labelColor = me ? 'rgba(255,255,255,0.92)' : colors.primary;
   const textColor = me ? 'rgba(255,255,255,0.8)' : colors.dim;

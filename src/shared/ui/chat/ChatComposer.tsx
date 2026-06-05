@@ -2,10 +2,11 @@ import React from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { EditPreviewChip } from './EditPreviewChip';
 import { ReplyPreviewChip } from './ReplyPreviewChip';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export interface ChatComposerReplyTo {
   authorLabel: string;
@@ -44,6 +45,8 @@ export function ChatComposer({
   sendDisabled,
   showMicIconWhenEmpty = true,
 }: ChatComposerProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const editable = typeof onChangeDraft === 'function';
   const hasChip = !!(composingReplyTo || composingEdit);
   return (

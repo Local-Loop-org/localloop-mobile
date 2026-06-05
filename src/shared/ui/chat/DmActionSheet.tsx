@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '@/shared/icons';
 import type { IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import Avatar from '@/shared/ui/Avatar';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export type DmActionId =
   | 'profile'
@@ -84,6 +85,8 @@ export function DmActionSheet({
   onClose,
   onSelect,
 }: DmActionSheetProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const peerFirstName = peerName.split(' ')[0] || peerName;
   const items = buildItems(peerFirstName, archived);
 
