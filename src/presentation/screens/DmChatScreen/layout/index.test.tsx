@@ -22,6 +22,14 @@ jest.mock('@/shared/ui/chat/PeerBubble', () => ({
   }),
 }));
 
+jest.mock('@/shared/format/chat', () => {
+  const actual = jest.requireActual('@/shared/format/chat');
+  return {
+    ...actual,
+    formatLastSeen: jest.fn(() => 'Visto ontem às 01:02'),
+  };
+});
+
 const mockOwnBubble = OwnBubble as jest.Mock;
 const mockPeerBubble = PeerBubble as jest.Mock;
 
@@ -110,12 +118,12 @@ describe('DmChatLayout', () => {
     const { getByText, queryByTestId } = renderLayout({
       peerStatus: {
         kind: 'lastSeen',
-        at: '2026-06-05T01:02:06.222',
+        at: '2026-06-04T01:02:06.222',
       },
     });
 
     expect(queryByTestId('header-peer-online-dot')).toBeNull();
-    expect(getByText('Visto por último em 01:02')).toBeTruthy();
+    expect(getByText('Visto ontem às 01:02')).toBeTruthy();
   });
 
   it('passes read status only to own DM bubbles', () => {

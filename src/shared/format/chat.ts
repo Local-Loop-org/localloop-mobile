@@ -1,4 +1,12 @@
-import { format, isToday, isYesterday, isValid } from 'date-fns';
+import {
+  format,
+  isSameDay,
+  isSameYear,
+  isToday,
+  isYesterday,
+  isValid,
+  subDays,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { ChatMessage } from '@localloop/shared-types';
 
@@ -20,6 +28,18 @@ export function formatTime(iso: string): string {
   const d = new Date(iso);
   if (!isValid(d)) return '';
   return format(d, 'HH:mm');
+}
+
+export function formatLastSeen(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  if (!isValid(d)) return '';
+
+  const time = format(d, 'HH:mm');
+  if (isSameDay(d, now)) return `Visto às ${time}`;
+  if (isSameDay(d, subDays(now, 1))) return `Visto ontem às ${time}`;
+
+  const datePattern = isSameYear(d, now) ? 'dd/MM' : 'dd/MM/yyyy';
+  return `Visto ${format(d, datePattern)} às ${time}`;
 }
 
 export function buildChatListItems(messages: ChatMessage[]): ChatListItem[] {

@@ -19,7 +19,7 @@ import { DmActionSheet } from '@/shared/ui/chat/DmActionSheet';
 import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
 import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
-import { formatTime } from '@/shared/format/chat';
+import { formatLastSeen } from '@/shared/format/chat';
 import Avatar from '@/shared/ui/Avatar';
 import { layoutDimensions, createStyles } from './styles';
 import type { DmChatLayoutProps, DmPeerStatus } from './types';
@@ -40,7 +40,7 @@ function renderPeerStatusSubtitle(
     text = 'Digitando...';
     style = [styles.headerSubtitle, styles.headerSubtitleTyping];
   } else if (status.kind === 'lastSeen') {
-    text = `Visto por último em ${formatTime(status.at)}`;
+    text = formatLastSeen(status.at);
   }
 
   return (
