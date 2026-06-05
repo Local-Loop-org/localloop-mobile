@@ -7,7 +7,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import Hero from './Hero';
 import SectionLabel from './SectionLabel';
 import Card, { Divider } from './Card';
@@ -16,7 +17,7 @@ import ToggleRow from './ToggleRow';
 import SegmentRow from './SegmentRow';
 import RadiusSlider from './RadiusSlider';
 import DMPicker from './DMPicker';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { ProfileLayoutProps } from './types';
 
 export default function ProfileLayout({
@@ -57,6 +58,8 @@ export default function ProfileLayout({
   onLogout,
   onDeleteAccount,
 }: ProfileLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

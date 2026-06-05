@@ -60,6 +60,7 @@ export const darkColors = {
   dangerBorder: 'rgba(255,91,107,0.30)',
   scrim: 'rgba(0,0,0,0.60)', // modal / sheet backdrop
   quotedReplyBg: 'rgba(255,255,255,0.16)', // quoted reply block on own bubble
+  switchTrackOff: '#262630', // Switch / segmented "off" track
 };
 
 /** Structural type — both palettes must expose exactly these keys. */
@@ -109,6 +110,7 @@ export const lightColors: ThemeColors = {
   dangerBorder: 'rgba(216,48,63,0.30)',
   scrim: 'rgba(10,10,15,0.35)',
   quotedReplyBg: 'rgba(10,10,15,0.10)',
+  switchTrackOff: '#D4D4DE', // Switch / segmented "off" track
 };
 
 /**

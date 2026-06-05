@@ -1,8 +1,9 @@
 import React from 'react';
 import { Switch, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   icon: IconName;
@@ -13,9 +14,11 @@ interface Props {
 }
 
 export default function ToggleRow({ icon, title, sub, value, onChange }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.toggleRow}>
-      <View style={[styles.rowIconBubble, { backgroundColor: 'rgba(0,209,255,0.1)' }]}>
+      <View style={[styles.rowIconBubble, { backgroundColor: colors.primarySoft }]}>
         <Icon name={icon} size={14} color={colors.primary} strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
@@ -25,7 +28,7 @@ export default function ToggleRow({ icon, title, sub, value, onChange }: Props) 
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: '#262630', true: colors.success }}
+        trackColor={{ false: colors.switchTrackOff, true: colors.success }}
         thumbColor={colors.white}
         accessibilityLabel={title}
       />

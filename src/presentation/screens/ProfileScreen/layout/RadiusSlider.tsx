@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
-import { styles } from './styles';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 
 interface Props {
   value: number;
@@ -33,6 +34,8 @@ export default function RadiusSlider({
   value,
   onCommit,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [trackWidth, setTrackWidth] = useState(0);
   const [draftKm, setDraftKm] = useState(value);
 
@@ -80,7 +83,7 @@ export default function RadiusSlider({
   return (
     <>
       <View style={styles.radiusHeader}>
-        <View style={[styles.rowIconBubble, { backgroundColor: 'rgba(0,209,255,0.1)' }]}>
+        <View style={[styles.rowIconBubble, { backgroundColor: colors.primarySoft }]}>
           <Icon name='radar' size={14} color={colors.primary} strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>
