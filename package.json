@@ -8,6 +8,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "release:detect": "node scripts/publish-release.js detect",
+    "release:prepare": "node scripts/publish-release.js prepare",
+    "release:build-android": "node scripts/publish-release.js build-android",
+    "release:notes": "node scripts/publish-release.js notes",
     "test": "jest",
     "test:watch": "jest --watch"
   },
