@@ -160,6 +160,6 @@ const createStyles = (c: ThemeColors) =>
       fontSize: 10.5,
       fontFamily: monoFamily,
       fontWeight: '700',
-      color: c.black,
+      color: c.accentInk,
     },
   });

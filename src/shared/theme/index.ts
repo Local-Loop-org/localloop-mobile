@@ -61,6 +61,7 @@ export const darkColors = {
   scrim: 'rgba(0,0,0,0.60)', // modal / sheet backdrop
   quotedReplyBg: 'rgba(255,255,255,0.16)', // quoted reply block on own bubble
   switchTrackOff: '#262630', // Switch / segmented "off" track
+  surfaceOverlay: 'rgba(21,21,27,0.82)', // translucent surface chrome over previews/media
 };
 
 /** Structural type — both palettes must expose exactly these keys. */
@@ -111,6 +112,7 @@ export const lightColors: ThemeColors = {
   scrim: 'rgba(10,10,15,0.35)',
   quotedReplyBg: 'rgba(10,10,15,0.10)',
   switchTrackOff: '#D4D4DE', // Switch / segmented "off" track
+  surfaceOverlay: 'rgba(255,255,255,0.82)', // translucent surface chrome over previews/media
 };
 
 /* ─── Fonts ─────────────────────────────────────────────────────────────── */

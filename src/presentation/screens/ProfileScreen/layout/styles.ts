@@ -222,7 +222,7 @@ export const createStyles = (c: ThemeColors) =>
       borderRadius: 9,
       backgroundColor: c.text,
       borderWidth: 3,
-      borderColor: c.background,
+      borderColor: c.surface,
     },
     radiusTicks: {
       flexDirection: 'row',

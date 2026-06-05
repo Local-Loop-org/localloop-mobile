@@ -132,7 +132,7 @@ const createStyles = (colors: ThemeColors) =>
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(15,15,15,0.82)',
+    backgroundColor: colors.surfaceOverlay,
     borderColor: colors.primary,
     borderWidth: 1,
   },

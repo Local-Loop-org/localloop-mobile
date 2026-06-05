@@ -40,7 +40,7 @@ export function BottomTabBar({ active, onPress, bottomInset = 0 }: Props) {
           const isActive = tab.id === active;
           const labelColor = isActive ? colors.text : colors.textSecondary;
           const iconColor = isNew
-            ? colors.black
+            ? colors.accentInk
             : isActive
               ? colors.text
               : colors.textSecondary;
