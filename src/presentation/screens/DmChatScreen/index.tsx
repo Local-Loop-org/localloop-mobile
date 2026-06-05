@@ -23,6 +23,7 @@ import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useEditDirectMessage } from '@/application/hooks/useEditDirectMessage/useEditDirectMessage';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
+import { useDmSummaryActivity } from '@/application/hooks/useDmSummaryActivity/useDmSummaryActivity';
 import { useDmTyping } from '@/application/hooks/useDmTyping/useDmTyping';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import type { DmChatScreenProps } from './types';
@@ -56,8 +57,15 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const editMessage = useEditDirectMessage();
   const presence = useDmPresence(peerId);
   const { peerTyping, notifyTyping, notifyStopTyping } = useDmTyping(peerId);
-  // Typing takes precedence over online in the header subtitle + bubble.
-  const peerStatus = peerTyping ? ({ kind: 'typing' } as const) : presence;
+  const summaryLastActivityAt = useDmSummaryActivity(peerId);
+  // Typing takes precedence over online, which takes precedence over offline summary activity.
+  const peerStatus = peerTyping
+    ? ({ kind: 'typing' } as const)
+    : presence
+      ? presence
+      : summaryLastActivityAt
+        ? ({ kind: 'lastSeen', at: summaryLastActivityAt } as const)
+        : null;
   const { messageStatuses } = useDmReadState(peerId);
   const conversationKey = dmPushConversationKey(peerId);
 

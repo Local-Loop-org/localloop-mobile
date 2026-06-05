@@ -99,6 +99,7 @@ export const createStyles = (c: ThemeColors) =>
   },
   headerSubtitleTyping: {
     fontStyle: 'italic',
+    color: c.primary,
   },
   // --- content states ---
   errorText: {

@@ -106,6 +106,18 @@ describe('DmChatLayout', () => {
     expect(queryByText('Online')).toBeNull();
   });
 
+  it('renders the offline last-seen subtitle', () => {
+    const { getByText, queryByTestId } = renderLayout({
+      peerStatus: {
+        kind: 'lastSeen',
+        at: '2026-06-05T01:02:06.222',
+      },
+    });
+
+    expect(queryByTestId('header-peer-online-dot')).toBeNull();
+    expect(getByText('Visto por último em 01:02')).toBeTruthy();
+  });
+
   it('passes read status only to own DM bubbles', () => {
     renderLayout({
       messages: [

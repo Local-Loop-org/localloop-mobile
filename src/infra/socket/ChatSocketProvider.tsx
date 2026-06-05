@@ -13,6 +13,28 @@ import { createChatSocket } from './chat-socket';
 
 type AnyHandler = (payload: any) => void;
 
+/**
+ * Backstop the typed `event: string` contract at runtime. An `undefined`/empty
+ * event name (e.g. a stale `@localloop/shared-types` where an event constant is
+ * missing) serializes as `[null, …]` in the Socket.IO protocol, which the
+ * server rejects as a malformed packet and closes the connection. Throw in dev
+ * so it surfaces immediately; in production log and drop the frame rather than
+ * killing the live socket. Returns whether the event is safe to emit.
+ */
+function isValidEventName(event: string): boolean {
+  if (typeof event === 'string' && event.length > 0) {
+    return true;
+  }
+  const message = `[chat-socket] refusing to emit with invalid event name: ${String(
+    event,
+  )}`;
+  if (__DEV__) {
+    throw new Error(message);
+  }
+  console.error(message);
+  return false;
+}
+
 export interface ChatSocketSubscription {
   key: string;
   subscribe: () => void;
@@ -102,6 +124,9 @@ export function ChatSocketProvider({
   }, [accessToken]);
 
   const emit = useCallback((event: string, payload: unknown) => {
+    if (!isValidEventName(event)) {
+      return;
+    }
     socketRef.current?.emit(event, payload);
   }, []);
 
@@ -112,6 +137,10 @@ export function ChatSocketProvider({
       timeoutMs: number,
       callback: (error: Error | null, payload?: unknown) => void,
     ) => {
+      if (!isValidEventName(event)) {
+        callback(new Error(`invalid chat socket event name: ${String(event)}`));
+        return;
+      }
       const socket = socketRef.current;
       if (!socket) {
         callback(new Error('chat socket not connected'));

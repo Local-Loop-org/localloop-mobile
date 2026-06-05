@@ -6,6 +6,8 @@ import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConver
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
 import { useDmReadState } from '@/application/hooks/useDmReadState/useDmReadState';
+import { useDmSummaryActivity } from '@/application/hooks/useDmSummaryActivity/useDmSummaryActivity';
+import { useDmTyping } from '@/application/hooks/useDmTyping/useDmTyping';
 import { useUnarchiveDmConversation } from '@/application/hooks/useUnarchiveDmConversation/useUnarchiveDmConversation';
 import { dmApi } from '@/infra/api/dm.api';
 import DmChatScreen from './index';
@@ -21,6 +23,10 @@ jest.mock('@/application/hooks/useDmPresence/useDmPresence', () => ({
 
 jest.mock('@/application/hooks/useDmReadState/useDmReadState', () => ({
   useDmReadState: jest.fn(),
+}));
+
+jest.mock('@/application/hooks/useDmSummaryActivity/useDmSummaryActivity', () => ({
+  useDmSummaryActivity: jest.fn(),
 }));
 
 jest.mock('@/application/hooks/useDmTyping/useDmTyping', () => ({
@@ -148,6 +154,12 @@ const mockedUseDmPresence = useDmPresence as jest.MockedFunction<
 const mockedUseDmReadState = useDmReadState as jest.MockedFunction<
   typeof useDmReadState
 >;
+const mockedUseDmSummaryActivity = useDmSummaryActivity as jest.MockedFunction<
+  typeof useDmSummaryActivity
+>;
+const mockedUseDmTyping = useDmTyping as jest.MockedFunction<
+  typeof useDmTyping
+>;
 const mockedUseArchiveDmConversation =
   useArchiveDmConversation as jest.MockedFunction<
     typeof useArchiveDmConversation
@@ -215,6 +227,12 @@ describe('DmChatScreen', () => {
       connected: true,
     } as never);
     mockedUseDmPresence.mockReturnValue(null);
+    mockedUseDmSummaryActivity.mockReturnValue(null);
+    mockedUseDmTyping.mockReturnValue({
+      peerTyping: false,
+      notifyTyping: jest.fn(),
+      notifyStopTyping: jest.fn(),
+    });
     mockedUseDmReadState.mockReturnValue({
       lastReadAt: null,
       peerLastReadAt: null,
@@ -302,6 +320,47 @@ describe('DmChatScreen', () => {
     expect(mockedUseDmPresence).toHaveBeenCalledWith('peer-1');
     expect(getByTestId('peer-status').props.children).toBe(
       JSON.stringify({ kind: 'online' }),
+    );
+  });
+
+  it('passes offline summary activity into the layout as last-seen status', () => {
+    mockedUseDmSummaryActivity.mockReturnValue('2026-06-05T04:02:06.222Z');
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(mockedUseDmSummaryActivity).toHaveBeenCalledWith('peer-1');
+    expect(getByTestId('peer-status').props.children).toBe(
+      JSON.stringify({
+        kind: 'lastSeen',
+        at: '2026-06-05T04:02:06.222Z',
+      }),
+    );
+  });
+
+  it('keeps online presence ahead of offline summary activity', () => {
+    mockedUseDmPresence.mockReturnValue({ kind: 'online' });
+    mockedUseDmSummaryActivity.mockReturnValue('2026-06-05T04:02:06.222Z');
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(getByTestId('peer-status').props.children).toBe(
+      JSON.stringify({ kind: 'online' }),
+    );
+  });
+
+  it('keeps typing ahead of online presence and offline summary activity', () => {
+    mockedUseDmPresence.mockReturnValue({ kind: 'online' });
+    mockedUseDmSummaryActivity.mockReturnValue('2026-06-05T04:02:06.222Z');
+    mockedUseDmTyping.mockReturnValue({
+      peerTyping: true,
+      notifyTyping: jest.fn(),
+      notifyStopTyping: jest.fn(),
+    });
+
+    const { getByTestId } = renderScreen(false);
+
+    expect(getByTestId('peer-status').props.children).toBe(
+      JSON.stringify({ kind: 'typing' }),
     );
   });
 
