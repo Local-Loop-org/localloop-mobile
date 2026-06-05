@@ -1,12 +1,16 @@
 import React from 'react';
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface FormTextAreaProps extends Omit<TextInputProps, 'style' | 'multiline'> {
   rows?: number;
 }
 
 export function FormTextArea({ rows = 3, ...rest }: FormTextAreaProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <TextInput
       placeholderTextColor={colors.faint}
@@ -18,7 +22,8 @@ export function FormTextArea({ rows = 3, ...rest }: FormTextAreaProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   input: {
     backgroundColor: colors.surface,
     borderColor: colors.line,

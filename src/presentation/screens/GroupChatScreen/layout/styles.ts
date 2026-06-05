@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
 
 const HEADER_BTN = 38;
 const HEADER_RADIUS = 11;
@@ -15,10 +15,11 @@ const monoFamily = Platform.select({
   default: 'monospace',
 });
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   // --- header ---
   header: {
@@ -29,15 +30,15 @@ export const styles = StyleSheet.create({
     paddingBottom: spacing.sm + 2,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: c.line,
   },
   iconBtn: {
     width: HEADER_BTN,
     height: HEADER_BTN,
     borderRadius: HEADER_RADIUS,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -62,7 +63,7 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.2,
     flexShrink: 1,
   },
@@ -70,13 +71,13 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: monoFamily,
     fontWeight: '500',
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 1.4,
     marginTop: 2,
   },
   // --- content states ---
   errorText: {
-    color: colors.error,
+    color: c.error,
     textAlign: 'center',
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
@@ -89,7 +90,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: colors.faint,
+    color: c.faint,
     textAlign: 'center',
   },
   loadingMoreWrapper: {

@@ -1,10 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   header: {
     flexDirection: 'row',
@@ -18,9 +19,9 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -37,12 +38,12 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
   },
   subtitle: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
-    color: colors.dim,
+    color: c.dim,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
@@ -66,7 +67,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   errorText: {
-    color: colors.error,
+    color: c.error,
     textAlign: 'center',
     marginHorizontal: 16,
     marginTop: 12,
@@ -79,7 +80,7 @@ export const styles = StyleSheet.create({
   footerNote: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.6,
     textAlign: 'center',
     marginTop: 18,

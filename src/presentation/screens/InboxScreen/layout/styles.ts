@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
 
 const monoFamily = Platform.select({
   ios: 'Menlo',
@@ -7,10 +7,11 @@ const monoFamily = Platform.select({
   default: 'monospace',
 });
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
 
   // Header
@@ -29,19 +30,19 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.5,
     lineHeight: 22,
   },
   headerSubtitle: {
     fontSize: 10.5,
     fontFamily: monoFamily,
-    color: colors.dim,
+    color: c.dim,
     letterSpacing: 1.4,
     marginTop: 3,
   },
   headerSubtitleAccent: {
-    color: colors.primary,
+    color: c.primary,
   },
   headerActions: {
     flexDirection: 'row',
@@ -51,9 +52,9 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -84,7 +85,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: colors.dim,
+    color: c.dim,
     textAlign: 'center',
   },
   loadingMore: {
@@ -113,18 +114,18 @@ export const styles = StyleSheet.create({
   requestName: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.2,
   },
   requestAt: {
     fontSize: 10.5,
     fontFamily: monoFamily,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.4,
   },
   requestMessage: {
     fontSize: 12.5,
-    color: colors.dim,
+    color: c.dim,
     lineHeight: 18,
     marginTop: 6,
     marginBottom: 8,
@@ -137,12 +138,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   requestAcceptText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: colors.black,
+    color: c.black,
     letterSpacing: 0.1,
   },
   requestIgnoreBtn: {
@@ -150,7 +151,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     backgroundColor: 'transparent',
   },
   requestActionDisabled: {
@@ -159,7 +160,7 @@ export const styles = StyleSheet.create({
   requestIgnoreText: {
     fontSize: 11.5,
     fontWeight: '600',
-    color: colors.dim,
+    color: c.dim,
     letterSpacing: 0.1,
   },
 });

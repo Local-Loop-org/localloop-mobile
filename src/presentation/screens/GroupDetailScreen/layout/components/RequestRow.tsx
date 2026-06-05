@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Avatar } from '../atoms/Avatar';
 
 interface RequestRowProps {
@@ -23,6 +24,7 @@ export function RequestRow({
   onApprove,
   onReject,
 }: RequestRowProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <View style={styles.head}>
@@ -61,7 +63,8 @@ export function RequestRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   head: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -109,7 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   approve: {
-    backgroundColor: 'rgba(0,209,255,0.14)',
+    backgroundColor: colors.primarySoft,
     borderColor: colors.primary,
   },
   approveLabel: {

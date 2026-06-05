@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { colors, spacing } from '@/shared/theme';
+import { spacing, type ThemeColors } from '@/shared/theme';
 
 export const TAB_BAR_BASE_BOTTOM_PADDING = spacing.lg + 2;
 
@@ -9,17 +9,18 @@ const monoFamily = Platform.select({
   default: 'monospace',
 });
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   scrollContent: {
     paddingTop: spacing.sm,
     paddingBottom: 120,
   },
   errorText: {
-    color: colors.error,
+    color: c.error,
     textAlign: 'center',
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
@@ -35,13 +36,13 @@ export const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
   },
 
@@ -57,7 +58,7 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.5,
   },
   headerActions: {
@@ -68,9 +69,9 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -87,11 +88,11 @@ export const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.line,
+    backgroundColor: c.line,
   },
   dividerLabel: {
     fontSize: 10,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 1.6,
     fontWeight: '600',
   },
@@ -115,20 +116,20 @@ export const styles = StyleSheet.create({
     height: 24,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: 'rgba(0, 209, 255, 0.3)',
-    backgroundColor: 'rgba(0, 209, 255, 0.1)',
+    borderColor: c.primaryBorder,
+    backgroundColor: c.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.2,
   },
   sectionCount: {
     fontSize: 11,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.4,
     fontWeight: '600',
   },
@@ -138,7 +139,7 @@ export const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 12,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '600',
   },
 
@@ -165,9 +166,9 @@ export const styles = StyleSheet.create({
     width: 220,
     padding: spacing.md - 2,
     borderRadius: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -180,7 +181,7 @@ export const styles = StyleSheet.create({
     height: 24,
     paddingHorizontal: 8,
     borderRadius: 12,
-    backgroundColor: 'rgba(0, 230, 118, 0.18)',
+    backgroundColor: `${c.success}2E`,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -190,24 +191,24 @@ export const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.success,
+    backgroundColor: c.success,
   },
   cardLiveText: {
     fontSize: 11,
     fontFamily: monoFamily,
     fontWeight: '700',
-    color: colors.success,
+    color: c.success,
   },
   cardName: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.3,
     marginBottom: 4,
   },
   cardAnchor: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     marginBottom: spacing.sm,
   },
   cardFooter: {
@@ -217,7 +218,7 @@ export const styles = StyleSheet.create({
   },
   cardMeta: {
     fontSize: 10,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.4,
     fontWeight: '600',
     flex: 1,
@@ -227,21 +228,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 2,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.secondary,
-    backgroundColor: 'rgba(112, 0, 255, 0.08)',
+    borderColor: c.secondary,
+    backgroundColor: `${c.secondary}14`,
   },
   cardRequestBtn: {
     paddingVertical: 4,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(0, 209, 255, 0.08)',
+    borderColor: c.primary,
+    backgroundColor: c.primarySoft08,
   },
   cardRequestText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.primary,
+    color: c.primary,
     letterSpacing: 0.2,
   },
   cardMemberBtn: {
@@ -249,32 +250,32 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 2,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.success,
-    backgroundColor: 'rgba(0, 230, 118, 0.08)',
+    borderColor: c.success,
+    backgroundColor: `${c.success}14`,
   },
   cardPendingBtn: {
     paddingVertical: 4,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   cardJoinText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.secondary,
+    color: c.secondary,
     letterSpacing: 0.2,
   },
   cardMemberText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.success,
+    color: c.success,
     letterSpacing: 0.2,
   },
   cardPendingText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.2,
   },
 
@@ -282,9 +283,9 @@ export const styles = StyleSheet.create({
   row: {
     padding: spacing.sm + 4,
     borderRadius: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm + 4,
@@ -295,18 +296,18 @@ export const styles = StyleSheet.create({
   rowName: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     letterSpacing: -0.2,
   },
   rowMeta: {
     fontSize: 11,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.4,
     fontWeight: '600',
     marginTop: 2,
   },
   rowLiveMeta: {
-    color: colors.success,
+    color: c.success,
     fontWeight: '700',
   },
 
@@ -319,12 +320,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: TAB_BAR_BASE_BOTTOM_PADDING,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
+    backgroundColor: c.surface,
+    borderColor: c.line,
     borderWidth: 1,
     borderRadius: 28,
     padding: 6,
@@ -347,16 +348,16 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 22,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   tabLabel: {
     fontSize: 10,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   tabLabelActive: {
-    color: colors.text,
+    color: c.text,
   },
   tabBadge: {
     position: 'absolute',
@@ -367,15 +368,15 @@ export const styles = StyleSheet.create({
     height: 14,
     paddingHorizontal: 4,
     borderRadius: 7,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     borderWidth: 2,
-    borderColor: colors.surface,
+    borderColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabBadgeText: {
     fontSize: 9,
-    color: colors.black,
+    color: c.black,
     fontWeight: '700',
   },
 });

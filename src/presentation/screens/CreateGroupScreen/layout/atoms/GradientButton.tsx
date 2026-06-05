@@ -7,7 +7,9 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
 interface GradientButtonProps {
@@ -27,6 +29,8 @@ export function GradientButton({
   onPress,
   testID,
 }: GradientButtonProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const isDisabled = disabled || loading;
   return (
     <Pressable
@@ -77,7 +81,8 @@ export function GradientButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   pressable: {
     width: '100%',
     borderRadius: 14,

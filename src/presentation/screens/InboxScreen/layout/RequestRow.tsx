@@ -2,7 +2,8 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Avatar from '@/shared/ui/Avatar';
 import { formatLastActivity } from '@/shared/format/lastActivity';
-import { styles } from './styles';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { createStyles } from './styles';
 import type { DmRequest } from '../types';
 
 interface RequestRowProps {
@@ -18,6 +19,7 @@ export function RequestRow({
   onIgnore,
   actionsDisabled = false,
 }: RequestRowProps) {
+  const styles = useThemedStyles(createStyles);
   const at = formatLastActivity(request.createdAt);
 
   return (

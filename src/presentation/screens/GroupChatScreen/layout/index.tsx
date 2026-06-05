@@ -10,14 +10,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
 import { EditErrorBanner } from '@/shared/ui/chat/EditErrorBanner';
 import { GroupActionSheet } from '@/shared/ui/chat/GroupActionSheet';
 import { MessageActionSheet } from '@/shared/ui/chat/MessageActionSheet';
 import AnchorIcon from '../components/AnchorIcon';
-import { layoutDimensions, styles } from './styles';
+import { layoutDimensions, createStyles } from './styles';
 import type { GroupChatLayoutProps } from './types';
 
 export default function GroupChatLayout({
@@ -54,6 +55,8 @@ export default function GroupChatLayout({
   onSelectMessageAction,
   onCloseMessageActionSheet,
 }: GroupChatLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const sendDisabled = draft.trim().length === 0;
 
   return (

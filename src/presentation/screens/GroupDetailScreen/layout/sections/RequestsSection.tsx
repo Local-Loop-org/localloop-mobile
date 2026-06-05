@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Card } from '@/presentation/screens/CreateGroupScreen/layout/atoms/Card';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
 import { RequestRow } from '../components/RequestRow';
@@ -24,6 +25,7 @@ export function RequestsSection({
   onApprove,
   onReject,
 }: RequestsSectionProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <SectionLabel
@@ -52,7 +54,8 @@ export function RequestsSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   empty: {
     padding: 16,
     fontSize: 12.5,

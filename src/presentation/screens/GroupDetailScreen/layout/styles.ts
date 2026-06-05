@@ -1,10 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { colors, fonts, spacing } from '@/shared/theme';
+import { fonts, spacing, type ThemeColors } from '@/shared/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   centered: {
     flex: 1,
@@ -14,7 +15,7 @@ export const styles = StyleSheet.create({
     gap: 16,
   },
   errorText: {
-    color: colors.text,
+    color: c.text,
     fontSize: 15,
     textAlign: 'center',
   },
@@ -23,10 +24,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   errorBackText: {
-    color: colors.text,
+    color: c.text,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -44,7 +45,7 @@ export const styles = StyleSheet.create({
   joinHint: {
     fontFamily: fonts.mono,
     fontSize: 9.5,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.6,
     textAlign: 'center',
     marginTop: 8,
@@ -52,7 +53,7 @@ export const styles = StyleSheet.create({
   createdAt: {
     fontFamily: fonts.mono,
     fontSize: 10,
-    color: colors.faint,
+    color: c.faint,
     letterSpacing: 0.6,
     textAlign: 'center',
     marginTop: 18,

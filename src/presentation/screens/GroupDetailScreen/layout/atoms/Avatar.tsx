@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/shared/theme';
+import type { ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 
 interface AvatarProps {
   name: string;
@@ -20,6 +22,8 @@ function deriveInitials(name: string): string {
 }
 
 export function Avatar({ name, initials, size = 36 }: AvatarProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const display = (initials ?? deriveInitials(name)) || '?';
   return (
     <View style={{ width: size, height: size }}>
@@ -44,7 +48,8 @@ export function Avatar({ name, initials, size = 36 }: AvatarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   bg: {
     alignItems: 'center',
     justifyContent: 'center',

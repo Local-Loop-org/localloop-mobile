@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MemberRole } from '@localloop/shared-types';
-import { colors, fonts } from '@/shared/theme';
+import { fonts, type ThemeColors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
 import { Icon, type IconName } from '@/shared/icons';
 
 export type RolePillRole =
@@ -18,7 +19,6 @@ interface RolePillProps {
 interface PillSpec {
   label: string;
   icon: IconName;
-  color: string;
   bg: string;
   border: string;
 }
@@ -27,35 +27,46 @@ const SPECS: Record<RolePillRole, PillSpec> = {
   [MemberRole.OWNER]: {
     label: 'PROPRIETÁRIO',
     icon: 'shield',
-    color: colors.accent2,
     bg: 'rgba(167,139,250,0.18)',
     border: 'rgba(167,139,250,0.50)',
   },
   [MemberRole.MODERATOR]: {
     label: 'ADMINISTRADOR',
     icon: 'shield',
-    color: colors.primary,
     bg: 'rgba(0,209,255,0.18)',
     border: 'rgba(0,209,255,0.50)',
   },
   [MemberRole.MEMBER]: {
     label: 'MEMBRO',
     icon: 'check',
-    color: colors.success,
     bg: 'rgba(0,230,118,0.16)',
     border: 'rgba(0,230,118,0.50)',
   },
   pending: {
     label: 'AGUARDANDO',
     icon: 'dot',
-    color: colors.dim,
     bg: 'rgba(196,196,196,0.12)',
     border: 'rgba(196,196,196,0.45)',
   },
 };
 
+const roleColor = (role: RolePillRole, c: ThemeColors): string => {
+  switch (role) {
+    case MemberRole.OWNER:
+      return c.accent2;
+    case MemberRole.MODERATOR:
+      return c.primary;
+    case MemberRole.MEMBER:
+      return c.success;
+    default:
+      return c.dim;
+  }
+};
+
 export function RolePill({ role, large }: RolePillProps) {
+  const { colors } = useTheme();
   const spec = SPECS[role];
+  const color = roleColor(role, colors);
   return (
     <View
       style={[
@@ -71,14 +82,14 @@ export function RolePill({ role, large }: RolePillProps) {
       <Icon
         name={spec.icon}
         size={large ? 11 : 9}
-        color={spec.color}
+        color={color}
         strokeWidth={2.2}
       />
       <Text
         style={[
           styles.label,
           large ? styles.labelLarge : styles.labelSmall,
-          { color: spec.color },
+          { color },
         ]}
       >
         {spec.label}

@@ -10,7 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { ChatThread } from '@/shared/ui/chat/ChatThread';
 import { ChatComposer } from '@/shared/ui/chat/ChatComposer';
 import { EditErrorBanner } from '@/shared/ui/chat/EditErrorBanner';
@@ -20,10 +21,13 @@ import { DmRequestBanner } from '@/shared/ui/chat/DmRequestBanner';
 import { DmRequestComposer } from '@/shared/ui/chat/DmRequestComposer';
 import { formatTime } from '@/shared/format/chat';
 import Avatar from '@/shared/ui/Avatar';
-import { layoutDimensions, styles } from './styles';
+import { layoutDimensions, createStyles } from './styles';
 import type { DmChatLayoutProps, DmPeerStatus } from './types';
 
-function renderPeerStatusSubtitle(status: DmPeerStatus) {
+function renderPeerStatusSubtitle(
+  status: DmPeerStatus,
+  styles: ReturnType<typeof createStyles>,
+) {
   if (!status) return null;
 
   let text = '';
@@ -82,6 +86,8 @@ export default function DmChatLayout({
   onSelectMessageAction,
   onCloseMessageActionSheet,
 }: DmChatLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const sendDisabled = draft.trim().length === 0 || awaitingApproval;
   const isTyping = peerStatus?.kind === 'typing';
 
@@ -124,7 +130,7 @@ export default function DmChatLayout({
                   {peerName}
                 </Text>
               </View>
-              {renderPeerStatusSubtitle(peerStatus)}
+              {renderPeerStatusSubtitle(peerStatus, styles)}
             </View>
           </TouchableOpacity>
           <TouchableOpacity

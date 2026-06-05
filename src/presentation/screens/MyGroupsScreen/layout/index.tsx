@@ -9,11 +9,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/shared/icons';
-import { colors } from '@/shared/theme';
+import { useTheme } from '@/shared/theme/useTheme';
+import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { MyGroupRow } from '@/shared/ui/MyGroupRow';
 import { FilterChip } from '@/shared/ui/FilterChip';
 import { SearchInput } from '@/shared/ui/SearchInput';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import type { MyGroupsLayoutProps } from './types';
 
 export default function MyGroupsLayout({
@@ -29,6 +30,8 @@ export default function MyGroupsLayout({
   onPressGroup,
   onPressBack,
 }: MyGroupsLayoutProps) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
