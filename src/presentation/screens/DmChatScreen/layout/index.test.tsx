@@ -115,7 +115,7 @@ describe('DmChatLayout', () => {
     });
 
     expect(queryByTestId('header-peer-online-dot')).toBeNull();
-    expect(getByText('visto por ultimo em 01:02')).toBeTruthy();
+    expect(getByText('Visto por último em 01:02')).toBeTruthy();
   });
 
   it('passes read status only to own DM bubbles', () => {

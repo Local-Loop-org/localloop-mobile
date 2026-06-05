@@ -40,7 +40,7 @@ function renderPeerStatusSubtitle(
     text = 'Digitando...';
     style = [styles.headerSubtitle, styles.headerSubtitleTyping];
   } else if (status.kind === 'lastSeen') {
-    text = `visto por ultimo em ${formatTime(status.at)}`;
+    text = `Visto por último em ${formatTime(status.at)}`;
   }
 
   return (
