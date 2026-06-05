@@ -12,6 +12,9 @@
     "release:prepare": "node scripts/publish-release.js prepare",
     "release:build-android": "node scripts/publish-release.js build-android",
     "release:notes": "node scripts/publish-release.js notes",
+    "assert-deps": "node scripts/assert-shared-types.js",
+    "postinstall": "node scripts/assert-shared-types.js",
+    "pretest": "node scripts/assert-shared-types.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

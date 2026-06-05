@@ -313,4 +313,71 @@ describe('ChatSocketProvider', () => {
       cb,
     );
   });
+
+  // Regression: a stale @localloop/shared-types made ChatSocketEvents.DM_TYPING
+  // `undefined`, so emit(undefined, …) serialized as `[null, …]` and the server
+  // closed the socket. The guard must refuse such emits instead of passing them
+  // through.
+  describe('emit guard against invalid event names', () => {
+    const devFlag = global as unknown as { __DEV__: boolean };
+
+    it('throws in dev and never touches the socket when the event name is undefined', async () => {
+      const socket = makeSocketMock();
+      mockedCreateChatSocket.mockReturnValueOnce(socket);
+      const { result } = renderHook(() => useChatSocketManager(), { wrapper });
+      await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+      expect(() =>
+        result.current.emit(undefined as unknown as string, {
+          recipientId: 'peer',
+        }),
+      ).toThrow(/invalid event name/);
+      expect(socket.emit).not.toHaveBeenCalled();
+    });
+
+    it('emitWithAck throws in dev for an empty event name and never calls timeout', async () => {
+      const socket = makeSocketMock();
+      mockedCreateChatSocket.mockReturnValueOnce(socket);
+      const { result } = renderHook(() => useChatSocketManager(), { wrapper });
+      await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+      const cb = jest.fn();
+      expect(() => result.current.emitWithAck('', {}, 4_000, cb)).toThrow(
+        /invalid event name/,
+      );
+      expect(socket.timeout).not.toHaveBeenCalled();
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it('in production logs and drops the frame instead of emitting', async () => {
+      const socket = makeSocketMock();
+      mockedCreateChatSocket.mockReturnValueOnce(socket);
+      const { result } = renderHook(() => useChatSocketManager(), { wrapper });
+      await waitFor(() => expect(mockedCreateChatSocket).toHaveBeenCalled());
+
+      const prevDev = devFlag.__DEV__;
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      try {
+        devFlag.__DEV__ = false;
+        result.current.emit(undefined as unknown as string, { x: 1 });
+        const cb = jest.fn();
+        result.current.emitWithAck(
+          undefined as unknown as string,
+          {},
+          4_000,
+          cb,
+        );
+
+        expect(socket.emit).not.toHaveBeenCalled();
+        expect(socket.timeout).not.toHaveBeenCalled();
+        expect(cb).toHaveBeenCalledWith(expect.any(Error));
+        expect(errorSpy).toHaveBeenCalled();
+      } finally {
+        devFlag.__DEV__ = prevDev;
+        errorSpy.mockRestore();
+      }
+    });
+  });
 });
