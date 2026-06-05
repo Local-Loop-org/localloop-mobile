@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import DmChatLayout from './layout';
 import type { DmActionId } from '@/shared/ui/chat/DmActionSheet';
 import type { MessageActionId } from '@/shared/ui/chat/MessageActionSheet';
@@ -7,9 +8,17 @@ import {
   availableMessageActions,
   hasAnyAction,
 } from '@/shared/ui/chat/messageActionPolicy';
+import { getLocalSendStatus } from '@/shared/chat/sendStatus';
 import { useArchiveDmConversation } from '@/application/hooks/useArchiveDmConversation/useArchiveDmConversation';
 import { useChatComposerState } from '@/application/hooks/useChatComposerState/useChatComposerState';
-import { useDeleteDirectMessage } from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
+import {
+  removeDirectMessageById,
+  useDeleteDirectMessage,
+} from '@/application/hooks/useDeleteDirectMessage/useDeleteDirectMessage';
+import {
+  dmHistoryKey,
+  type DmHistoryInfiniteData,
+} from '@/application/hooks/useDmHistory/dmHistoryQuery';
 import { useDmChat } from '@/application/hooks/useDmChat/useDmChat';
 import { useEditDirectMessage } from '@/application/hooks/useEditDirectMessage/useEditDirectMessage';
 import { useDmPresence } from '@/application/hooks/useDmPresence/useDmPresence';
@@ -39,6 +48,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
   const [messageActionTargetId, setMessageActionTargetId] = useState<
     string | null
   >(null);
+  const queryClient = useQueryClient();
   const archiveDm = useArchiveDmConversation();
   const unarchiveDm = useUnarchiveDmConversation();
   const deleteMessage = useDeleteDirectMessage();
@@ -130,6 +140,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
       message: targetMessage,
       currentUserId,
       conversation: 'dm',
+      sendStatus: getLocalSendStatus(targetMessage),
     });
     if (!hasAnyAction(available)) return null;
     return {
@@ -146,6 +157,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         message: msg,
         currentUserId,
         conversation: 'dm',
+        sendStatus: getLocalSendStatus(msg),
       });
       if (!hasAnyAction(available)) return;
       setMessageActionTargetId(messageId);
@@ -162,6 +174,13 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         deleteMessage.mutate({ peerId, messageId: id });
         return;
       }
+      if (action === 'discard') {
+        queryClient.setQueryData<DmHistoryInfiniteData>(
+          dmHistoryKey(peerId),
+          (old) => removeDirectMessageById(old, id),
+        );
+        return;
+      }
       if (action === 'reply') {
         composer.openReplyComposerFor(id);
         return;
@@ -170,7 +189,7 @@ export default function DmChatScreen({ route, navigation }: DmChatScreenProps) {
         composer.openEditComposerFor(id);
       }
     },
-    [messageActionTargetId, deleteMessage, peerId, composer],
+    [messageActionTargetId, deleteMessage, queryClient, peerId, composer],
   );
 
   return (

@@ -37,6 +37,27 @@ export function markGroupMessageDeleted(
   return changed ? { ...old, pages } : old;
 }
 
+/**
+ * Filters the matching message out of every cached page. Used by E6 to drop a
+ * failed optimistic temp from the cache when the user discards it — a true
+ * removal rather than a tombstone, because a never-sent message has nothing
+ * to memorialise. Idempotent: returns the same reference when nothing matches.
+ */
+export function removeGroupMessageById(
+  old: GroupHistoryCache | undefined,
+  messageId: string,
+): GroupHistoryCache | undefined {
+  if (!old) return old;
+  let changed = false;
+  const pages = old.pages.map((page) => {
+    const next = page.data.filter((m) => m.id !== messageId);
+    if (next.length === page.data.length) return page;
+    changed = true;
+    return { ...page, data: next };
+  });
+  return changed ? { ...old, pages } : old;
+}
+
 export type DeleteGroupMessageVars = {
   groupId: string;
   messageId: string;
