@@ -14,10 +14,16 @@ const THUMB_SIZE = 14;
 
 interface MapRadiusControlProps {
   value: number;
-  onChange: (value: number) => void;
+  /**
+   * Commit-on-release: the drafted value is committed only when the drag ends,
+   * so binding this to the shared radius preference doesn't write to storage or
+   * refetch nearby groups on every pan tick. The thumb still tracks the drag
+   * live via the slider hook's internal draft.
+   */
+  onCommit: (value: number) => void;
 }
 
-export function MapRadiusControl({ value, onChange }: MapRadiusControlProps) {
+export function MapRadiusControl({ value, onCommit }: MapRadiusControlProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const { onTrackLayout, panHandlers, displayValue, fillPct, trackWidth } =
@@ -26,7 +32,7 @@ export function MapRadiusControl({ value, onChange }: MapRadiusControlProps) {
       min: MIN_KM,
       max: MAX_KM,
       step: STEP_KM,
-      onChange,
+      onCommit,
     });
 
   const thumbLeft = trackWidth * fillPct - THUMB_SIZE / 2;

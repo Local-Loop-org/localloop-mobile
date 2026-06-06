@@ -51,7 +51,7 @@ function renderLayout(overrides: Partial<MapLayoutProps> = {}) {
     recenterTick: 0,
     onChangeFilter: jest.fn(),
     onSelectPin: jest.fn(),
-    onChangeRadius: jest.fn(),
+    onCommitRadius: jest.fn(),
     onChangeSearch: jest.fn(),
     onRecenter: jest.fn(),
     onCreate: jest.fn(),

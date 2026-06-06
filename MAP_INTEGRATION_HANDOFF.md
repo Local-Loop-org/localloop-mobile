@@ -14,9 +14,9 @@ What remains, in order:
 
 1. ~~Map provider integration~~ ✅ done.
 2. ~~**Real markers** (§7)~~ ✅ **done** (`feat/nearby-anchor-coords` cross-repo change). `NearbyGroup` now carries `anchorLat`/`anchorLng` (shared-types 2.12.0) and `GET /groups/nearby` returns them; groups render as geo `<Marker>`s inside `MapView`. Mock pins are now geo-anchored (not x/y overlays).
-3. **Data wiring** (§8, later) — replace mock pins with live nearby-groups + presence, and wire join/navigate. **← next step.**
+3. ~~**Data wiring** (§8)~~ ✅ **done** (this session). `MOCK_PINS` replaced with `useNearbyGroups` + presence; selected-pin card joins/navigates via the new shared `useGroupJoinFlow` hook; radius bound to the shared `discoveryRadiusKm` preference (commit-on-release). See §8.
 
-Everything shipped so far is documented in PR #36 and the plan at `~/.claude/plans/fetch-this-design-file-scalable-kitten.md`.
+**Map data wiring is complete.** The only remaining Map item is M5 Maestro E2E (tracked in `localloop-shared/docs/testing-backlog.md`, not here).
 
 ---
 
@@ -121,20 +121,27 @@ The cross-repo blocker is closed:
 
 ---
 
-## 8. Step 3 — Data wiring (later)
+## 8. Step 3 — Data wiring ✅ DONE
 
-Mirror HomeScreen ([src/presentation/screens/HomeScreen/index.tsx](src/presentation/screens/HomeScreen/index.tsx)):
-- Replace `MOCK_PINS` with `useNearbyGroups(coords, radiusKm)` (`src/application/hooks/useNearbyGroups/`) + `useGroupListRealtime` for live counts.
-- Bind `radiusKm` to `usePreferencesStore.discoveryRadiusKm` (`src/application/stores/preferences.store.ts`) so Home + Map share the radius.
-- Wire `onPressGroup` to the join/navigate flow: reuse HomeScreen's `handlePressGroup` / `navigateToChat` / `promptJoinRequest`. **Candidate refactor: extract a shared `useGroupJoinFlow` hook** so Home and Map don't duplicate it.
-- Handle the location-permission-denied state (HomeScreen has the pattern).
-- The selected-pin card already renders `NearbyGroupRow` (the real Home discovery row) — feeding it live `NearbyGroup`s is the only change there.
+Shipped this session (mirrors HomeScreen):
+
+- **Live pins** — `MOCK_PINS` deleted; [MapScreen/index.tsx](src/presentation/screens/MapScreen/index.tsx) now calls `useNearbyGroups(coords, discoveryRadiusKm)` and feeds `effectiveGroups` (merged with presence) into the layout. Query auto-disabled while `coords == null` (permission denied → no pins, map keeps its fallback center; the layout has no error banner, so no extra denied UI was added).
+- **Presence** — `useGroupListRealtime({ presenceGroupIds, enabled: isFocused })`; `presenceGroupIds` derived via the shared `canShowPresence` so counts never leak for closed non-member groups. Live counts merged with `withLiveCount`.
+- **Join/navigate** — the join logic was **extracted** from HomeScreen into a shared hook `useGroupJoinFlow({ groups, navigation })` ([src/application/hooks/useGroupJoinFlow/](src/application/hooks/useGroupJoinFlow/)), now consumed by **both** Home and Map. Returns `{ effectiveGroups, handlePressGroup }`; `onPressGroup={handlePressGroup}` (TODO removed). Navigation is **passed in** (not `useNavigation()`) to keep the application-layer hook free of a presentation dependency and HomeScreen's existing tests green.
+- **Shared presence helpers** — `canShowPresence` / `withLiveCount` moved to [src/shared/groups/presence.ts](src/shared/groups/presence.ts) (was inline in HomeScreen).
+- **Radius** — bound to `usePreferencesStore.discoveryRadiusKm` (shared with Home + Profile). `MapRadiusControl` switched from continuous `onChange` to **`onCommit`** (commit-on-release) so dragging doesn't write to SecureStore / refetch on every pan tick (`MapLayoutProps.onChangeRadius` → `onCommitRadius`). Note: the Map now opens at the shared 25 km default instead of the old 0.5 km.
+
+Out of scope (left as-is): search-box pin filtering (still a non-filtering controlled input), a dedicated location-denied banner.
+
+Tests: added `useGroupJoinFlow.test.ts`, `presence.test.ts`, and a `MapScreen/index.test.tsx` container test; updated `MapLayout.test.tsx` (`onChangeRadius` → `onCommitRadius`). Full suite **78 suites / 612 green**, `tsc` clean.
 
 ---
 
 ## 9. Reuse — don't break these
 
 Shared pieces this branch introduced/consolidated; keep them intact:
+- `src/application/hooks/useGroupJoinFlow/` — discovery group tap → join/navigate flow (used by Home **and** Map). Takes `{ groups, navigation }`, returns `{ effectiveGroups, handlePressGroup }`.
+- `src/shared/groups/presence.ts` — `canShowPresence` + `withLiveCount` (used by Home **and** Map).
 - `src/shared/ui/radius/` — `useRadiusSlider` (used by **3 screens**: CreateGroup, Profile, Map), `RadiusMapPreview` (CreateGroup preview), `radiusGeometry`.
 - `src/shared/ui/nearbyGroup/` — `NearbyGroupRow` + `GroupStatusBadge` (used by Home **and** Map).
 - `src/shared/ui/FilterChip.tsx` — `hideLabel` + `iconColor` props (used by Map, Inbox, MyGroups, GroupMembers).

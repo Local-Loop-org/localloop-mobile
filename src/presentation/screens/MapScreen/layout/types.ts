@@ -15,11 +15,12 @@ export interface MapLayoutProps {
   recenterTick: number;
   onChangeFilter: (filter: AnchorFilter) => void;
   onSelectPin: (id: string) => void;
-  onChangeRadius: (km: number) => void;
+  /** Commit-on-release of the radius slider (persists to the shared preference). */
+  onCommitRadius: (km: number) => void;
   onChangeSearch: (text: string) => void;
   onRecenter: () => void;
   onCreate: () => void;
   onMyGroups: () => void;
-  /** Tapping the selected-pin card. TODO(wire): join + navigate. Optional until wired. */
+  /** Tapping the selected-pin card → join/navigate flow. */
   onPressGroup?: (id: string) => void;
 }
