@@ -2,11 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import MapView, {
   Circle,
+  Marker,
   PROVIDER_GOOGLE,
   type Region,
 } from 'react-native-maps';
 import type { Coords } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import { useTheme } from '@/shared/theme/useTheme';
+import type { AnchorFilter, MapPinData } from '../../types';
+import { MapPin } from './MapPin';
 import { darkMapStyle, lightMapStyle } from './mapStyle';
 
 interface MapCanvasProps {
@@ -16,6 +19,14 @@ interface MapCanvasProps {
   radiusKm: number;
   /** Bumped by the container's recenter (compass) action to re-frame on the user. */
   recenterTick: number;
+  /** Group markers, positioned by their anchor coordinates. */
+  pins: MapPinData[];
+  /** Currently selected pin id (enlarges + raises it), or `null`. */
+  selectedId: string | null;
+  /** Active category filter — non-matching pins dim and gain a name label. */
+  filter: AnchorFilter;
+  /** Tapping a marker selects its group. */
+  onSelectPin: (id: string) => void;
 }
 
 const KM_PER_DEG_LAT = 111;
@@ -45,10 +56,18 @@ function regionFor({ lat, lng }: Coords, radiusKm: number): Region {
  * the discovery radius as a geo `Circle` and shows the native "you are here" dot.
  *
  * Leaf component: reads `useTheme()` directly (no static palette exists).
- * TODO(wire): group markers wait on anchor coords in `NearbyGroup` — see
- * MAP_INTEGRATION_HANDOFF.md §7. Until then the screen's pins stay as overlays.
+ * Group `pins` render as geo `<Marker>`s positioned by their anchor coordinates;
+ * each marker's custom child is the `MapPin` visual.
  */
-export function MapCanvas({ userCoords, radiusKm, recenterTick }: MapCanvasProps) {
+export function MapCanvas({
+  userCoords,
+  radiusKm,
+  recenterTick,
+  pins,
+  selectedId,
+  filter,
+  onSelectPin,
+}: MapCanvasProps) {
   const { colors, mode } = useTheme();
   const mapRef = useRef<MapView>(null);
   const initialRegion = useRef(
@@ -98,6 +117,24 @@ export function MapCanvas({ userCoords, radiusKm, recenterTick }: MapCanvasProps
           fillColor={colors.duotoneSoftFrom}
         />
       ) : null}
+
+      {pins.map((pin) => (
+        <Marker
+          key={pin.id}
+          testID={`map-pin-${pin.id}`}
+          coordinate={{ latitude: pin.anchorLat, longitude: pin.anchorLng }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          zIndex={pin.id === selectedId ? 25 : 10}
+          onPress={() => onSelectPin(pin.id)}
+        >
+          <MapPin
+            pin={pin}
+            selected={pin.id === selectedId}
+            dimmed={filter !== 'all' && pin.anchorType !== filter}
+            withLabel={filter !== 'all'}
+          />
+        </Marker>
+      ))}
     </MapView>
   );
 }

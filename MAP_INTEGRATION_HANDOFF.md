@@ -13,8 +13,8 @@ The **M6 "territory" Map screen** layout is built and merged into this branch (H
 What remains, in order:
 
 1. ~~Map provider integration~~ ✅ done.
-2. **Real markers** (§7) — blocked on a cross-repo API change to add anchor coordinates to `NearbyGroup`. Mock pins currently still render as screen-positioned overlays.
-3. **Data wiring** (§8, later) — replace mock pins with live nearby-groups + presence, and wire join/navigate.
+2. ~~**Real markers** (§7)~~ ✅ **done** (`feat/nearby-anchor-coords` cross-repo change). `NearbyGroup` now carries `anchorLat`/`anchorLng` (shared-types 2.12.0) and `GET /groups/nearby` returns them; groups render as geo `<Marker>`s inside `MapView`. Mock pins are now geo-anchored (not x/y overlays).
+3. **Data wiring** (§8, later) — replace mock pins with live nearby-groups + presence, and wire join/navigate. **← next step.**
 
 Everything shipped so far is documented in PR #36 and the plan at `~/.claude/plans/fetch-this-design-file-scalable-kitten.md`.
 
@@ -61,10 +61,10 @@ src/presentation/screens/MapScreen/
     types.ts                     MapLayoutProps (incl. userCoords, recenterTick)
     components/
       MapCanvas.tsx              REAL basemap: react-native-maps MapView + geo Circle +
-                                 showsUserLocation; themed via useTheme (see §6)
+                                 showsUserLocation + geo <Marker>s per group; themed (see §6)
       mapStyle.ts                darkMapStyle / lightMapStyle (palette-tuned Google JSON)
-      MapPin.tsx                 marker positioned by x/y FRACTIONS (0..1) — PLACEHOLDER
-                                 overlay, floats over the map until real <Marker>s land (§7)
+      MapPin.tsx                 pure marker visual (badge + icon + live dot + label),
+                                 rendered as a <Marker>'s custom child by MapCanvas (§7)
       MapCategoryChips.tsx       reuses shared FilterChip (icon-only categories)
       MapRadiusControl.tsx       inline radius slider (shared useRadiusSlider)
       MapActionRail.tsx          compass(recenter) / plus(create) / users(my groups)
@@ -105,19 +105,19 @@ What shipped:
 
 ---
 
-## 7. Step 2 — Real markers (the remaining overlay work)
+## 7. Step 2 — Real markers ✅ DONE
 
-✅ **Done in Step 1:** the **radius ring** is now a geo `<Circle radius={radiusKm*1000}>` in MapCanvas, and **"you are here"** uses `showsUserLocation`. The only overlay left to reconcile is the pins:
+✅ **Done in Step 1:** the **radius ring** is a geo `<Circle radius={radiusKm*1000}>` in MapCanvas, and **"you are here"** uses `showsUserLocation`.
 
-- **Pins** — `MapPin`'s `x`/`y` fraction positioning is obsolete (they currently float over the map as a placeholder). Render groups as `<Marker coordinate={{latitude, longitude}}>` inside MapCanvas, ideally reusing the `MapPin` marker visual as the marker's custom child. Selection/dim/label behavior carries over. **This is blocked ↓.**
+✅ **Done now** (`feat/nearby-anchor-coords`): groups render as real geo `<Marker coordinate={{latitude: anchorLat, longitude: anchorLng}}>` **inside** `MapView` (moved from layout overlays into `MapCanvas`). Each marker's custom child is the `MapPin` visual; `MapPin` is now a pure view (the `TouchableOpacity` + `x`/`y` positioning were removed — `testID`/`onPress`/`zIndex` live on the `<Marker>`). Selection/dim/label behavior carries over (`selectedId` + `filter` are passed into `MapCanvas`). `MapPinData` dropped `x`/`y`; `MOCK_PINS` now hold real Curitiba-area `anchorLat`/`anchorLng`.
 
-### ⚠️ BLOCKER for real markers — group coordinates are not in the API
-The API's `NearbyGroup` (in `@localloop/shared-types`) currently exposes **`distanceMeters` + `anchorLabel` only — no `lat`/`lng`**. You cannot place real markers without coordinates. This requires a **cross-repo change** (flag to the user before starting markers):
-- `localloop-shared/packages/shared-types`: add e.g. `anchorLat`/`anchorLng` (or `coordinates`) to `NearbyGroup` (bump version).
-- `localloop-api`: include the group's anchor coordinates in the `GET /groups/nearby` payload.
-- Then `localloop-mobile`: consume them.
+### ✅ RESOLVED — group coordinates are now in the API
+The cross-repo blocker is closed:
+- `localloop-shared/packages/shared-types`: `NearbyGroup` now has required `anchorLat`/`anchorLng` (bumped **2.11.0 → 2.12.0**).
+- `localloop-api`: `GET /groups/nearby` (`DiscoverNearbyGroupsUseCase`) includes `anchorLat`/`anchorLng` (already-stored `anchor_lat`/`anchor_lng` columns — no migration). Sanctioned by architecture.md "Location privacy" (public anchor, no user coords).
+- `localloop-mobile`: consumed for the `<Marker>`s above.
 
-Until that lands, markers can only be faked (current x/y placeholder). Decide with the user whether to do the API change now or keep placeholder positions during integration.
+> Cross-repo ordering: shared-types 2.12.0 must publish before api/mobile lockfiles can be regenerated (`npm install`) and their CI goes green — see each PR.
 
 ---
 
@@ -143,9 +143,9 @@ Shared pieces this branch introduced/consolidated; keep them intact:
 
 ## 10. Tests to update
 
-- The `react-native-maps` jest mock is already in `jest.setup.ts` (see §5).
-- `MapLayout.test.tsx` asserts `map-pin-*` testIDs + the selected-pin card, and passes `userCoords` + `recenterTick`. When pins become real `<Marker>`s, update those assertions.
-- Keep the full suite green: `npx jest` (currently **75 suites / 598 tests** passing; `npx tsc --noEmit` clean).
+- The `react-native-maps` jest mock is already in `jest.setup.ts` (see §5). The `Marker` stub spreads props onto a `View`, so `map-pin-*` `testID` + `onPress` still resolve after the move into `MapView`.
+- `MapLayout.test.tsx` asserts `map-pin-*` testIDs + the selected-pin card; fixtures now carry `anchorLat`/`anchorLng` (no more `x`/`y`). Assertions unchanged.
+- Keep the full suite green: `npx jest` (**75 suites / 598 tests** passing after this change; `npx tsc --noEmit` clean).
 
 ---
 
@@ -154,7 +154,7 @@ Shared pieces this branch introduced/consolidated; keep them intact:
 1. ~~Map provider~~ → **react-native-maps** ✅
 2. **Google Maps API key** provisioning → wiring done (env-injected); **user still needs to provision + restrict the Android key** (see §6 callout).
 3. ~~Dark map style~~ → **custom palette style following `useTheme()`** ✅
-4. **API change** to add group coordinates to `NearbyGroup` (needed for real markers) → **still open** — deferred this session (scope was backdrop + radius only). Do this next to unblock §7 markers.
+4. ~~**API change** to add group coordinates to `NearbyGroup` (needed for real markers)~~ → ✅ **done** on `feat/nearby-anchor-coords` (shared-types 2.12.0 + `GET /groups/nearby` + mobile markers). §7 unblocked.
 
 ---
 

@@ -26,6 +26,8 @@ const sampleGroup = {
   anchorType: AnchorType.NEIGHBORHOOD,
   anchorLabel: 'Morumbi',
   distanceMeters: 210,
+  anchorLat: -23.55,
+  anchorLng: -46.63,
   privacy: GroupPrivacy.OPEN,
   memberCount: 5,
 };

@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { SearchInput } from '@/shared/ui/SearchInput';
 import { NearbyGroupRow } from '@/shared/ui/nearbyGroup';
 import { MapCanvas } from './components/MapCanvas';
-import { MapPin } from './components/MapPin';
 import { MapCategoryChips } from './components/MapCategoryChips';
 import { MapRadiusControl } from './components/MapRadiusControl';
 import { MapActionRail } from './components/MapActionRail';
@@ -32,30 +31,20 @@ export default function MapLayout({
 }: MapLayoutProps) {
   const styles = useThemedStyles(createStyles);
   const selectedPin = pins.find((p) => p.id === selectedId) ?? null;
-  const isFiltered = filter !== 'all';
 
   return (
     <View style={styles.root}>
-      {/* Real interactive basemap: themed map + geo radius circle + user dot. */}
+      {/* Real interactive basemap: themed map + geo radius circle + user dot +
+          group markers positioned by their anchor coordinates. */}
       <MapCanvas
         userCoords={userCoords}
         radiusKm={radiusKm}
         recenterTick={recenterTick}
+        pins={pins}
+        selectedId={selectedId}
+        filter={filter}
+        onSelectPin={onSelectPin}
       />
-
-      {/* TODO(wire): pins are still screen-positioned placeholders (x/y) that
-          float over the map — real <Marker>s wait on anchor coords in
-          NearbyGroup (see MAP_INTEGRATION_HANDOFF.md §7). */}
-      {pins.map((pin) => (
-        <MapPin
-          key={pin.id}
-          pin={pin}
-          selected={pin.id === selectedId}
-          dimmed={isFiltered && pin.anchorType !== filter}
-          withLabel={isFiltered}
-          onSelect={onSelectPin}
-        />
-      ))}
 
       <View style={[styles.topStack, { top: topInset }]}>
         <SearchInput

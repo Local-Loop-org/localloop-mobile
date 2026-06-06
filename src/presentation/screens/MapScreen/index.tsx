@@ -9,9 +9,12 @@ import type { AnchorFilter, MapPinData } from './types';
 
 /**
  * Static placeholder pins, shaped like the API's `NearbyGroup` (so the
- * selected-pin card reuses `NearbyGroupRow`). `x`/`y` are fractions of the
- * map viewport. TODO(wire): replace with `useNearbyGroups` + live presence +
- * geo-projected positions once a real map provider is integrated — see plan.
+ * selected-pin card reuses `NearbyGroupRow`). `anchorLat`/`anchorLng` are real
+ * geo coordinates scattered around central Curitiba (the map's fallback
+ * center) so they render as `<Marker>`s on the basemap — but they only sit
+ * near the user when the user is in Curitiba. TODO(wire): replace with
+ * `useNearbyGroups` + live presence (handoff §8), which positions markers at
+ * each group's real anchor relative to the actual user location.
  */
 const MOCK_PINS: MapPinData[] = [
   {
@@ -21,13 +24,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.NEIGHBORHOOD,
     anchorLabel: 'Bairro',
     distanceMeters: 0,
+    anchorLat: -25.4284,
+    anchorLng: -49.2733,
     privacy: GroupPrivacy.OPEN,
     memberCount: 12,
     myRole: null,
     memberStatus: null,
     liveCount: 4,
-    x: 0.39,
-    y: 0.37,
   },
   {
     id: 'baggio',
@@ -36,13 +39,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.NEIGHBORHOOD,
     anchorLabel: 'Bairro',
     distanceMeters: 80,
+    anchorLat: -25.429,
+    anchorLng: -49.2715,
     privacy: GroupPrivacy.OPEN,
     memberCount: 7,
     myRole: null,
     memberStatus: null,
     liveCount: 1,
-    x: 0.595,
-    y: 0.318,
   },
   {
     id: 'ibira',
@@ -51,13 +54,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.ESTABLISHMENT,
     anchorLabel: 'Estabelecimento',
     distanceMeters: 120,
+    anchorLat: -25.4272,
+    anchorLng: -49.2748,
     privacy: GroupPrivacy.APPROVAL_REQUIRED,
     memberCount: 24,
     myRole: null,
     memberStatus: null,
     liveCount: 9,
-    x: 0.687,
-    y: 0.488,
   },
   {
     id: 'manfredini',
@@ -66,13 +69,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.ESTABLISHMENT,
     anchorLabel: 'Estabelecimento',
     distanceMeters: 210,
+    anchorLat: -25.4301,
+    anchorLng: -49.2756,
     privacy: GroupPrivacy.OPEN,
     memberCount: 18,
     myRole: null,
     memberStatus: null,
     liveCount: 5,
-    x: 0.246,
-    y: 0.46,
   },
   {
     id: 'condo',
@@ -81,13 +84,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.CONDO,
     anchorLabel: 'Condomínio',
     distanceMeters: 0,
+    anchorLat: -25.4268,
+    anchorLng: -49.2726,
     privacy: GroupPrivacy.APPROVAL_REQUIRED,
     memberCount: 58,
     myRole: null,
     memberStatus: null,
     liveCount: 6,
-    x: 0.508,
-    y: 0.604,
   },
   {
     id: 'corredores',
@@ -96,13 +99,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.ESTABLISHMENT,
     anchorLabel: 'Estabelecimento',
     distanceMeters: 340,
+    anchorLat: -25.4256,
+    anchorLng: -49.2762,
     privacy: GroupPrivacy.OPEN,
     memberCount: 41,
     myRole: null,
     memberStatus: null,
     liveCount: 3,
-    x: 0.164,
-    y: 0.277,
   },
   {
     id: 'evento',
@@ -111,13 +114,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.EVENT,
     anchorLabel: 'Evento',
     distanceMeters: 900,
+    anchorLat: -25.4322,
+    anchorLng: -49.2701,
     privacy: GroupPrivacy.OPEN,
     memberCount: 128,
     myRole: null,
     memberStatus: null,
     liveCount: 42,
-    x: 0.8,
-    y: 0.393,
   },
   {
     id: 'hauer',
@@ -126,13 +129,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.NEIGHBORHOOD,
     anchorLabel: 'Bairro',
     distanceMeters: 600,
+    anchorLat: -25.4247,
+    anchorLng: -49.2704,
     privacy: GroupPrivacy.OPEN,
     memberCount: 89,
     myRole: null,
     memberStatus: null,
     liveCount: 7,
-    x: 0.836,
-    y: 0.578,
   },
   {
     id: 'bar',
@@ -141,13 +144,13 @@ const MOCK_PINS: MapPinData[] = [
     anchorType: AnchorType.ESTABLISHMENT,
     anchorLabel: 'Estabelecimento',
     distanceMeters: 450,
+    anchorLat: -25.4308,
+    anchorLng: -49.2778,
     privacy: GroupPrivacy.OPEN,
     memberCount: 32,
     myRole: null,
     memberStatus: null,
     liveCount: 11,
-    x: 0.282,
-    y: 0.637,
   },
 ];
 

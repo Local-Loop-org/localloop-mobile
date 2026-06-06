@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/shared/icons';
 import { anchorIconName } from '@/shared/icons/anchorIcon';
 import { type ThemeColors } from '@/shared/theme';
@@ -15,33 +15,21 @@ interface MapPinProps {
   selected: boolean;
   dimmed: boolean;
   withLabel: boolean;
-  onSelect: (id: string) => void;
 }
 
-export function MapPin({ pin, selected, dimmed, withLabel, onSelect }: MapPinProps) {
+/**
+ * The pure visual for a group marker — the rounded-square badge + anchor icon,
+ * an optional live dot, and an optional name label. Geo positioning and press
+ * handling live on the enclosing `<Marker>` in `MapCanvas`; this is just its
+ * custom child view.
+ */
+export function MapPin({ pin, selected, dimmed, withLabel }: MapPinProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const square = selected ? SIZE_SELECTED : SIZE;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={() => onSelect(pin.id)}
-      testID={`map-pin-${pin.id}`}
-      accessibilityRole="button"
-      accessibilityLabel={pin.name}
-      accessibilityState={{ selected }}
-      style={[
-        styles.wrap,
-        {
-          left: `${pin.x * 100}%`,
-          top: `${pin.y * 100}%`,
-          transform: [{ translateX: -square / 2 }, { translateY: -square / 2 }],
-          opacity: dimmed ? 0.35 : 1,
-          zIndex: selected ? 25 : 10,
-        },
-      ]}
-    >
+    <View style={[styles.wrap, { opacity: dimmed ? 0.35 : 1 }]}>
       <View
         style={[
           styles.marker,
@@ -70,14 +58,13 @@ export function MapPin({ pin, selected, dimmed, withLabel, onSelect }: MapPinPro
           </Text>
         </View>
       ) : null}
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     wrap: {
-      position: 'absolute',
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
