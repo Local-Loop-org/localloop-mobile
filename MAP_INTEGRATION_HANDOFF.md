@@ -6,10 +6,15 @@
 
 ## 1. Where we are
 
-The **M6 "territory" Map screen** layout is built and merged into this branch (HOME-12). It currently renders over a **placeholder** map background with **static mock pins** and **no data wiring**. Two things remain, in order:
+The **M6 "territory" Map screen** layout is built and merged into this branch (HOME-12).
 
-1. **Map provider integration** (this next session) — replace the placeholder backdrop with a real, interactive map.
-2. **Data wiring** (later) — replace mock pins with live nearby-groups + presence, and wire join/navigate.
+✅ **Step 1 — Map provider integration is DONE** (this session). `react-native-maps` (1.27.2, SDK-pinned) replaces the placeholder backdrop: a real interactive basemap centered on the user, the discovery radius drawn as a geo `<Circle>`, and the native "you are here" dot. The basemap is themed to the LocalLoop palette and follows the Light/Dark toggle (custom JSON style on Android/Google, `userInterfaceStyle` on iOS/Apple). tsc + jest green (75 suites / 598). See §6 for the as-shipped detail and the **native rebuild + API key** steps the user must run.
+
+What remains, in order:
+
+1. ~~Map provider integration~~ ✅ done.
+2. **Real markers** (§7) — blocked on a cross-repo API change to add anchor coordinates to `NearbyGroup`. Mock pins currently still render as screen-positioned overlays.
+3. **Data wiring** (§8, later) — replace mock pins with live nearby-groups + presence, and wire join/navigate.
 
 Everything shipped so far is documented in PR #36 and the plan at `~/.claude/plans/fetch-this-design-file-scalable-kitten.md`.
 
@@ -26,19 +31,18 @@ Everything shipped so far is documented in PR #36 and the plan at `~/.claude/pla
 
 ---
 
-## 3. THE SEAM — where the real map mounts
+## 3. THE SEAM — DONE ✅
 
-In [src/presentation/screens/MapScreen/layout/index.tsx](src/presentation/screens/MapScreen/layout/index.tsx), the backdrop is:
+The backdrop in [src/presentation/screens/MapScreen/layout/index.tsx](src/presentation/screens/MapScreen/layout/index.tsx) is now the real map:
 
 ```tsx
-<RadiusMapPreview variant="fill" showBadge={false} showOverlay={false} radiusKm={radiusKm} />
-<MapRadiusRing radiusKm={radiusKm} />
-<MapUserLocation />
+<MapCanvas userCoords={userCoords} radiusKm={radiusKm} recenterTick={recenterTick} />
 ```
 
-- **Replace `RadiusMapPreview variant="fill"` with the real map component.** That single element is the placeholder backdrop.
-- `RadiusMapPreview` itself stays in the codebase — CreateGroup still uses its `variant="preview"` small radius preview. Only the Map's full-screen usage is replaced.
-- `MapRadiusRing` and `MapUserLocation` are **placeholder overlays** (screen-centered SVG ring + animated dot). Once the real map is in, replace them with the map library's geo primitives (see §6).
+- `MapCanvas` ([layout/components/MapCanvas.tsx](src/presentation/screens/MapScreen/layout/components/MapCanvas.tsx)) renders `<MapView>` full-bleed with a geo `<Circle>` (radius in metres) + `showsUserLocation`.
+- The old placeholders `RadiusMapPreview variant="fill"`, `MapRadiusRing`, and `MapUserLocation` were removed. `MapRadiusRing.tsx` / `MapUserLocation.tsx` are **deleted** (were Map-only).
+- `RadiusMapPreview` itself stays — CreateGroup still uses its `variant="preview"` small radius preview.
+- The container ([MapScreen/index.tsx](src/presentation/screens/MapScreen/index.tsx)) now calls `useCurrentLocation()` and passes `userCoords`; the compass/recenter button bumps `recenterTick` to re-frame on the user.
 
 ---
 
@@ -78,19 +82,20 @@ Static mock data: `MOCK_PINS` in `index.tsx` (9 pins). `x`/`y` are fractions of 
 
 ---
 
-## 6. Step 1 — Map provider integration
+## 6. Step 1 — Map provider integration ✅ DONE
 
-**Open decision for the user — pick a provider:**
-- **`react-native-maps`** — mature; `<MapView>` + `<Marker>`/`<Circle>`/`<Polygon>`; Google on Android (needs a **Google Maps API key**), Apple on iOS. Config plugin + native rebuild.
-- **`expo-maps`** — Expo's first-party maps (SDK 52+); `GoogleMaps`/`AppleMaps` views; config-plugin; also needs a dev build. Newer/less battle-tested; API still maturing.
+**Decision (user, 2026-06-05):** **`react-native-maps`** (1.27.2, via `npx expo install`). Dark styling: a **custom palette-matched style that follows `useTheme()`** so the basemap matches both Light and Dark.
 
-Recommended default: **react-native-maps** (richest overlay primitives — `<Circle>` for the radius, `<Marker>` for pins). Confirm with the user; also confirm **dark map styling** to match the palette (bg `#0A0A0D`-ish, surface `#15151B`, cyan accent `#00D9FF`) and **API key provisioning**.
+What shipped:
+1. `react-native-maps@1.27.2` installed (SDK-pinned).
+2. **Themed basemap** — [layout/components/mapStyle.ts](src/presentation/screens/MapScreen/layout/components/mapStyle.ts) holds `darkMapStyle`/`lightMapStyle` (Google JSON tuned to the palette). `MapCanvas` applies `customMapStyle` (Android/Google) **and** `userInterfaceStyle={mode}` (iOS/Apple), both driven by `useTheme().mode`.
+3. **Radius + location** — geo `<Circle radius={radiusKm*1000}>` (stroke `colors.primary`, fill `colors.duotoneSoftFrom`); `showsUserLocation` native dot; camera centers on `useCurrentLocation()` coords (fallback: central Curitiba) and re-frames on the compass button via the `recenterTick` prop.
+4. **jest** — `jest.mock('react-native-maps', …)` added in [jest.setup.ts](jest.setup.ts): `MapView` is a `forwardRef` exposing `animateToRegion`/`animateCamera`/`fitToCoordinates` as no-ops; `Marker`/`Circle`/… are plain-View stubs.
+5. **Config** — Android Google Maps key injected from `process.env.GOOGLE_MAPS_API_KEY` in [app.config.js](app.config.js) (kept out of source); documented in [.env.example](.env.example). iOS uses Apple Maps (no key).
 
-Tasks:
-1. Install the lib; add its config plugin to `app.json` plugins (+ Google Maps API keys for Android/iOS as needed).
-2. `npx expo prebuild` (or rebuild the dev client) — this touches `ios/`/`android/`.
-3. Add a `jest.mock(...)` for the map lib in `jest.setup.ts` (mirror the svg mock — return plain Views for `MapView`/`Marker`/`Circle`).
-4. Replace the backdrop seam (§3) with `<MapView>`, full-bleed. Center the camera on the user's location (`useCurrentLocation()` already exists at `src/application/hooks/useCurrentLocation/`). Apply the dark style.
+> ⚠️ **User must run before the map renders on device:**
+> 1. Put a **Google Maps (Android) API key** in `.env` as `GOOGLE_MAPS_API_KEY=…` — restrict it to the Maps SDK for Android + `com.localloop.app` + SHA-1.
+> 2. **Rebuild the dev client** so the native config is applied: `npx expo prebuild --clean` then `npx expo run:android` / `npx expo run:ios` (`ios/`+`android/` are gitignored/regenerated). iOS renders without a key (Apple Maps).
 
 ---
 
@@ -138,12 +143,12 @@ Shared pieces this branch introduced/consolidated; keep them intact:
 
 ---
 
-## 11. Open decisions to confirm with the user (before coding)
+## 11. Open decisions
 
-1. **Map provider**: react-native-maps vs expo-maps.
-2. **Google Maps API key** provisioning (+ Android/iOS config).
-3. **Dark map style** to match the app palette.
-4. **API change** to add group coordinates to `NearbyGroup` (needed for real markers) — do it now, or keep placeholder positions during integration?
+1. ~~Map provider~~ → **react-native-maps** ✅
+2. **Google Maps API key** provisioning → wiring done (env-injected); **user still needs to provision + restrict the Android key** (see §6 callout).
+3. ~~Dark map style~~ → **custom palette style following `useTheme()`** ✅
+4. **API change** to add group coordinates to `NearbyGroup` (needed for real markers) → **still open** — deferred this session (scope was backdrop + radius only). Do this next to unblock §7 markers.
 
 ---
 

@@ -47,6 +47,8 @@ function renderLayout(overrides: Partial<MapLayoutProps> = {}) {
     search: '',
     topInset: 47,
     bottomInset: 34,
+    userCoords: { lat: -25.4284, lng: -49.2733 },
+    recenterTick: 0,
     onChangeFilter: jest.fn(),
     onSelectPin: jest.fn(),
     onChangeRadius: jest.fn(),

@@ -1,11 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 import { SearchInput } from '@/shared/ui/SearchInput';
-import { RadiusMapPreview } from '@/shared/ui/radius';
 import { NearbyGroupRow } from '@/shared/ui/nearbyGroup';
+import { MapCanvas } from './components/MapCanvas';
 import { MapPin } from './components/MapPin';
-import { MapRadiusRing } from './components/MapRadiusRing';
-import { MapUserLocation } from './components/MapUserLocation';
 import { MapCategoryChips } from './components/MapCategoryChips';
 import { MapRadiusControl } from './components/MapRadiusControl';
 import { MapActionRail } from './components/MapActionRail';
@@ -21,6 +19,8 @@ export default function MapLayout({
   search,
   topInset,
   bottomInset,
+  userCoords,
+  recenterTick,
   onChangeFilter,
   onSelectPin,
   onChangeRadius,
@@ -36,18 +36,16 @@ export default function MapLayout({
 
   return (
     <View style={styles.root}>
-      {/* Placeholder map backdrop (grid/streets). Replace with a real map
-          provider when one is wired in. Its own ring/dot are off — the Map
-          renders correctly-sized, animated overlays instead. */}
-      <RadiusMapPreview
-        variant="fill"
-        showBadge={false}
-        showOverlay={false}
+      {/* Real interactive basemap: themed map + geo radius circle + user dot. */}
+      <MapCanvas
+        userCoords={userCoords}
         radiusKm={radiusKm}
+        recenterTick={recenterTick}
       />
-      <MapRadiusRing radiusKm={radiusKm} />
-      <MapUserLocation />
 
+      {/* TODO(wire): pins are still screen-positioned placeholders (x/y) that
+          float over the map — real <Marker>s wait on anchor coords in
+          NearbyGroup (see MAP_INTEGRATION_HANDOFF.md §7). */}
       {pins.map((pin) => (
         <MapPin
           key={pin.id}

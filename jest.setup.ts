@@ -117,6 +117,36 @@ jest.mock('react-native-svg', () => {
   };
 });
 
+jest.mock('react-native-maps', () => {
+  const ReactLib = require('react');
+  const { View } = require('react-native');
+  const Stub = ({ children, ...props }: { children?: React.ReactNode }) =>
+    ReactLib.createElement(View, props, children);
+  // MapView forwards a ref exposing its imperative methods as no-ops so callers
+  // that `mapRef.current?.animateToRegion(...)` don't blow up under jsdom.
+  const MapView = ReactLib.forwardRef(
+    ({ children, ...props }: { children?: React.ReactNode }, ref: unknown) => {
+      ReactLib.useImperativeHandle(ref, () => ({
+        animateToRegion: () => undefined,
+        animateCamera: () => undefined,
+        fitToCoordinates: () => undefined,
+      }));
+      return ReactLib.createElement(View, props, children);
+    },
+  );
+  return {
+    __esModule: true,
+    default: MapView,
+    Marker: Stub,
+    Circle: Stub,
+    Polygon: Stub,
+    Polyline: Stub,
+    Callout: Stub,
+    PROVIDER_GOOGLE: 'google',
+    PROVIDER_DEFAULT: undefined,
+  };
+});
+
 jest.mock('expo-linear-gradient', () => {
   const ReactLib = require('react');
   const { View } = require('react-native');

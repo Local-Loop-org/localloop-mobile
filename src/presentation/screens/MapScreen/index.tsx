@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
+import { useCurrentLocation } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import { StackRoutes, TabRoutes } from '@/presentation/navigation/routes';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import MapLayout from './layout';
@@ -154,13 +155,26 @@ const DEFAULT_RADIUS_KM = 0.5;
 
 export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
   const insets = useSafeAreaInsets();
+  const { coords, request } = useCurrentLocation();
   const [filter, setFilter] = useState<AnchorFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [search, setSearch] = useState('');
+  const [recenterTick, setRecenterTick] = useState(0);
+
+  // Resolve the device location so the basemap can center + draw the radius.
+  // Permission is normally already granted (onboarding/Home); this re-reads it.
+  useEffect(() => {
+    request();
+  }, [request]);
 
   const handleSelectPin = useCallback((id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleRecenter = useCallback(() => {
+    setSelectedId(null);
+    setRecenterTick((tick) => tick + 1);
   }, []);
 
   return (
@@ -172,11 +186,13 @@ export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
       search={search}
       topInset={insets.top}
       bottomInset={insets.bottom}
+      userCoords={coords}
+      recenterTick={recenterTick}
       onChangeFilter={setFilter}
       onSelectPin={handleSelectPin}
       onChangeRadius={setRadiusKm}
       onChangeSearch={setSearch}
-      onRecenter={() => setSelectedId(null)}
+      onRecenter={handleRecenter}
       onCreate={() => navigation.navigate(TabRoutes.CreateGroup)}
       onMyGroups={() => navigation.navigate(StackRoutes.MyGroups)}
       // onPressGroup omitted — TODO(wire): join + navigate (reuse HomeScreen logic).
