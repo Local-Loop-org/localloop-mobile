@@ -1,16 +1,21 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { MemberStatus, GroupPrivacy } from '@localloop/shared-types';
-import type { NearbyGroup } from '@/infra/api/groups.api';
+import { Text, View } from 'react-native';
+import {
+  GroupPrivacy,
+  MemberStatus,
+  type NearbyGroup,
+} from '@localloop/shared-types';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { createStyles } from './styles';
 
 interface Props {
-  group: NearbyGroup;
+  group: Pick<NearbyGroup, 'memberStatus' | 'privacy'>;
 }
 
-export function StatusBadge({ group }: Props) {
+/** Membership/privacy-aware action label for a nearby group row. */
+export function GroupStatusBadge({ group }: Props) {
   const styles = useThemedStyles(createStyles);
+
   if (group.memberStatus === MemberStatus.ACTIVE)
     return (
       <View style={styles.cardMemberBtn}>

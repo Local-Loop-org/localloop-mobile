@@ -10,11 +10,33 @@ import { formatRadiusKm, radiusToRingPx } from './radiusGeometry';
 const MAP_WIDTH = 327;
 const MAP_HEIGHT = 170;
 
+type RadiusMapVariant = 'preview' | 'fill';
+
 interface RadiusMapPreviewProps {
   radiusKm: number;
+  /**
+   * `'preview'` (default) renders the framed, fixed-aspect card used in the
+   * CreateGroup visibility section. `'fill'` renders edge-to-edge as a
+   * full-screen map placeholder (e.g. behind the Map screen) until a real
+   * map provider is wired in.
+   */
+  variant?: RadiusMapVariant;
+  /** Show the radius badge overlay (default true; Map hides it). */
+  showBadge?: boolean;
+  /**
+   * Draw the centered radius ring + "you are here" dot on the basemap
+   * (default true). The Map screen sets this false and renders its own
+   * correctly-sized, animated overlays instead of scaling these up.
+   */
+  showOverlay?: boolean;
 }
 
-export function RadiusMapPreview({ radiusKm }: RadiusMapPreviewProps) {
+export function RadiusMapPreview({
+  radiusKm,
+  variant = 'preview',
+  showBadge = true,
+  showOverlay = true,
+}: RadiusMapPreviewProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const cx = MAP_WIDTH / 2;
@@ -23,13 +45,15 @@ export function RadiusMapPreview({ radiusKm }: RadiusMapPreviewProps) {
     width: MAP_WIDTH,
     height: MAP_HEIGHT,
   });
+  const isFill = variant === 'fill';
 
   return (
-    <View style={styles.frame}>
+    <View style={isFill ? styles.fill : styles.frame}>
       <Svg
         viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
         width="100%"
         height="100%"
+        preserveAspectRatio={isFill ? 'xMidYMid slice' : 'xMidYMid meet'}
       >
         <Rect width={MAP_WIDTH} height={MAP_HEIGHT} fill={colors.surface} />
         {[40, 80, 120, 160].map((y) => (
@@ -80,33 +104,41 @@ export function RadiusMapPreview({ radiusKm }: RadiusMapPreviewProps) {
           strokeOpacity={0.18}
           strokeDasharray="2 3"
         />
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={ringR}
-          fill={colors.primary}
-          fillOpacity={0.10}
-        />
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={ringR}
-          stroke={colors.primary}
-          strokeWidth={1.4}
-          strokeDasharray="3 3"
-          strokeOpacity={0.85}
-          fill="none"
-        />
-        <Circle cx={cx} cy={cy} r={34} fill={colors.secondary} fillOpacity={0.18} />
-        <Circle cx={cx} cy={cy} r={20} fill={colors.secondary} fillOpacity={0.32} />
-        <Circle cx={cx} cy={cy} r={9} fill={colors.secondary} />
-        <Circle cx={cx} cy={cy} r={3} fill={colors.background} />
+        {showOverlay ? (
+          <>
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={ringR}
+              fill={colors.primary}
+              fillOpacity={0.10}
+            />
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={ringR}
+              stroke={colors.primary}
+              strokeWidth={1.4}
+              strokeDasharray="3 3"
+              strokeOpacity={0.85}
+              fill="none"
+            />
+            <Circle cx={cx} cy={cy} r={34} fill={colors.secondary} fillOpacity={0.18} />
+            <Circle cx={cx} cy={cy} r={20} fill={colors.secondary} fillOpacity={0.32} />
+            <Circle cx={cx} cy={cy} r={9} fill={colors.secondary} />
+            <Circle cx={cx} cy={cy} r={3} fill={colors.background} />
+          </>
+        ) : null}
       </Svg>
 
-      <View style={styles.badge} testID="radius-badge">
-        <Icon name="radar" size={11} color={colors.primary} strokeWidth={2.2} />
-        <Text style={styles.badgeText}>{formatRadiusKm(radiusKm).toUpperCase()}</Text>
-      </View>
+      {showBadge ? (
+        <View style={styles.badge} testID="radius-badge">
+          <Icon name="radar" size={11} color={colors.primary} strokeWidth={2.2} />
+          <Text style={styles.badgeText}>
+            {formatRadiusKm(radiusKm).toUpperCase()}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -121,6 +153,10 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.surface2,
     borderColor: colors.line,
     borderWidth: 1,
+  },
+  fill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.surface,
   },
   badge: {
     position: 'absolute',

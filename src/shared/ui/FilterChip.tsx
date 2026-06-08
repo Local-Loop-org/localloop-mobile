@@ -17,18 +17,23 @@ export interface ChipSpec<TId extends string = string> {
   count?: number;
   icon?: IconName;
   dot?: boolean;
+  /** Hide the label text visually while keeping it for accessibility. */
+  hideLabel?: boolean;
 }
 
 interface FilterChipProps<TId extends string = string> {
   spec: ChipSpec<TId>;
   active: boolean;
   onPress: (id: TId) => void;
+  /** Icon tint when inactive (defaults to a dim grey). */
+  iconColor?: string;
 }
 
 export function FilterChip<TId extends string = string>({
   spec,
   active,
   onPress,
+  iconColor,
 }: FilterChipProps<TId>) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
@@ -51,16 +56,18 @@ export function FilterChip<TId extends string = string>({
         <Icon
           name={spec.icon}
           size={12}
-          color={active ? colors.background : colors.dim}
+          color={active ? colors.background : (iconColor ?? colors.dim)}
           strokeWidth={2}
         />
       ) : null}
       {spec.dot ? (
         <View style={[styles.chipDot, active ? styles.chipDotActive : null]} />
       ) : null}
-      <Text style={[styles.chipLabel, active ? styles.chipLabelActive : null]}>
-        {spec.label}
-      </Text>
+      {!spec.hideLabel ? (
+        <Text style={[styles.chipLabel, active ? styles.chipLabelActive : null]}>
+          {spec.label}
+        </Text>
+      ) : null}
       {spec.count !== undefined ? (
         <Text
           style={[styles.chipCount, active ? styles.chipCountActive : null]}

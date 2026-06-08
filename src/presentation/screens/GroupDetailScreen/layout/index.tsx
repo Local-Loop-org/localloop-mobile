@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { MemberRole } from '@localloop/shared-types';
 import { useTheme } from '@/shared/theme/useTheme';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
+import { useScrollLock } from '@/shared/ui/useScrollLock';
 import { GradientButton } from '@/presentation/screens/CreateGroupScreen/layout/atoms/GradientButton';
 import { LocationSection } from '@/presentation/screens/CreateGroupScreen/layout/sections/LocationSection';
 import { VisibilitySection } from '@/presentation/screens/CreateGroupScreen/layout/sections/VisibilitySection';
@@ -81,6 +82,8 @@ export default function GroupDetailLayout({
 }: GroupDetailLayoutProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
+  // Lock vertical scroll while the user pans the embedded map (edit mode only).
+  const { scrollEnabled, lock, unlock } = useScrollLock();
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -143,6 +146,7 @@ export default function GroupDetailLayout({
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={scrollEnabled}
       >
         <Hero
           name={displayName}
@@ -204,8 +208,19 @@ export default function GroupDetailLayout({
 
         <VisibilitySection
           radiusKm={displayRadiusKm}
+          anchorCoords={
+            isEditing && editDraft
+              ? { lat: editDraft.lat, lng: editDraft.lng }
+              : { lat: group.anchorLat, lng: group.anchorLng }
+          }
           readOnly={!isEditing}
           onChange={(v) => onDraftChange('radiusKm', v)}
+          onAnchorCoordsChange={(coords) => {
+            onDraftChange('lat', coords.lat);
+            onDraftChange('lng', coords.lng);
+          }}
+          onMapInteractStart={lock}
+          onMapInteractEnd={unlock}
         />
 
         {!showAboutStats ? (

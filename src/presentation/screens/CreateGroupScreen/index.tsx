@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
-import { useCurrentLocation } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
+import {
+  useCurrentLocation,
+  type Coords,
+} from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import { useCreateGroup } from '@/application/hooks/useCreateGroup/useCreateGroup';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -26,12 +29,29 @@ export default function CreateGroupScreen({ navigation }: Props) {
   const [sendPerm, setSendPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
   const [sendMediaPerm, setSendMediaPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
 
+  // Anchor for the group. Seeded from device GPS and kept in sync with it until
+  // the user explicitly repositions the pin on the map (`anchorPicked`), after
+  // which their choice is authoritative. `anchorCoords` stays null — and the
+  // group is therefore never submittable — until GPS resolves or the user picks,
+  // so the map's fallback region can't leak in as an accidental anchor.
+  const [anchorCoords, setAnchorCoords] = useState<Coords | null>(null);
+  const [anchorPicked, setAnchorPicked] = useState(false);
+
   const { coords, granted, request: requestLocation } = useCurrentLocation();
   const createGroup = useCreateGroup();
 
   useEffect(() => {
     void requestLocation();
   }, [requestLocation]);
+
+  useEffect(() => {
+    if (coords && !anchorPicked) setAnchorCoords(coords);
+  }, [coords, anchorPicked]);
+
+  const handleAnchorChange = useCallback((next: Coords) => {
+    setAnchorPicked(true);
+    setAnchorCoords(next);
+  }, []);
 
   const canSubmit = name.trim().length > 0 && !createGroup.isPending;
 
@@ -44,8 +64,10 @@ export default function CreateGroupScreen({ navigation }: Props) {
       Alert.alert('Ops', 'Informe o local de referência.');
       return;
     }
-    let finalCoords = coords;
-    if (!granted || !finalCoords) {
+    // Prefer the anchor the user positioned on the map; fall back to raw GPS,
+    // and only re-request permission if we have no coordinates at all.
+    let finalCoords = anchorCoords ?? coords;
+    if (!finalCoords) {
       finalCoords = await requestLocation();
       if (!finalCoords) {
         Alert.alert(
@@ -81,6 +103,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
       anchorLabel={anchorLabel}
       privacy={privacy}
       radiusKm={radiusKm}
+      anchorCoords={anchorCoords}
       sendPerm={sendPerm}
       sendMediaPerm={sendMediaPerm}
       locationGranted={granted}
@@ -92,6 +115,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
       onAnchorLabelChange={setAnchorLabel}
       onPrivacyChange={setPrivacy}
       onRadiusChange={setRadiusKm}
+      onAnchorCoordsChange={handleAnchorChange}
       onSendPermChange={setSendPerm}
       onSendMediaPermChange={setSendMediaPerm}
       onSubmit={handleSubmit}

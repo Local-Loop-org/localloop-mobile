@@ -1,23 +1,17 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
-import {
-  GroupPrivacy,
-  MemberRole,
-  MemberStatus,
-} from '@localloop/shared-types';
 import {
   type Coords,
   useCurrentLocation,
 } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import { useNearbyGroups } from '@/application/hooks/useNearbyGroups/useNearbyGroups';
 import { useMyGroups } from '@/application/hooks/useMyGroups/useMyGroups';
-import { useJoinGroup } from '@/application/hooks/useJoinGroup/useJoinGroup';
+import { useGroupJoinFlow } from '@/application/hooks/useGroupJoinFlow/useGroupJoinFlow';
 import { useHomePushBootstrap } from '@/application/hooks/usePushNotifications/usePushNotifications';
 import { useUserProfile } from '@/application/hooks/useUserProfile/useUserProfile';
 import { useGroupListRealtime } from '@/application/hooks/useGroupListRealtime/useGroupListRealtime';
 import { usePreferencesStore } from '@/application/stores/preferences.store';
-import type { MyGroup, NearbyGroup } from '@/infra/api/groups.api';
+import { canShowPresence, withLiveCount } from '@/shared/groups/presence';
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
 import HomeLayout from './layout';
@@ -30,27 +24,10 @@ const LOCATION_DENIED_MESSAGE =
 const FETCH_FAILED_MESSAGE =
   'Não foi possível carregar os grupos. Tente novamente.';
 
-function canShowPresence(group: NearbyGroup): boolean {
-  return (
-    group.privacy === GroupPrivacy.OPEN ||
-    group.memberStatus === MemberStatus.ACTIVE
-  );
-}
-
-function withLiveCount<T extends MyGroup | NearbyGroup>(
-  group: T,
-  liveCount: number,
-): T & { liveCount?: number } {
-  return liveCount > 0 ? { ...group, liveCount } : group;
-}
-
 export default function HomeScreen({ navigation }: Props) {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [optimisticPending, setOptimisticPending] = useState<Set<string>>(
-    new Set(),
-  );
   const didFocusOnceRef = useRef(false);
 
   const discoveryRadiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
@@ -59,7 +36,6 @@ export default function HomeScreen({ navigation }: Props) {
   const query = useNearbyGroups(coords, discoveryRadiusKm);
   const myGroupsQuery = useMyGroups();
   const profileQuery = useUserProfile();
-  const joinMutation = useJoinGroup();
   const isFocused = useIsFocused();
 
   useHomePushBootstrap(
@@ -103,17 +79,12 @@ export default function HomeScreen({ navigation }: Props) {
   const groups = query.data ?? [];
   const myGroups = myGroupsQuery.data ?? [];
 
-  const myGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
+  const { effectiveGroups, handlePressGroup } = useGroupJoinFlow({
+    groups,
+    navigation,
+  });
 
-  const effectiveGroups = useMemo(
-    () =>
-      groups.map((g) =>
-        optimisticPending.has(g.id)
-          ? { ...g, memberStatus: MemberStatus.PENDING }
-          : g,
-      ),
-    [groups, optimisticPending],
-  );
+  const myGroupIds = useMemo(() => myGroups.map((g) => g.id), [myGroups]);
 
   const presenceGroupIds = useMemo(() => {
     const ids = new Set<string>();
@@ -154,84 +125,6 @@ export default function HomeScreen({ navigation }: Props) {
     : query.isError
       ? FETCH_FAILED_MESSAGE
       : null;
-
-  const navigateToChat = useCallback(
-    (
-      id: string,
-      groupName: string,
-      anchorType: NearbyGroup['anchorType'],
-      myRole: NearbyGroup['myRole'],
-    ) => {
-      navigation.navigate('GroupChat', {
-        groupId: id,
-        groupName,
-        anchorType,
-        myRole,
-      });
-    },
-    [navigation],
-  );
-
-  const promptJoinRequest = useCallback(
-    (id: string, group: NearbyGroup) => {
-      Alert.alert(
-        'Solicitar entrada?',
-        `${group.name} requer aprovação de um moderador para participar. Deseja enviar uma solicitação?`,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Solicitar',
-            onPress: async () => {
-              setOptimisticPending((prev) => new Set([...prev, id]));
-              try {
-                await joinMutation.mutateAsync({ groupId: id, group });
-                Alert.alert(
-                  'Solicitação enviada',
-                  'Aguarde a aprovação de um moderador para entrar no grupo.',
-                );
-              } catch {
-                setOptimisticPending((prev) => {
-                  const next = new Set(prev);
-                  next.delete(id);
-                  return next;
-                });
-                Alert.alert(
-                  'Erro',
-                  'Não foi possível enviar sua solicitação. Tente novamente.',
-                );
-              }
-            },
-          },
-        ],
-      );
-    },
-    [joinMutation],
-  );
-
-  const handlePressGroup = useCallback(
-    (id: string) => {
-      const group = effectiveGroups.find((g) => g.id === id);
-      if (!group) return;
-
-      if (group.memberStatus === MemberStatus.PENDING) return;
-
-      if (joinMutation.isPending) return;
-
-      if (group.memberStatus === MemberStatus.ACTIVE) {
-        navigateToChat(id, group.name, group.anchorType, group.myRole);
-        return;
-      }
-
-      if (group.privacy === GroupPrivacy.OPEN) {
-        joinMutation.mutate({ groupId: id, group });
-        navigateToChat(id, group.name, group.anchorType, MemberRole.MEMBER);
-        return;
-      }
-
-      promptJoinRequest(id, group);
-    },
-    [effectiveGroups, joinMutation, navigateToChat, promptJoinRequest],
-  );
 
   return (
     <HomeLayout
