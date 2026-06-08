@@ -1,16 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
-import MapView, {
-  Circle,
-  Marker,
-  PROVIDER_GOOGLE,
-  type Region,
-} from 'react-native-maps';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import type { Coords } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import { useTheme } from '@/shared/theme/useTheme';
+import {
+  FALLBACK_COORDS,
+  darkMapStyle,
+  lightMapStyle,
+  regionFor,
+} from '@/shared/map';
 import type { AnchorFilter, MapPinData } from '../../types';
 import { MapPin } from './MapPin';
-import { darkMapStyle, lightMapStyle } from './mapStyle';
 
 interface MapCanvasProps {
   /** Device location; `null` until the permission/fetch resolves. */
@@ -27,26 +27,6 @@ interface MapCanvasProps {
   filter: AnchorFilter;
   /** Tapping a marker selects its group. */
   onSelectPin: (id: string) => void;
-}
-
-const KM_PER_DEG_LAT = 111;
-
-/**
- * Fallback camera until the user's location resolves — central Curitiba, where
- * the mock discovery data is anchored. Replaced the moment `userCoords` arrives.
- */
-const FALLBACK_COORDS: Coords = { lat: -25.4284, lng: -49.2733 };
-
-/** A region centered on `coords` framed to comfortably contain the radius circle. */
-function regionFor({ lat, lng }: Coords, radiusKm: number): Region {
-  // 2.6× the diameter leaves margin around the ring at any radius.
-  const latitudeDelta = Math.max(0.01, (radiusKm * 2.6) / KM_PER_DEG_LAT);
-  return {
-    latitude: lat,
-    longitude: lng,
-    latitudeDelta,
-    longitudeDelta: latitudeDelta,
-  };
 }
 
 /**

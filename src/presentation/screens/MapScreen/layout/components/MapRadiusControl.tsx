@@ -15,15 +15,23 @@ const THUMB_SIZE = 14;
 interface MapRadiusControlProps {
   value: number;
   /**
-   * Commit-on-release: the drafted value is committed only when the drag ends,
-   * so binding this to the shared radius preference doesn't write to storage or
-   * refetch nearby groups on every pan tick. The thumb still tracks the drag
-   * live via the slider hook's internal draft.
+   * Live, per-tick updates while dragging — used to drive on-map UI (the radius
+   * circle) in real time. Cheap, in-memory only; must NOT persist or refetch.
+   */
+  onChange: (value: number) => void;
+  /**
+   * Commit-on-release: only the final value is committed when the drag ends, so
+   * the expensive work (writing the shared radius preference + refetching nearby
+   * groups) runs once per gesture instead of on every pan tick.
    */
   onCommit: (value: number) => void;
 }
 
-export function MapRadiusControl({ value, onCommit }: MapRadiusControlProps) {
+export function MapRadiusControl({
+  value,
+  onChange,
+  onCommit,
+}: MapRadiusControlProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const { onTrackLayout, panHandlers, displayValue, fillPct, trackWidth } =
@@ -32,6 +40,7 @@ export function MapRadiusControl({ value, onCommit }: MapRadiusControlProps) {
       min: MIN_KM,
       max: MAX_KM,
       step: STEP_KM,
+      onChange,
       onCommit,
     });
 

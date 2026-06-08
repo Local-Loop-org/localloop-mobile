@@ -22,11 +22,19 @@ export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
   const [recenterTick, setRecenterTick] = useState(0);
 
   // The discovery radius is shared with Home + Profile via the preferences
-  // store, so all three surfaces stay in sync.
+  // store, so all three surfaces stay in sync. Only the *committed* value
+  // (changed on slider release) drives the nearby-groups query + preference write.
   const discoveryRadiusKm = usePreferencesStore((s) => s.discoveryRadiusKm);
   const setDiscoveryRadiusKm = usePreferencesStore(
     (s) => s.setDiscoveryRadiusKm,
   );
+
+  // Live radius for the on-map circle: tracks the slider drag in real time while
+  // the committed value (and thus the query/preference) only changes on release.
+  const [displayRadiusKm, setDisplayRadiusKm] = useState(discoveryRadiusKm);
+  useEffect(() => {
+    setDisplayRadiusKm(discoveryRadiusKm);
+  }, [discoveryRadiusKm]);
 
   // Resolve the device location so the basemap can center + draw the radius.
   // Permission is normally already granted (onboarding/Home); this re-reads it.
@@ -79,6 +87,7 @@ export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
 
   const handleCommitRadius = useCallback(
     (km: number) => {
+      setDisplayRadiusKm(km);
       if (km !== discoveryRadiusKm) void setDiscoveryRadiusKm(km);
     },
     [discoveryRadiusKm, setDiscoveryRadiusKm],
@@ -89,7 +98,7 @@ export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
       pins={pins}
       filter={filter}
       selectedId={selectedId}
-      radiusKm={discoveryRadiusKm}
+      radiusKm={displayRadiusKm}
       search={search}
       topInset={insets.top}
       bottomInset={insets.bottom}
@@ -97,6 +106,7 @@ export default function MapScreen({ navigation }: HomeTabsScreenProps<'Map'>) {
       recenterTick={recenterTick}
       onChangeFilter={setFilter}
       onSelectPin={handleSelectPin}
+      onChangeRadius={setDisplayRadiusKm}
       onCommitRadius={handleCommitRadius}
       onChangeSearch={setSearch}
       onRecenter={handleRecenter}

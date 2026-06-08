@@ -76,6 +76,8 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
       anchorLabel: group.anchorLabel,
       privacy: group.privacy,
       radiusKm: group.radiusKm ?? 25,
+      lat: group.anchorLat,
+      lng: group.anchorLng,
     });
   };
 

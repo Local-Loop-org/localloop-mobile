@@ -15,6 +15,8 @@ export interface MapLayoutProps {
   recenterTick: number;
   onChangeFilter: (filter: AnchorFilter) => void;
   onSelectPin: (id: string) => void;
+  /** Live radius updates while dragging — drives the on-map circle, no persistence. */
+  onChangeRadius: (km: number) => void;
   /** Commit-on-release of the radius slider (persists to the shared preference). */
   onCommitRadius: (km: number) => void;
   onChangeSearch: (text: string) => void;

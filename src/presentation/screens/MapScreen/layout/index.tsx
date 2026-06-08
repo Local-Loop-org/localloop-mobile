@@ -22,6 +22,7 @@ export default function MapLayout({
   recenterTick,
   onChangeFilter,
   onSelectPin,
+  onChangeRadius,
   onCommitRadius,
   onChangeSearch,
   onRecenter,
@@ -54,7 +55,11 @@ export default function MapLayout({
         />
         <MapCategoryChips pins={pins} filter={filter} onChange={onChangeFilter} />
         <View style={styles.radiusRow}>
-          <MapRadiusControl value={radiusKm} onCommit={onCommitRadius} />
+          <MapRadiusControl
+            value={radiusKm}
+            onChange={onChangeRadius}
+            onCommit={onCommitRadius}
+          />
         </View>
       </View>
 

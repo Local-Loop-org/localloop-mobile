@@ -63,6 +63,14 @@ export interface UpdateGroupBody {
   anchorLabel?: string;
   privacy?: GroupPrivacy;
   radiusKm?: number;
+  /**
+   * Relocated anchor coordinates. Sent by the GroupDetail edit map but currently
+   * stripped server-side (the API ignores them until anchor relocation lands —
+   * see status.md "anchor relocation on update"). Until then the anchor reverts
+   * on refetch.
+   */
+  lat?: number;
+  lng?: number;
 }
 
 export type JoinGroupResult =

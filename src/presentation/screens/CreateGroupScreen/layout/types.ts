@@ -1,4 +1,5 @@
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
+import type { Coords } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
 import type { SendPermValue } from './components/SendPermPicker';
 
 export type { SendPermValue };
@@ -9,6 +10,8 @@ export interface CreateGroupLayoutProps {
   placeType: AnchorType;
   anchorLabel: string;
   privacy: GroupPrivacy;
+  /** Group anchor picked on the map; `null` until device location resolves. */
+  anchorCoords: Coords | null;
   /**
    * Local-only state (not yet persisted to the API). Wired through the layout
    * so the controls behave correctly; dropped at submit time. Tracked under
@@ -28,6 +31,7 @@ export interface CreateGroupLayoutProps {
   onAnchorLabelChange: (value: string) => void;
   onPrivacyChange: (value: GroupPrivacy) => void;
   onRadiusChange: (value: number) => void;
+  onAnchorCoordsChange: (coords: Coords) => void;
   onSendPermChange: (value: SendPermValue) => void;
   onSendMediaPermChange: (value: SendPermValue) => void;
 

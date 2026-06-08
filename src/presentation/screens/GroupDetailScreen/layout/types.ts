@@ -11,6 +11,9 @@ export interface GroupEditDraft {
   anchorLabel: string;
   privacy: GroupPrivacy;
   radiusKm: number;
+  /** Anchor position, editable via the map picker. Seeded from the group on edit start. */
+  lat: number;
+  lng: number;
 }
 
 export type JoinButtonState = 'join' | 'pending' | 'joined';
