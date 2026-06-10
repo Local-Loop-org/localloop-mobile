@@ -44,6 +44,34 @@ describe('groupsApi', () => {
     expect(result).toEqual(response);
   });
 
+  it('createGroup allows a null anchor label', async () => {
+    const body = {
+      name: 'Morumbi Runners',
+      anchorType: AnchorType.NEIGHBORHOOD,
+      anchorLabel: null,
+      lat: -23.55,
+      lng: -46.63,
+      privacy: GroupPrivacy.OPEN,
+    };
+    const response = {
+      id: 'g-1',
+      name: body.name,
+      anchorType: body.anchorType,
+      anchorLabel: null,
+      privacy: body.privacy,
+      memberCount: 1,
+      myRole: MemberRole.OWNER,
+    };
+    mock.onPost('/groups').reply((config) => {
+      expect(JSON.parse(config.data)).toEqual(body);
+      return [200, response];
+    });
+
+    const result = await groupsApi.createGroup(body);
+
+    expect(result.anchorLabel).toBeNull();
+  });
+
   it('getNearbyGroups GETs /groups/nearby with lat/lng params and unwraps data', async () => {
     const groups = [
       {

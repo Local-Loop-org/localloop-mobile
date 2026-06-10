@@ -12,7 +12,7 @@ import { AnchorType } from '@localloop/shared-types';
 import { fonts, type ThemeColors } from '@/shared/theme';
 import { useTheme } from '@/shared/theme/useTheme';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
-import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
+import { ANCHOR_TYPE_LABELS, formatAnchorLabel } from '@/shared/anchor/labels';
 import type { GroupMember } from '@/infra/api/groups.api';
 import { GroupAvatar } from '../atoms/GroupAvatar';
 import { MemberStack } from '../atoms/MemberStack';
@@ -22,7 +22,7 @@ interface HeroProps {
   name: string;
   description: string | null;
   anchorType: AnchorType;
-  anchorLabel: string;
+  anchorLabel: string | null;
   memberCount: number;
   /** Top of the members list — fed into the inline MemberStack. */
   members: GroupMember[];
@@ -52,6 +52,7 @@ export function Hero({
 }: HeroProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
+  const displayedAnchorLabel = formatAnchorLabel(anchorLabel);
   const stack = members.map((m) => ({
     id: m.userId,
     displayName: m.displayName,
@@ -146,8 +147,10 @@ export function Hero({
           <View>
             <Text style={styles.membersCount}>{memberCount} membros</Text>
             <Text style={styles.membersMeta} numberOfLines={1}>
-              {ANCHOR_TYPE_LABELS[anchorType].toUpperCase()} ·{' '}
-              {anchorLabel.toUpperCase()}
+              {ANCHOR_TYPE_LABELS[anchorType].toUpperCase()}
+              {displayedAnchorLabel
+                ? ` · ${displayedAnchorLabel.toUpperCase()}`
+                : ''}
             </Text>
           </View>
         </View>

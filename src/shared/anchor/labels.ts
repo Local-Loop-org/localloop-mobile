@@ -16,3 +16,9 @@ export const ANCHOR_SECTION_LABELS: Record<AnchorType, string> = {
   [AnchorType.EVENT]: 'Eventos',
   [AnchorType.CITY]: 'Cidades',
 };
+
+export function formatAnchorLabel(
+  anchorLabel: string | null | undefined,
+): string {
+  return anchorLabel?.trim() ?? '';
+}

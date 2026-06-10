@@ -82,7 +82,16 @@ describe('CreateGroupScreen', () => {
     ).toBe(true);
   });
 
-  it('alerts with the new copy when anchorLabel is whitespace-only', async () => {
+  it('submits anchorLabel=null when the reference label is whitespace-only', async () => {
+    mutateAsync.mockResolvedValueOnce({
+      id: 'g-new',
+      name: 'Morumbi Runners',
+      anchorType: AnchorType.ESTABLISHMENT,
+      anchorLabel: null,
+      privacy: GroupPrivacy.OPEN,
+      memberCount: 1,
+      myRole: MemberRole.OWNER,
+    });
     const utils = await renderScreen();
     fireEvent.changeText(
       utils.getByPlaceholderText('Nome do grupo'),
@@ -94,8 +103,9 @@ describe('CreateGroupScreen', () => {
       fireEvent.press(utils.getByTestId('create-group-submit'));
     });
 
-    expect(alertSpy).toHaveBeenCalledWith('Ops', 'Informe o local de referência.');
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ anchorLabel: null }),
+    );
   });
 
   it('alerts when location permission is denied', async () => {

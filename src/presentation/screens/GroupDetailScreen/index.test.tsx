@@ -601,6 +601,32 @@ describe('GroupDetailScreen', () => {
     );
   });
 
+  it('edit: sends anchorLabel=null when the edited label is blank', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({
+        myRole: MemberRole.OWNER,
+        anchorLabel: 'Original Label',
+      }),
+    );
+    mockedUpdateGroup.mockResolvedValueOnce(
+      buildGroup({ myRole: MemberRole.OWNER, anchorLabel: null }),
+    );
+
+    const { findByTestId, getByTestId } = renderScreen();
+
+    fireEvent.press(await findByTestId('group-detail-edit'));
+    fireEvent.changeText(getByTestId('create-group-anchor-label'), '   ');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('group-detail-save-edit'));
+    });
+
+    expect(mockedUpdateGroup).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ anchorLabel: null }),
+    );
+  });
+
   it('edit: cancel discards draft without calling updateGroup', async () => {
     mockedGetDetail.mockResolvedValueOnce(
       buildGroup({ myRole: MemberRole.OWNER, name: 'Original Name' }),

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { AnchorIconBadge } from '@/shared/icons';
+import { formatAnchorLabel } from '@/shared/anchor/labels';
 import { formatDistance } from '@/shared/format/distance';
 import { GroupStatusBadge } from '@/shared/ui/nearbyGroup';
 import type { HomeNearbyGroup } from '../types';
@@ -41,7 +42,7 @@ export function DiscoverCard({ group, onPress }: Props) {
         {group.name}
       </Text>
       <Text style={styles.cardAnchor} numberOfLines={1}>
-        {group.anchorLabel}
+        {formatAnchorLabel(group.anchorLabel)}
       </Text>
       <View style={styles.cardFooter}>
         <Text style={styles.cardMeta} numberOfLines={1}>

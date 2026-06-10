@@ -73,7 +73,7 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
     setEditDraft({
       name: group.name,
       description: group.description,
-      anchorLabel: group.anchorLabel,
+      anchorLabel: group.anchorLabel ?? '',
       privacy: group.privacy,
       radiusKm: group.radiusKm ?? 25,
       lat: group.anchorLat,
@@ -85,8 +85,12 @@ export default function GroupDetailScreen({ navigation, route }: Props) {
 
   const handleSaveEdit = () => {
     if (!editDraft) return;
+    const body = {
+      ...editDraft,
+      anchorLabel: editDraft.anchorLabel.trim() || null,
+    };
     updateMutation.mutate(
-      { groupId, body: editDraft },
+      { groupId, body },
       {
         onSuccess: () => setEditDraft(null),
         onError: () =>

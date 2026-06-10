@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MemberRole } from '@localloop/shared-types';
+import { formatAnchorLabel } from '@/shared/anchor/labels';
 import { useTheme } from '@/shared/theme/useTheme';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { useScrollLock } from '@/shared/ui/useScrollLock';
@@ -125,7 +126,9 @@ export default function GroupDetailLayout({
   const displayDescription =
     isEditing && editDraft ? editDraft.description : group.description;
   const displayAnchorLabel =
-    isEditing && editDraft ? editDraft.anchorLabel : group.anchorLabel;
+    isEditing && editDraft
+      ? editDraft.anchorLabel
+      : formatAnchorLabel(group.anchorLabel);
   const displayPrivacy =
     isEditing && editDraft ? editDraft.privacy : group.privacy;
   const displayRadiusKm =

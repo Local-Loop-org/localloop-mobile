@@ -23,7 +23,7 @@ export interface CreateGroupBody {
   name: string;
   description?: string;
   anchorType: AnchorType;
-  anchorLabel: string;
+  anchorLabel?: string | null;
   lat: number;
   lng: number;
   privacy: GroupPrivacy;
@@ -34,7 +34,7 @@ export interface CreatedGroup {
   id: string;
   name: string;
   anchorType: AnchorType;
-  anchorLabel: string;
+  anchorLabel: string | null;
   privacy: GroupPrivacy;
   memberCount: number;
   myRole: MemberRole;
@@ -47,7 +47,7 @@ export interface GroupDetail {
   anchorType: AnchorType;
   anchorLat: number;
   anchorLng: number;
-  anchorLabel: string;
+  anchorLabel: string | null;
   privacy: GroupPrivacy;
   radiusKm?: number;
   memberCount: number;
@@ -60,7 +60,7 @@ export interface GroupDetail {
 export interface UpdateGroupBody {
   name?: string;
   description?: string | null;
-  anchorLabel?: string;
+  anchorLabel?: string | null;
   privacy?: GroupPrivacy;
   radiusKm?: number;
   /**

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
-import { ANCHOR_TYPE_LABELS } from '@/shared/anchor/labels';
+import { ANCHOR_TYPE_LABELS, formatAnchorLabel } from '@/shared/anchor/labels';
 import { anchorIconName, type IconName } from '@/shared/icons';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
 import { StatPill } from '../atoms/StatPill';
@@ -9,7 +9,7 @@ import { StatPill } from '../atoms/StatPill';
 interface AboutStatsSectionProps {
   memberCount: number;
   anchorType: AnchorType;
-  anchorLabel: string;
+  anchorLabel: string | null;
   privacy: GroupPrivacy;
   distanceLabel?: string | null;
   /** Optional: hide the radius pill if data isn't available yet. */
@@ -39,6 +39,8 @@ export function AboutStatsSection({
   distanceLabel,
   radiusKm,
 }: AboutStatsSectionProps) {
+  const displayedAnchorLabel = formatAnchorLabel(anchorLabel);
+
   return (
     <View>
       <SectionLabel label='Sobre o Grupo' />
@@ -59,7 +61,7 @@ export function AboutStatsSection({
         <StatPill
           icon={anchorIconName(anchorType)}
           label={ANCHOR_TYPE_LABELS[anchorType]}
-          value={anchorLabel}
+          value={displayedAnchorLabel}
         />
         {distanceLabel ? (
           <StatPill

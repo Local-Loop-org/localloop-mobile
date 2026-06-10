@@ -60,10 +60,6 @@ export default function CreateGroupScreen({ navigation }: Props) {
       Alert.alert('Ops', 'Informe o nome do grupo.');
       return;
     }
-    if (!anchorLabel.trim()) {
-      Alert.alert('Ops', 'Informe o local de referência.');
-      return;
-    }
     // Prefer the anchor the user positioned on the map; fall back to raw GPS,
     // and only re-request permission if we have no coordinates at all.
     let finalCoords = anchorCoords ?? coords;
@@ -83,7 +79,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
         name: name.trim(),
         description: description.trim() || undefined,
         anchorType: placeType,
-        anchorLabel: anchorLabel.trim(),
+        anchorLabel: anchorLabel.trim() || null,
         lat: finalCoords.lat,
         lng: finalCoords.lng,
         privacy,
