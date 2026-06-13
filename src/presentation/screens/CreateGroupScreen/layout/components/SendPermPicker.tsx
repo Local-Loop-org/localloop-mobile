@@ -1,14 +1,13 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MessagePermission } from '@localloop/shared-types';
 import type { ThemeColors } from '@/shared/theme';
 import { useTheme } from '@/shared/theme/useTheme';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 
-export type SendPermValue = 'all' | 'within_radius' | 'admins_only';
-
 interface SendPermOption {
-  value: SendPermValue;
+  value: MessagePermission;
   label: string;
   sub: string;
   icon: IconName;
@@ -16,19 +15,19 @@ interface SendPermOption {
 
 export const SEND_PERM_OPTIONS: SendPermOption[] = [
   {
-    value: 'all',
+    value: MessagePermission.ALL_MEMBERS,
     label: 'Todos',
     sub: 'Qualquer membro',
     icon: 'users',
   },
   {
-    value: 'within_radius',
+    value: MessagePermission.MEMBERS_IN_RADIUS,
     label: 'Dentro do raio',
     sub: 'Só quem está no raio do grupo',
     icon: 'radar',
   },
   {
-    value: 'admins_only',
+    value: MessagePermission.ADMIN_ONLY,
     label: 'Só admins',
     sub: 'Apenas administradores',
     icon: 'shield',
@@ -36,8 +35,8 @@ export const SEND_PERM_OPTIONS: SendPermOption[] = [
 ];
 
 interface SendPermPickerProps {
-  value: SendPermValue;
-  onChange?: (value: SendPermValue) => void;
+  value: MessagePermission;
+  onChange?: (value: MessagePermission) => void;
   /** Used to scope `testID`s when the same picker is rendered twice on a screen. */
   testIdPrefix?: string;
   /** When true, render only the selected option (non-interactive). */

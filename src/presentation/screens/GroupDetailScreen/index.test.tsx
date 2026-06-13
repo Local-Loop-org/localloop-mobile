@@ -3,7 +3,12 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MemberRole,
+  MessagePermission,
+} from '@localloop/shared-types';
 import GroupDetailScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
 
@@ -101,6 +106,8 @@ const buildGroup = (
   anchorLabel: 'Morumbi',
   privacy: GroupPrivacy.OPEN,
   memberCount: 10,
+  sendTextPerm: MessagePermission.ALL_MEMBERS,
+  sendMediaPerm: MessagePermission.ALL_MEMBERS,
   myRole: null,
   createdAt: '2026-03-12T15:00:00.000Z',
   ...overrides,
@@ -144,6 +151,25 @@ describe('GroupDetailScreen', () => {
     expect(queryByText('Sair do grupo')).toBeNull();
     expect(queryByTestId('danger-delete')).toBeNull();
     expect(queryByTestId('role-pill-owner')).toBeNull();
+  });
+
+  it('render: permissions summary reflects the group send policies', async () => {
+    mockedGetDetail.mockResolvedValueOnce(
+      buildGroup({
+        myRole: null,
+        sendTextPerm: MessagePermission.ADMIN_ONLY,
+        sendMediaPerm: MessagePermission.MEMBERS_IN_RADIUS,
+      }),
+    );
+
+    const { findByTestId } = renderScreen();
+
+    expect(await findByTestId('permissions-summary-send')).toHaveTextContent(
+      /Só admins/,
+    );
+    expect(await findByTestId('permissions-summary-media')).toHaveTextContent(
+      /Dentro do raio/,
+    );
   });
 
   it('render: shows the CRIADO EM caption from group.createdAt', async () => {

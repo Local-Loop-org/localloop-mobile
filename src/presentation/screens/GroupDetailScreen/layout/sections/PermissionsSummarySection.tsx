@@ -1,19 +1,17 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { MessagePermission } from '@localloop/shared-types';
 import { SectionLabel } from '@/presentation/screens/CreateGroupScreen/layout/atoms/SectionLabel';
-import {
-  SEND_PERM_OPTIONS,
-  type SendPermValue,
-} from '@/presentation/screens/CreateGroupScreen/layout/components/SendPermPicker';
+import { SEND_PERM_OPTIONS } from '@/presentation/screens/CreateGroupScreen/layout/components/SendPermPicker';
 import { SummaryCard } from '../components/SummaryCard';
 
 interface PermissionsSummarySectionProps {
   /** When undefined, renders "Em breve" placeholder. */
-  sendPerm?: SendPermValue;
-  sendMediaPerm?: SendPermValue;
+  sendPerm?: MessagePermission;
+  sendMediaPerm?: MessagePermission;
 }
 
-function labelFor(value: SendPermValue | undefined): string {
+function labelFor(value: MessagePermission | undefined): string {
   if (!value) return 'Em breve';
   return SEND_PERM_OPTIONS.find((o) => o.value === value)?.label ?? '—';
 }

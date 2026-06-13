@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/shared/icons';
 import { useTheme } from '@/shared/theme/useTheme';
@@ -30,6 +30,12 @@ interface ChatComposerProps {
   onSend?: () => void;
   onPressAttach?: () => void;
   sendDisabled?: boolean;
+  /** Disables the text input + send button (e.g. send-text permission denied). */
+  textDisabled?: boolean;
+  /** Disables the attach button (e.g. send-media permission denied). */
+  attachDisabled?: boolean;
+  /** When set, shows a muted hint row above the bar explaining why it's disabled. */
+  disabledHint?: string | null;
   /** Whether to show a small mic icon at the right of the input when empty. */
   showMicIconWhenEmpty?: boolean;
 }
@@ -43,14 +49,27 @@ export function ChatComposer({
   onSend,
   onPressAttach,
   sendDisabled,
+  textDisabled,
+  attachDisabled,
+  disabledHint,
   showMicIconWhenEmpty = true,
 }: ChatComposerProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
-  const editable = typeof onChangeDraft === 'function';
+  const editable = typeof onChangeDraft === 'function' && !textDisabled;
   const hasChip = !!(composingReplyTo || composingEdit);
   return (
     <>
+      {disabledHint ? (
+        <View style={styles.composerDisabledHint}>
+          <Text
+            style={styles.composerDisabledHintText}
+            testID='composer-disabled-hint'
+          >
+            {disabledHint}
+          </Text>
+        </View>
+      ) : null}
       {composingReplyTo && (
         <ReplyPreviewChip
           authorLabel={composingReplyTo.authorLabel}
@@ -63,8 +82,12 @@ export function ChatComposer({
         style={[styles.composerBar, hasChip && styles.composerBarNoTopBorder]}
       >
         <Pressable
-          style={styles.composerAttachBtn}
+          style={[
+            styles.composerAttachBtn,
+            attachDisabled && styles.composerAttachBtnDisabled,
+          ]}
           onPress={onPressAttach}
+          disabled={attachDisabled}
           accessibilityRole='button'
           accessibilityLabel='Anexar arquivo'
           testID='composer-attach'

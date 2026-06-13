@@ -1,15 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { MessagePermission } from '@localloop/shared-types';
 import { fonts, type ThemeColors } from '@/shared/theme';
 import { useTheme } from '@/shared/theme/useTheme';
 import { useThemedStyles } from '@/shared/theme/useThemedStyles';
 import { Icon, type IconName } from '@/shared/icons';
 import { Card } from '../atoms/Card';
 import { SectionLabel } from '../atoms/SectionLabel';
-import {
-  SendPermPicker,
-  type SendPermValue,
-} from '../components/SendPermPicker';
+import { SendPermPicker } from '../components/SendPermPicker';
 
 interface StackHeaderProps {
   icon: IconName;
@@ -30,10 +28,10 @@ function StackHeader({ icon, label, meta }: StackHeaderProps) {
 }
 
 interface SendPermSectionProps {
-  sendPerm: SendPermValue;
-  sendMediaPerm: SendPermValue;
-  onSendPermChange?: (value: SendPermValue) => void;
-  onSendMediaPermChange?: (value: SendPermValue) => void;
+  sendPerm: MessagePermission;
+  sendMediaPerm: MessagePermission;
+  onSendPermChange?: (value: MessagePermission) => void;
+  onSendMediaPermChange?: (value: MessagePermission) => void;
   /** When true, render only selected options (non-interactive). */
   readOnly?: boolean;
 }

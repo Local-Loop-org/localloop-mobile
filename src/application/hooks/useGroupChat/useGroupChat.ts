@@ -40,7 +40,10 @@ import {
   MY_GROUPS_KEY,
 } from '../useMyGroups/useMyGroups';
 
-export type ChatErrorKind = 'load_failed' | 'socket_error';
+export type ChatErrorKind =
+  | 'load_failed'
+  | 'socket_error'
+  | 'send_permission_denied';
 export type GroupMessageStatus = ChatSendStatus;
 type GroupMessageWithSendStatus = ChatMessageWithSendStatus<GroupMessage>;
 
@@ -274,7 +277,11 @@ export function useGroupChat(groupId: string) {
     };
 
     const handleSocketError = (payload: SocketErrorPayload) => {
-      setSocketError('socket_error');
+      setSocketError(
+        payload.code === 'SEND_PERMISSION_DENIED'
+          ? 'send_permission_denied'
+          : 'socket_error',
+      );
       // eslint-disable-next-line no-console
       console.warn('[chat] socket error', payload);
     };

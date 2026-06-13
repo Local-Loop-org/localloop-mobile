@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MessagePermission,
+} from '@localloop/shared-types';
 import {
   useCurrentLocation,
   type Coords,
@@ -9,12 +13,11 @@ import { useCreateGroup } from '@/application/hooks/useCreateGroup/useCreateGrou
 import type { HomeTabsScreenProps } from '@/presentation/navigation/types';
 import { StackRoutes } from '@/presentation/navigation/routes';
 import CreateGroupLayout from './layout';
-import type { SendPermValue } from './layout/types';
 
 type Props = HomeTabsScreenProps<'CreateGroup'>;
 
 const DEFAULT_RADIUS_KM = 2;
-const DEFAULT_SEND_PERM: SendPermValue = 'all';
+const DEFAULT_SEND_PERM: MessagePermission = MessagePermission.ALL_MEMBERS;
 
 export default function CreateGroupScreen({ navigation }: Props) {
   const [name, setName] = useState('');
@@ -26,8 +29,9 @@ export default function CreateGroupScreen({ navigation }: Props) {
   const [privacy, setPrivacy] = useState<GroupPrivacy>(GroupPrivacy.OPEN);
 
   const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
-  const [sendPerm, setSendPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
-  const [sendMediaPerm, setSendMediaPerm] = useState<SendPermValue>(DEFAULT_SEND_PERM);
+  const [sendPerm, setSendPerm] = useState<MessagePermission>(DEFAULT_SEND_PERM);
+  const [sendMediaPerm, setSendMediaPerm] =
+    useState<MessagePermission>(DEFAULT_SEND_PERM);
 
   // Anchor for the group. Seeded from device GPS and kept in sync with it until
   // the user explicitly repositions the pin on the map (`anchorPicked`), after
@@ -88,6 +92,8 @@ export default function CreateGroupScreen({ navigation }: Props) {
         lng: finalCoords.lng,
         privacy,
         radiusKm,
+        sendTextPerm: sendPerm,
+        sendMediaPerm,
       });
       navigation.replace(StackRoutes.GroupDetail, { groupId: created.id });
     } catch {

@@ -434,6 +434,19 @@ export const createStyles = (c: ThemeColors) =>
   composerSendBtnDisabled: {
     opacity: 0.4,
   },
+  composerAttachBtnDisabled: {
+    opacity: 0.4,
+  },
+  composerDisabledHint: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 2,
+  },
+  composerDisabledHintText: {
+    fontSize: 12,
+    color: c.dim,
+    textAlign: 'center',
+  },
 
   // --- swipe-to-reply wrap ---
   swipeWrap: {

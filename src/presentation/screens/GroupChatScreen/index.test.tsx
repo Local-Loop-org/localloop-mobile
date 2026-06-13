@@ -5,15 +5,21 @@ import {
   AnchorType,
   type GroupMessage,
   MemberRole,
+  MessagePermission,
 } from '@localloop/shared-types';
 import GroupChatScreen from './index';
 import { useGroupChat } from '@/application/hooks/useGroupChat/useGroupChat';
+import { useGroupDetail } from '@/application/hooks/useGroupDetail/useGroupDetail';
 import { messagesApi } from '@/infra/api/messages.api';
 import type { ChatSendStatus } from '@/shared/chat/sendStatus';
 
 jest.mock('@/application/hooks/useGroupChat/useGroupChat', () => ({
   useGroupChat: jest.fn(),
   chatHistoryKey: (groupId: string) => ['chat', 'history', groupId] as const,
+}));
+
+jest.mock('@/application/hooks/useGroupDetail/useGroupDetail', () => ({
+  useGroupDetail: jest.fn(),
 }));
 
 jest.mock('@/infra/api/messages.api', () => ({
@@ -23,6 +29,20 @@ jest.mock('@/infra/api/messages.api', () => ({
 const mockedUseGroupChat = useGroupChat as jest.MockedFunction<
   typeof useGroupChat
 >;
+const mockedUseGroupDetail = useGroupDetail as jest.MockedFunction<
+  typeof useGroupDetail
+>;
+
+/** Stubs the group-detail query's `.data` (the only field the screen reads). */
+const setDetail = (
+  data: Partial<{
+    sendTextPerm: MessagePermission;
+    sendMediaPerm: MessagePermission;
+  }> | null,
+) =>
+  mockedUseGroupDetail.mockReturnValue({ data } as unknown as ReturnType<
+    typeof useGroupDetail
+  >);
 
 const navigation = {
   goBack: jest.fn(),
@@ -94,6 +114,8 @@ const baseMessage = (over: Partial<GroupMessage> = {}): GroupMessage => ({
 describe('GroupChatScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: detail not yet loaded — composer stays enabled.
+    setDetail(null);
   });
 
   it('renders the empty state when no messages and not loading', () => {
@@ -253,6 +275,70 @@ describe('GroupChatScreen', () => {
     });
     const { getByText } = renderScreen();
     expect(getByText('Não foi possível carregar o histórico.')).toBeTruthy();
+  });
+
+  it('surfaces the permission error when error=send_permission_denied', () => {
+    mockedUseGroupChat.mockReturnValue({
+      ...baseHookState,
+      error: 'send_permission_denied',
+    });
+    const { getByText } = renderScreen();
+    expect(
+      getByText('Você não tem permissão para enviar mensagens neste grupo.'),
+    ).toBeTruthy();
+  });
+
+  describe('composer gating by send-permission policy', () => {
+    it('disables the composer and shows a hint for a non-admin under admin_only', () => {
+      const sendMessage = jest.fn();
+      mockedUseGroupChat.mockReturnValue({ ...baseHookState, sendMessage });
+      setDetail({ sendTextPerm: MessagePermission.ADMIN_ONLY });
+      const { getByTestId, getByText, getByPlaceholderText } = renderScreen({
+        myRole: MemberRole.MEMBER,
+      });
+
+      expect(getByText('Apenas admins podem enviar mensagens')).toBeTruthy();
+      expect(getByPlaceholderText('Escreva uma mensagem').props.editable).toBe(
+        false,
+      );
+
+      fireEvent.changeText(
+        getByPlaceholderText('Escreva uma mensagem'),
+        'tentando',
+      );
+      fireEvent.press(getByTestId('composer-send'));
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('keeps the composer enabled for an OWNER under admin_only', () => {
+      const sendMessage = jest.fn();
+      mockedUseGroupChat.mockReturnValue({ ...baseHookState, sendMessage });
+      setDetail({ sendTextPerm: MessagePermission.ADMIN_ONLY });
+      const { getByTestId, queryByTestId, getByPlaceholderText } = renderScreen({
+        myRole: MemberRole.OWNER,
+      });
+
+      expect(queryByTestId('composer-disabled-hint')).toBeNull();
+
+      fireEvent.changeText(getByPlaceholderText('Escreva uma mensagem'), 'oi');
+      fireEvent.press(getByTestId('composer-send'));
+      expect(sendMessage).toHaveBeenCalledWith({ content: 'oi', replyTo: null });
+    });
+
+    it('keeps the composer enabled (optimistic) for a member under members_in_radius', () => {
+      const sendMessage = jest.fn();
+      mockedUseGroupChat.mockReturnValue({ ...baseHookState, sendMessage });
+      setDetail({ sendTextPerm: MessagePermission.MEMBERS_IN_RADIUS });
+      const { getByTestId, queryByTestId, getByPlaceholderText } = renderScreen({
+        myRole: MemberRole.MEMBER,
+      });
+
+      expect(queryByTestId('composer-disabled-hint')).toBeNull();
+
+      fireEvent.changeText(getByPlaceholderText('Escreva uma mensagem'), 'oi');
+      fireEvent.press(getByTestId('composer-send'));
+      expect(sendMessage).toHaveBeenCalledWith({ content: 'oi', replyTo: null });
+    });
   });
 
   it('header back button navigates back', () => {
