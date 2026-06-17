@@ -1,8 +1,9 @@
-import { AnchorType, GroupPrivacy } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MessagePermission,
+} from '@localloop/shared-types';
 import type { Coords } from '@/application/hooks/useCurrentLocation/useCurrentLocation';
-import type { SendPermValue } from './components/SendPermPicker';
-
-export type { SendPermValue };
 
 export interface CreateGroupLayoutProps {
   name: string;
@@ -13,13 +14,13 @@ export interface CreateGroupLayoutProps {
   /** Group anchor picked on the map; `null` until device location resolves. */
   anchorCoords: Coords | null;
   /**
-   * Local-only state (not yet persisted to the API). Wired through the layout
-   * so the controls behave correctly; dropped at submit time. Tracked under
-   * the `feedback_create_group_local_only_fields` memory.
+   * `radiusKm` is wired through the layout but not yet persisted to the API
+   * (dropped at submit time). `sendPerm`/`sendMediaPerm` are submitted as
+   * `sendTextPerm`/`sendMediaPerm`.
    */
   radiusKm: number;
-  sendPerm: SendPermValue;
-  sendMediaPerm: SendPermValue;
+  sendPerm: MessagePermission;
+  sendMediaPerm: MessagePermission;
 
   locationGranted: boolean;
   isSubmitting: boolean;
@@ -32,8 +33,8 @@ export interface CreateGroupLayoutProps {
   onPrivacyChange: (value: GroupPrivacy) => void;
   onRadiusChange: (value: number) => void;
   onAnchorCoordsChange: (coords: Coords) => void;
-  onSendPermChange: (value: SendPermValue) => void;
-  onSendMediaPermChange: (value: SendPermValue) => void;
+  onSendPermChange: (value: MessagePermission) => void;
+  onSendMediaPermChange: (value: MessagePermission) => void;
 
   onSubmit: () => void;
   onClose: () => void;

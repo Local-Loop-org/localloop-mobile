@@ -4,6 +4,7 @@ import {
   AnchorType,
   GroupPrivacy,
   MemberRole,
+  MessagePermission,
   type MyGroup as SharedMyGroup,
   type NearbyGroup,
 } from '@localloop/shared-types';
@@ -28,6 +29,9 @@ export interface CreateGroupBody {
   lng: number;
   privacy: GroupPrivacy;
   radiusKm?: number;
+  /** Optional — the API defaults both to `all_members`. */
+  sendTextPerm?: MessagePermission;
+  sendMediaPerm?: MessagePermission;
 }
 
 export interface CreatedGroup {
@@ -51,6 +55,9 @@ export interface GroupDetail {
   privacy: GroupPrivacy;
   radiusKm?: number;
   memberCount: number;
+  /** Who may send text/audio and media. Always returned by the API. */
+  sendTextPerm: MessagePermission;
+  sendMediaPerm: MessagePermission;
   /** null when the caller is not a member. */
   myRole: MemberRole | null;
   /** ISO-8601 timestamp from the API. Optional for forward-compat with older responses. */

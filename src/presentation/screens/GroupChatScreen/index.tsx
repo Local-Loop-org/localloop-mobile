@@ -11,6 +11,11 @@ import {
   type GroupHistoryCache,
 } from '@/application/hooks/useDeleteGroupMessage/useDeleteGroupMessage';
 import { useEditGroupMessage } from '@/application/hooks/useEditGroupMessage/useEditGroupMessage';
+import { useGroupDetail } from '@/application/hooks/useGroupDetail/useGroupDetail';
+import {
+  canSendUnderPolicy,
+  SEND_BLOCKED_HINT,
+} from '@/shared/groups/sendPermissions';
 import GroupChatLayout from './layout';
 import type { GroupChatScreenProps } from './types';
 import { StackRoutes } from '@/presentation/navigation/routes';
@@ -30,6 +35,8 @@ import { getLocalSendStatus } from '@/shared/chat/sendStatus';
 const ERROR_LABEL: Record<string, string> = {
   load_failed: 'Não foi possível carregar o histórico.',
   socket_error: 'Erro de conexão com o chat.',
+  send_permission_denied:
+    'Você não tem permissão para enviar mensagens neste grupo.',
 };
 
 export default function GroupChatScreen({
@@ -53,6 +60,16 @@ export default function GroupChatScreen({
   const queryClient = useQueryClient();
   const deleteMessage = useDeleteGroupMessage();
   const editMessage = useEditGroupMessage();
+
+  // Group detail carries the send-permission policy (cached, shared with
+  // GroupDetailScreen). Until it loads, the composer stays enabled.
+  const detail = useGroupDetail(groupId).data;
+  const textSendBlocked = !canSendUnderPolicy(myRole, detail?.sendTextPerm);
+  const mediaSendBlocked = !canSendUnderPolicy(myRole, detail?.sendMediaPerm);
+  const sendBlockedHint =
+    textSendBlocked && detail
+      ? (SEND_BLOCKED_HINT[detail.sendTextPerm] ?? null)
+      : null;
 
   const editMessageAsync = editMessage.mutateAsync;
   const handleEditMessage = useCallback(
@@ -196,6 +213,9 @@ export default function GroupChatScreen({
       composingEdit={composer.composingEdit}
       editError={composer.editError}
       onDismissEditError={composer.onDismissEditError}
+      textSendBlocked={textSendBlocked}
+      mediaSendBlocked={mediaSendBlocked}
+      sendBlockedHint={sendBlockedHint}
       actionSheetOpen={actionSheetOpen}
       messageActionSheet={messageActionSheet}
       onChangeDraft={composer.onChangeDraft}

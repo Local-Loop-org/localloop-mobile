@@ -6,6 +6,7 @@ import {
   AnchorType,
   GroupPrivacy,
   MemberRole,
+  MessagePermission,
 } from '@localloop/shared-types';
 import GroupMembersScreen from './index';
 import { groupsApi } from '@/infra/api/groups.api';
@@ -104,6 +105,8 @@ const groupFixture = {
   anchorLabel: 'Barigui',
   privacy: GroupPrivacy.OPEN,
   memberCount: 3,
+  sendTextPerm: MessagePermission.ALL_MEMBERS,
+  sendMediaPerm: MessagePermission.ALL_MEMBERS,
   myRole: null as MemberRole | null,
   createdAt: '2026-03-12T15:00:00.000Z',
 };

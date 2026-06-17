@@ -231,7 +231,10 @@ export default function GroupDetailLayout({
           />
         ) : null}
 
-        <PermissionsSummarySection />
+        <PermissionsSummarySection
+          sendPerm={group.sendTextPerm}
+          sendMediaPerm={group.sendMediaPerm}
+        />
 
         {isActiveMember ? (
           <DangerSection

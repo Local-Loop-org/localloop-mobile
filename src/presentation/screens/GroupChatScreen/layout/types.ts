@@ -33,6 +33,13 @@ export interface GroupChatLayoutProps {
   /** Inline error banner above the composer, dismissable. */
   editError: string | null;
   onDismissEditError: () => void;
+  /** When true, the active user can't send text under the group's policy:
+   * disables the text input + send button. */
+  textSendBlocked?: boolean;
+  /** When true, the active user can't send media: disables the attach button. */
+  mediaSendBlocked?: boolean;
+  /** Muted hint shown above the composer explaining why sending is blocked. */
+  sendBlockedHint?: string | null;
   /** Whether the bottom action sheet is currently shown. */
   actionSheetOpen: boolean;
   /** The per-message action sheet renders when this is non-null. */

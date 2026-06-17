@@ -2,7 +2,12 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor, type RenderResult } from '@testing-library/react-native';
 import * as Location from 'expo-location';
-import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MemberRole,
+  MessagePermission,
+} from '@localloop/shared-types';
 import CreateGroupScreen from './index';
 import { useCreateGroup } from '@/application/hooks/useCreateGroup/useCreateGroup';
 
@@ -146,13 +151,15 @@ describe('CreateGroupScreen', () => {
       lng: -46.63,
       privacy: GroupPrivacy.OPEN,
       radiusKm: 2,
+      sendTextPerm: MessagePermission.ALL_MEMBERS,
+      sendMediaPerm: MessagePermission.ALL_MEMBERS,
     });
     expect(navigation.replace).toHaveBeenCalledWith('GroupDetail', {
       groupId: 'g-new',
     });
   });
 
-  it('does not include sendPerm or sendMediaPerm in the submitted payload, but does include radiusKm', async () => {
+  it('submits the selected send permissions (as sendTextPerm/sendMediaPerm) and radiusKm', async () => {
     mutateAsync.mockResolvedValueOnce({
       id: 'g-new',
       name: 'Morumbi Runners',
@@ -167,17 +174,19 @@ describe('CreateGroupScreen', () => {
     fillRequiredFields(utils);
 
     fireEvent.press(utils.getByTestId('radius-tick-5'));
-    fireEvent.press(utils.getByTestId('send-perm-admins_only'));
-    fireEvent.press(utils.getByTestId('send-media-perm-within_radius'));
+    fireEvent.press(utils.getByTestId('send-perm-admin_only'));
+    fireEvent.press(utils.getByTestId('send-media-perm-members_in_radius'));
 
     await act(async () => {
       fireEvent.press(utils.getByTestId('create-group-submit'));
     });
 
     const payload = mutateAsync.mock.calls[0][0];
-    expect(payload).toHaveProperty('radiusKm', 5);
-    expect(payload).not.toHaveProperty('sendPerm');
-    expect(payload).not.toHaveProperty('sendMediaPerm');
+    expect(payload).toMatchObject({
+      radiusKm: 5,
+      sendTextPerm: MessagePermission.ADMIN_ONLY,
+      sendMediaPerm: MessagePermission.MEMBERS_IN_RADIUS,
+    });
   });
 
   it('alerts and does not navigate when the create mutation rejects', async () => {

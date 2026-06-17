@@ -1,7 +1,12 @@
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AnchorType, GroupPrivacy, MemberRole } from '@localloop/shared-types';
+import {
+  AnchorType,
+  GroupPrivacy,
+  MemberRole,
+  MessagePermission,
+} from '@localloop/shared-types';
 import { groupsApi } from '@/infra/api/groups.api';
 import { useGroupDetail, groupDetailKey } from './useGroupDetail';
 
@@ -34,6 +39,8 @@ const baseDetail = {
   anchorLabel: 'Morumbi',
   privacy: GroupPrivacy.OPEN,
   memberCount: 10,
+  sendTextPerm: MessagePermission.ALL_MEMBERS,
+  sendMediaPerm: MessagePermission.ALL_MEMBERS,
   myRole: MemberRole.MEMBER,
 };
 

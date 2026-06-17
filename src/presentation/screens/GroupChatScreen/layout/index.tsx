@@ -38,6 +38,9 @@ export default function GroupChatLayout({
   composingEdit,
   editError,
   onDismissEditError,
+  textSendBlocked,
+  mediaSendBlocked,
+  sendBlockedHint,
   actionSheetOpen,
   messageActionSheet,
   onChangeDraft,
@@ -57,7 +60,7 @@ export default function GroupChatLayout({
 }: GroupChatLayoutProps) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
-  const sendDisabled = draft.trim().length === 0;
+  const sendDisabled = draft.trim().length === 0 || !!textSendBlocked;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,6 +167,9 @@ export default function GroupChatLayout({
           onChangeDraft={onChangeDraft}
           onSend={onSend}
           sendDisabled={sendDisabled}
+          textDisabled={textSendBlocked}
+          attachDisabled={mediaSendBlocked}
+          disabledHint={sendBlockedHint}
         />
 
         {actionSheetOpen ? (
