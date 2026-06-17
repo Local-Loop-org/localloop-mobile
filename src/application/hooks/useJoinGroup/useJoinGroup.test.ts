@@ -81,6 +81,28 @@ describe('useJoinGroup', () => {
     client.clear();
   });
 
+  it('preserves a null anchor label in the optimistic my-groups cache row', async () => {
+    mockedJoin.mockResolvedValueOnce({
+      status: 'joined',
+      role: MemberRole.MEMBER,
+    });
+    const { client, wrapper } = makeWrapper();
+
+    const { result } = renderHook(() => useJoinGroup(), { wrapper });
+    result.current.mutate({
+      groupId: 'g-1',
+      group: { ...baseGroup, anchorLabel: null },
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const cached = client.getQueryData<
+      import('@/infra/api/groups.api').MyGroup[]
+    >(myGroupsKey(5));
+    expect(cached![0].anchorLabel).toBeNull();
+    client.clear();
+  });
+
   it('prepends to existing my-groups cache entries', async () => {
     mockedJoin.mockResolvedValueOnce({
       status: 'joined',

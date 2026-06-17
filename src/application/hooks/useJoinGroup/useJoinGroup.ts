@@ -5,7 +5,6 @@ import {
 } from '@tanstack/react-query';
 import {
   groupsApi,
-  type GroupDetail,
   type JoinGroupResult,
   type MyGroup,
 } from '@/infra/api/groups.api';
@@ -18,7 +17,7 @@ import {
 export type JoinGroupVars = {
   groupId: string;
   group: Pick<
-    GroupDetail,
+    MyGroup,
     'id' | 'name' | 'anchorType' | 'anchorLabel' | 'memberCount'
   >;
 };
